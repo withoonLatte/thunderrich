@@ -1,12 +1,54 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { AlertTriangle, ShieldCheck, Trophy, Info } from 'lucide-react';
+import { AlertTriangle, Trophy, Info, Camera, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 const ProfileCard: React.FC = () => {
   const { user } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   if (!user) return null;
+
+  const handlePhotoClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Limit size to 1MB for Firestore storage (storing as base64 is not ideal but works for 15 users)
+    if (file.size > 1024 * 1024) {
+      alert('ขนาดรูปใหญ่เกินไป (จำกัด 1MB)');
+      return;
+    }
+
+    setIsUploading(true);
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64String = reader.result as string;
+      try {
+        if (user.uid !== 'hardcoded-admin-id') {
+          const userDocRef = doc(db, 'users', user.uid);
+          await updateDoc(userDocRef, { photoURL: base64String });
+        } else {
+          // For hardcoded admin, save to local storage to persist change in this session
+          const mockUser = JSON.parse(localStorage.getItem('wc_mock_user') || '{}');
+          mockUser.photoURL = base64String;
+          localStorage.setItem('wc_mock_user', JSON.stringify(mockUser));
+          window.location.reload(); // Refresh to show the new mock photo
+        }
+      } catch (error) {
+        console.error('Error updating profile photo:', error);
+      } finally {
+        setIsUploading(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const wrongCount = user.round1_wrong_count || 0;
   const progressPercent = Math.min((wrongCount / 24) * 100, 100);
@@ -26,15 +68,33 @@ const ProfileCard: React.FC = () => {
       
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
-          <div className="relative">
-            <img 
-              src={user.photoURL || 'https://via.placeholder.com/150'} 
-              alt={user.displayName} 
-              className="w-14 h-14 rounded-full border-2 border-world-cup-green p-0.5 object-cover"
-            />
-            <div className="absolute -bottom-1 -right-1 bg-world-cup-gold text-blue-900 text-[10px] px-1.5 py-0.5 rounded-md shadow-lg">
+          <div className="relative group cursor-pointer" onClick={handlePhotoClick}>
+            <div className="w-14 h-14 rounded-full border-2 border-world-cup-green p-0.5 overflow-hidden bg-white/5">
+              {isUploading ? (
+                <div className="w-full h-full flex items-center justify-center bg-black/50">
+                  <Loader2 className="w-6 h-6 text-world-cup-green animate-spin" />
+                </div>
+              ) : (
+                <img 
+                  src={user.photoURL || 'https://via.placeholder.com/150'} 
+                  alt={user.displayName} 
+                  className="w-full h-full rounded-full object-cover"
+                />
+              )}
+            </div>
+            <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+              <Camera className="w-5 h-5 text-white/80" />
+            </div>
+            <div className="absolute -bottom-1 -right-1 bg-world-cup-gold text-blue-900 text-[10px] px-1.5 py-0.5 rounded-md shadow-lg z-10">
               #{user.role === 'admin' ? 'ADM' : 'PRO'}
             </div>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleFileChange} 
+              accept="image/*" 
+              className="hidden" 
+            />
           </div>
           <div>
             <h2 className="text-lg text-white italic tracking-tight">{user.displayName}</h2>
