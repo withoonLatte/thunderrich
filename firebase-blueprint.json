@@ -1,0 +1,88 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and game stats",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "user"] },
+        "points": { "type": "number" },
+        "round1_wrong_count": { "type": "number" },
+        "yellow_cards": { "type": "number" },
+        "red_cards": { "type": "number" },
+        "bannedMatchIds": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["uid", "displayName", "email", "role"]
+    },
+    "Match": {
+      "title": "Match",
+      "description": "Football match data",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "homeTeam": { "type": "string" },
+        "awayTeam": { "type": "string" },
+        "homeFlag": { "type": "string" },
+        "awayFlag": { "type": "string" },
+        "startTime": { "type": "object", "description": "Firestore Timestamp" },
+        "handicap": { "type": "number" },
+        "round": { "type": "string" },
+        "homeScore": { "type": "number" },
+        "awayScore": { "type": "number" },
+        "status": { "type": "string", "enum": ["scheduled", "live", "finished"] }
+      },
+      "required": ["homeTeam", "awayTeam", "handicap", "round", "startTime", "status"]
+    },
+    "Prediction": {
+      "title": "Prediction",
+      "description": "User match prediction",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "matchId": { "type": "string" },
+        "choice": { "type": "string", "enum": ["home", "away"] },
+        "pointsEarned": { "type": "number" },
+        "isResultCorrect": { "type": "boolean" },
+        "isVoided": { "type": "boolean" },
+        "createdAt": { "type": "object", "description": "Firestore Timestamp" }
+      },
+      "required": ["userId", "matchId", "choice", "isVoided", "createdAt"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Webboard chat message",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "object", "description": "Firestore Timestamp" }
+      },
+      "required": ["userId", "displayName", "content", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "Collection of user profiles"
+    },
+    "matches/{matchId}": {
+      "schema": "Match",
+      "description": "Collection of football matches"
+    },
+    "predictions/{predictionId}": {
+      "schema": "Prediction",
+      "description": "Collection of user predictions"
+    },
+    "messages/{messageId}": {
+      "schema": "Message",
+      "description": "Collection of chat room messages"
+    }
+  }
+}

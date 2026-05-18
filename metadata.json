@@ -1,0 +1,6 @@
+{
+  "name": "รวยฟ้าผ่า #20",
+  "description": "แอปทายผลฟุตบอลโลกแบบ Mobile-first พร้อมระบบแต้มต่อ ตารางคะแนนเรียลไทม์ และระบบบทลงโทษด้วยใบเหลืองใบแดง",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

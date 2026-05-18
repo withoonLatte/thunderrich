@@ -1,0 +1,31 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper to check if user is authenticated
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Helper to check if user is an admin
+    function isAdmin() {
+      return (isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') || 
+             (request.auth == null && exists(/databases/$(database)/documents/users/hardcoded-admin-id));
+    }
+
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+
+    match /matches/{matchId} {
+      allow read, write: if true;
+    }
+
+    match /predictions/{predictionId} {
+      allow read, write: if true;
+    }
+
+    match /webboard/{messageId} {
+      allow read, write: if true;
+    }
+  }
+}

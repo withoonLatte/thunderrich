@@ -1,0 +1,215 @@
+import React, { useEffect, useState } from 'react';
+import { collection, onSnapshot, query, orderBy, setDoc, doc, Timestamp, updateDoc, where } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import { Match, Prediction, PredictionChoice, MatchStatus } from '../types';
+import { useAuth } from '../contexts/AuthContext';
+import { format } from 'date-fns';
+import { motion, AnimatePresence } from 'motion/react';
+import { Clock, Info, CheckCircle2 } from 'lucide-react';
+
+const MatchList: React.FC = () => {
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [predictions, setPredictions] = useState<Record<string, Prediction>>({});
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const unsubMatches = onSnapshot(query(collection(db, 'matches'), orderBy('startTime', 'asc')), (snap) => {
+      setMatches(snap.docs.map(d => ({ id: d.id, ...d.data() } as Match)));
+    });
+
+    if (user) {
+      const unsubPreds = onSnapshot(query(collection(db, 'predictions'), where('userId', '==', user.uid)), (snap) => {
+        const predMap: Record<string, Prediction> = {};
+        snap.docs.forEach(d => {
+          const p = d.data() as Prediction;
+          predMap[p.matchId] = p;
+        });
+        setPredictions(predMap);
+      });
+      return () => {
+        unsubMatches();
+        unsubPreds();
+      };
+    }
+
+    return () => unsubMatches();
+  }, [user]);
+
+  const handlePredict = async (matchId: string, choice: PredictionChoice) => {
+    if (!user) return;
+    
+    // Check if match already started
+    const match = matches.find(m => m.id === matchId);
+    if (!match || match.startTime.seconds < Timestamp.now().seconds) return;
+
+    // Check if user is banned for this match
+    if (user.bannedMatchIds?.includes(matchId)) return;
+
+    const predId = `${user.uid}_${matchId}`;
+    const predRef = doc(db, 'predictions', predId);
+    
+    await setDoc(predRef, {
+      id: predId,
+      userId: user.uid,
+      matchId,
+      choice,
+      createdAt: Timestamp.now(),
+      isVoided: false
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      {matches.map((match, index) => {
+        const prediction = predictions[match.id];
+        const startTime = new Date(match.startTime.seconds * 1000);
+        const isStarted = match.startTime.seconds < Timestamp.now().seconds;
+        const isBanned = user?.bannedMatchIds?.includes(match.id);
+        const canPredict = !isStarted && !isBanned;
+
+        return (
+          <motion.div 
+            key={match.id}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.05 }}
+            className={`wc-glass rounded-3xl overflow-hidden border border-white/5 transition-all ${isStarted ? 'opacity-50 grayscale' : 'hover:border-world-cup-green/20'}`}
+          >
+            {/* Round & Date Header */}
+            <div className="bg-white/10 px-4 py-2.5 flex justify-between items-center border-b border-white/5">
+              <span className="text-[9px] font-black text-world-cup-green uppercase tracking-[0.2em]">{match.round.replace('_', ' ')}</span>
+              <div className="flex items-center gap-2 text-[10px] font-black text-gray-400">
+                <Clock className="w-3 h-3 text-world-cup-gold" />
+                {isStarted ? 'เริ่มการแข่งขันแล้ว' : format(startTime, 'MMM d, HH:mm')}
+              </div>
+            </div>
+
+            <div className="p-5 space-y-6">
+              <div className="flex items-center justify-between gap-4">
+                {/* Home Team */}
+                <div className="flex flex-col items-center gap-2 text-center flex-1">
+                  <div className="relative">
+                    <div className="w-16 h-10 rounded-xl bg-gradient-to-br from-white/10 to-transparent overflow-hidden border border-white/10 shadow-lg p-0.5">
+                      {match.homeFlag ? <img src={match.homeFlag} alt={match.homeTeam} className="w-full h-full object-cover rounded-lg" /> : <div className="text-xs text-gray-500 h-full flex items-center justify-center">🏳️</div>}
+                    </div>
+                  </div>
+                  <span className="text-xs font-black text-white uppercase tracking-tight truncate w-full">{match.homeTeam}</span>
+                  <div className="bg-world-cup-green/20 text-world-cup-green text-[10px] font-black px-2 py-0.5 rounded-full border border-world-cup-green/30">
+                    {match.handicap > 0 ? `+${match.handicap}` : match.handicap}
+                  </div>
+                </div>
+
+                {/* Score / VS */}
+                <div className="flex flex-col items-center gap-1 min-w-[60px]">
+                  {match.status === MatchStatus.FINISHED ? (
+                    <div className="flex flex-col items-center">
+                      <span className="text-3xl font-black italic tracking-tighter text-white drop-shadow-lg">
+                        {match.homeScore} <span className="text-world-cup-green">-</span> {match.awayScore}
+                      </span>
+                      <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest mt-1">จบการแข่งขัน</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center">
+                      <span className="text-lg font-black text-gray-700 italic tracking-[0.3em]">VS</span>
+                      {!isStarted && (
+                        <div className="animate-pulse bg-world-cup-gold/10 px-2 py-0.5 rounded-full mt-2">
+                           <span className="text-[8px] font-black text-world-cup-gold uppercase tracking-widest">เปิด</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Away Team */}
+                <div className="flex flex-col items-center gap-2 text-center flex-1">
+                  <div className="relative">
+                    <div className="w-16 h-10 rounded-xl bg-gradient-to-br from-white/10 to-transparent overflow-hidden border border-white/10 shadow-lg p-0.5">
+                      {match.awayFlag ? <img src={match.awayFlag} alt={match.awayTeam} className="w-full h-full object-cover rounded-lg" /> : <div className="text-xs text-gray-500 h-full flex items-center justify-center">🏳️</div>}
+                    </div>
+                  </div>
+                  <span className="text-xs font-black text-white uppercase tracking-tight truncate w-full">{match.awayTeam}</span>
+                  <div className="bg-white/5 text-gray-500 text-[10px] font-black px-2 py-0.5 rounded-full border border-white/10">
+                    0.00
+                  </div>
+                </div>
+              </div>
+
+              {/* Deadline & Warning */}
+              {!isStarted && !isBanned && (
+                <div className="flex items-center justify-center gap-2 text-[9px] font-black text-world-cup-gold/60 uppercase tracking-widest bg-world-cup-gold/5 py-1.5 rounded-lg border border-world-cup-gold/10">
+                  <Clock className="w-3 h-3" />
+                  ทายผลก่อนเวลา {format(startTime, 'HH:mm')}
+                </div>
+              )}
+
+              {/* Prediction Buttons */}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  disabled={!canPredict}
+                  onClick={() => handlePredict(match.id, PredictionChoice.HOME)}
+                  className={`group relative overflow-hidden py-4 rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-2 border-2 ${
+                    prediction?.choice === PredictionChoice.HOME 
+                      ? 'bg-world-cup-green border-world-cup-green text-white shadow-[0_0_20px_rgba(29,185,84,0.3)]' 
+                      : canPredict 
+                        ? 'bg-white/5 border-white/5 text-gray-400 hover:border-world-cup-green/50 hover:text-world-cup-green' 
+                        : 'bg-white/5 border-transparent text-gray-700'
+                  }`}
+                >
+                  {prediction?.choice === PredictionChoice.HOME && <CheckCircle2 className="w-4 h-4 shrink-0" />}
+                  <span>เจ้าบ้าน</span>
+                  {canPredict && <div className="absolute inset-0 bg-white/5 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />}
+                </button>
+                <button
+                  disabled={!canPredict}
+                  onClick={() => handlePredict(match.id, PredictionChoice.AWAY)}
+                  className={`group relative overflow-hidden py-4 rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-2 border-2 ${
+                    prediction?.choice === PredictionChoice.AWAY 
+                      ? 'bg-world-cup-green border-world-cup-green text-white shadow-[0_0_20px_rgba(29,185,84,0.3)]' 
+                      : canPredict 
+                        ? 'bg-white/5 border-white/5 text-gray-400 hover:border-world-cup-green/50 hover:text-world-cup-green' 
+                        : 'bg-white/5 border-transparent text-gray-700'
+                  }`}
+                >
+                  {prediction?.choice === PredictionChoice.AWAY && <CheckCircle2 className="w-4 h-4 shrink-0" />}
+                  <span>ทีมเยือน</span>
+                  {canPredict && <div className="absolute inset-0 bg-white/5 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />}
+                </button>
+              </div>
+
+              <AnimatePresence>
+                {isBanned && (
+                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="flex items-center gap-2 text-[10px] font-black text-red-500 bg-red-500/10 p-3 rounded-2xl border border-red-500/20">
+                    <Info className="w-3.5 h-3.5" />
+                    ถูกแบน: อยู่ระหว่างรับโทษทางวินัย
+                  </motion.div>
+                )}
+
+                {prediction && match.status === MatchStatus.FINISHED && (
+                  <motion.div 
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className={`text-xs font-black text-center py-3 rounded-2xl border ${
+                      prediction.isResultCorrect 
+                        ? 'bg-world-cup-green/20 border-world-cup-green/30 text-world-cup-green' 
+                        : 'bg-red-500/20 border-red-500/30 text-red-400'
+                    }`}
+                  >
+                    {prediction.isResultCorrect ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <CheckCircle2 className="w-4 h-4" /> ประตู! +{prediction.pointsEarned} คะแนน
+                      </span>
+                    ) : (
+                      <span>ล้ำหน้า! {prediction.pointsEarned} คะแนน</span>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+};
+
+export default MatchList;
