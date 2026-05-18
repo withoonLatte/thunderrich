@@ -1,17 +1,6 @@
 import express from "express";
 import path from "path";
-import { createServer as createViteServer } from "vite";
 import admin from "firebase-admin";
-
-// Global initialization (safe if called multiple times, but let's keep it clean)
-if (!admin.apps.length) {
-  try {
-    admin.initializeApp();
-    console.log("Firebase Admin initialized");
-  } catch (error) {
-    console.error("Firebase Admin initialization error:", error);
-  }
-}
 
 const app = express();
 
@@ -26,24 +15,51 @@ app.use((req, res, next) => {
   next();
 });
 
+// Helper for Firebase Admin (Lazy init)
+function getFirebaseAdmin() {
+  if (!admin.apps.length) {
+    try {
+      if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PRIVATE_KEY) {
+        admin.initializeApp({
+          credential: admin.credential.cert({
+            projectId: process.env.FIREBASE_PROJECT_ID,
+            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+            privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+          }),
+        });
+        console.log("Firebase Admin initialized with credentials");
+      } else {
+        admin.initializeApp();
+        console.log("Firebase Admin initialized with defaults");
+      }
+    } catch (error) {
+      console.error("Firebase Admin initialization error:", error);
+    }
+  }
+  return admin;
+}
+
 // API routes
 app.get("/api/health", (req, res) => res.json({ status: "ok" }));
 app.get("/api/ping", (req, res) => {
   res.json({ 
-    message: "pong from AIS", 
+    message: "pong from AIS (v3)", 
     time: new Date().toISOString(),
     vercel: !!process.env.VERCEL,
-    env: process.env.NODE_ENV
+    env: process.env.NODE_ENV,
+    hasFirebaseVars: !!(process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PRIVATE_KEY)
   });
 });
 
 // Admin: Create User
 app.post("/api/admin/create-user", async (req, res) => {
   const { adminUid, username, password, displayName } = req.body;
-  const auth = admin.auth();
-  const db = admin.firestore();
   
   try {
+    const firebaseAdmin = getFirebaseAdmin();
+    const auth = firebaseAdmin.auth();
+    const db = firebaseAdmin.firestore();
+
     if (!adminUid) return res.status(400).json({ error: "Missing adminUid" });
 
     // Check Admin
