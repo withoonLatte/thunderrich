@@ -23,17 +23,31 @@ async function startServer() {
 
   // Logging middleware
   app.use((req, res, next) => {
-    console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+    console.log(`[SERVER] ${new Date().toISOString()} - ${req.method} ${req.url}`);
     next();
   });
 
   // API routes
-  app.get("/api/health", (req, res) => res.json({ status: "ok" }));
-  app.get("/api/ping", (req, res) => res.json({ message: "pong", time: new Date().toISOString() }));
+  const apiRouter = express.Router();
+  app.use("/api", apiRouter);
+
+  apiRouter.get("/health", (req, res) => {
+    console.log("[API] Health check");
+    res.json({ status: "ok" });
+  });
+
+  apiRouter.get("/ping", (req, res) => {
+    console.log("[API] Ping check");
+    res.json({ 
+      message: "pong", 
+      time: new Date().toISOString(),
+      headers: req.headers
+    });
+  });
 
   // Route to create a new friend account
-  app.post("/api/admin/create-user", async (req, res) => {
-    console.log(`[API] POST /api/admin/create-user`);
+  apiRouter.post("/admin/create-user", async (req, res) => {
+    console.log("[API] Create user request");
     const { adminUid, username, password, displayName } = req.body;
 
     if (!adminUid) {
