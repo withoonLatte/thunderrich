@@ -90,7 +90,9 @@ const AdminDashboard: React.FC = () => {
       const contentType = response.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'สร้างผู้ใช้ไม่สำเร็จ');
+        if (!response.ok) {
+          throw new Error(data.error || data.message || 'สร้างผู้ใช้ไม่สำเร็จ');
+        }
         setUserCreationMessage({ type: 'success', text: `สร้างผู้ใช้ ${newUsername} สำเร็จ!` });
         setNewUsername('');
         setNewDisplayName('');
@@ -98,6 +100,10 @@ const AdminDashboard: React.FC = () => {
       } else {
         const text = await response.text();
         console.error('Non-JSON response:', text);
+        // If it's a 404, suggest a retry or check
+        if (response.status === 404) {
+          throw new Error('ไม่พบเส้นทาง API (404) โปรดลองรีเฟรชหน้าแล้วลองใหม่');
+        }
         throw new Error(`เกิดข้อผิดพลาดจากเซิร์ฟเวอร์ (รหัส: ${response.status})`);
       }
     } catch (err: any) {
