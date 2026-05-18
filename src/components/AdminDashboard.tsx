@@ -40,7 +40,10 @@ const AdminDashboard: React.FC = () => {
     });
     
     const unsubUsers = onSnapshot(collection(db, 'users'), (snap) => {
-      setUsers(snap.docs.map(d => d.data() as User));
+      const sortedUsers = snap.docs
+        .map(d => d.data() as User)
+        .sort((a, b) => b.points - a.points);
+      setUsers(sortedUsers);
     });
 
     return () => {
@@ -235,43 +238,19 @@ const AdminDashboard: React.FC = () => {
     setCalcLoading(null);
   };
 
-  const handleTestPing = async () => {
-    try {
-      const resp = await fetch('/api/ping');
-      const contentType = resp.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        const data = await resp.json();
-        const msg = data.message || data.msg || 'No message';
-        alert(`API Connection: ${msg}\nStatus: ${resp.status}\nTime: ${data.time}\nFirebase Vars: ${data.hasFirebaseVars ? 'OK' : 'MISSING'}\nVercel: ${data.vercel ? 'Yes' : 'No'}`);
-      } else {
-        const text = await resp.text();
-        console.error('Ping Non-JSON:', text);
-        alert(`API Error (Non-JSON): ${resp.status}\nBody: ${text.substring(0, 200)}`);
-      }
-    } catch (err: any) {
-      alert(`Fetch Error: ${err.message}`);
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4">
         <div className="flex justify-between items-center text-world-cup-green">
           <div className="flex items-center gap-2">
-            <h2 className="text-xl italic">ระบบจัดการแอดมิน</h2>
-            <button 
-              onClick={handleTestPing}
-              className="text-[8px] bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded border border-white/10 text-gray-500 uppercase tracking-tighter"
-            >
-              Ping API
-            </button>
+            <h2 className="text-xl italic font-black uppercase tracking-tighter">ADMIN PANEL</h2>
           </div>
           <div className="bg-white/5 p-1 rounded-lg flex">
             <button 
               onClick={() => setActiveAdminTab('matches')}
               className={`px-3 py-1.5 rounded-md text-[10px] uppercase tracking-widest transition-all ${activeAdminTab === 'matches' ? 'bg-world-cup-green text-white shadow-lg' : 'text-gray-500'}`}
             >
-              แมตช์การแข่งขัน
+              แมตช์
             </button>
             <button 
               onClick={() => setActiveAdminTab('players')}
@@ -290,13 +269,13 @@ const AdminDashboard: React.FC = () => {
               className="flex-1 flex items-center justify-center gap-2 bg-amber-600 text-white px-4 py-3 rounded-2xl text-xs disabled:opacity-50"
             >
               <RefreshCw className={`w-4 h-4 ${resetLoading ? 'animate-spin' : ''}`} />
-              รีเซ็ตเฟส
+              รีเซ็ตรอบ 16 ทีม
             </button>
             <button 
               onClick={() => setShowAdd(!showAdd)}
               className="flex-1 flex items-center justify-center gap-2 bg-world-cup-green text-white px-4 py-3 rounded-2xl text-xs"
             >
-              {showAdd ? 'ปิด' : <><PlusCircle className="w-4 h-4" /> เพิ่มแมตช์</>}
+              {showAdd ? 'ยกเลิก' : <><PlusCircle className="w-4 h-4" /> เพิ่มแมตช์</>}
             </button>
           </div>
         )}
@@ -304,80 +283,29 @@ const AdminDashboard: React.FC = () => {
 
       {activeAdminTab === 'players' && (
         <div className="space-y-6">
-          <form onSubmit={handleCreateUser} className="wc-glass p-6 rounded-3xl space-y-4 border-t-2 border-world-cup-green/20">
-            <h3 className="text-sm text-white italic uppercase tracking-wider mb-2">สร้างบัญชีผู้เล่น</h3>
+          <div className="wc-glass p-6 rounded-3xl border-t-2 border-world-cup-green/20">
+            <h3 className="text-sm text-gray-400 italic uppercase tracking-wider mb-2 text-center underline underline-offset-4">สรุปรายชื่อเพื่อนซี้</h3>
+            <p className="text-[10px] text-center text-gray-500 mb-6">ผู้เล่นสมัครสมาชิกเองผ่านหน้าลงทะเบียน</p>
             
-            {userCreationMessage && (
-              <div className={`p-4 rounded-2xl text-xs ${userCreationMessage.type === 'success' ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'}`}>
-                {userCreationMessage.text}
-              </div>
-            )}
-
-            <div className="space-y-1">
-              <label className="text-[10px] text-gray-500 uppercase px-2">ชื่อที่ใช้แสดง</label>
-              <input required value={newDisplayName} onChange={e => setNewDisplayName(e.target.value)} placeholder="เช่น Messi FC" className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm focus:outline-none focus:border-world-cup-green" />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-[10px] text-gray-500 uppercase px-2">ชื่อผู้ใช้</label>
-                <input required value={newUsername} onChange={e => setNewUsername(e.target.value)} placeholder="leo10" className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm focus:outline-none focus:border-world-cup-green" />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] text-gray-500 uppercase px-2">รหัสผ่าน</label>
-                <input required type="text" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="secret" className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm focus:outline-none focus:border-world-cup-green" />
-              </div>
-            </div>
-
-            <button 
-              disabled={userCreationLoading}
-              type="submit" 
-              className="w-full bg-world-cup-green text-white py-4 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
-            >
-              {userCreationLoading ? 'กำลังสร้าง...' : 'เพิ่มเพื่อนเข้าระบบ'}
-            </button>
-          </form>
-
-          <div className="space-y-3">
-            <h3 className="text-[10px] text-gray-500 uppercase tracking-[0.2em] px-2 text-center">รายชื่อผู้เล่น ({users.length}/15)</h3>
-            {users.map(u => (
-              <div key={u.uid} className="wc-glass p-4 rounded-2xl flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="relative group">
-                    <div className="w-12 h-12 rounded-full bg-world-cup-green/20 overflow-hidden flex items-center justify-center text-xs text-world-cup-green border-2 border-world-cup-green/30">
-                      {u.photoURL ? (
-                        <img src={u.photoURL} alt={u.displayName} className="w-full h-full object-cover" />
-                      ) : (
-                        u.displayName[0].toUpperCase()
-                      )}
+            <div className="space-y-3">
+              {users.map((u, idx) => (
+                <div key={u.uid} className="wc-glass p-4 rounded-2xl flex items-center justify-between border border-white/5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-world-cup-green/10 flex items-center justify-center text-xs text-world-cup-green font-bold border border-world-cup-green/20">
+                      {idx + 1}
                     </div>
-                    <label className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        className="hidden" 
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) handlePhotoUpload(u.uid, file);
-                        }}
-                      />
-                      {uploadingUid === u.uid ? (
-                        <Loader2 className="w-4 h-4 text-white animate-spin" />
-                      ) : (
-                        <Camera className="w-4 h-4 text-white" />
-                      )}
-                    </label>
+                    <div>
+                      <p className="text-sm text-white font-medium">{u.displayName}</p>
+                      <p className="text-[9px] text-gray-500">{u.role === 'admin' ? 'แอดมิน' : 'ผู้เล่น'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-white">{u.displayName}</p>
-                    <p className="text-[10px] text-gray-500 tracking-tight">{u.email}</p>
+                  <div className="text-right">
+                    <p className="text-sm text-world-cup-gold font-black">{u.points}</p>
+                    <p className="text-[8px] text-gray-500 uppercase">POINTS</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-xs text-world-cup-gold">{u.points} คะแนน</p>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       )}

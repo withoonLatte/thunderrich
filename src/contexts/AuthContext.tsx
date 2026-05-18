@@ -14,6 +14,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   signIn: (username: string, password: string) => Promise<void>;
+  signUp: (username: string, password: string, displayName: string, groupPin: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUserPassword?: (newPassword: string) => Promise<void>;
 }
@@ -96,6 +97,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const email = formatEmail(username);
     await signInWithEmailAndPassword(auth, email, password);
+  };
+
+  const signUp = async (username: string, password: string, displayName: string, groupPin: string) => {
+    // Basic verification (Hardcoded PINs for simplicity)
+    const NORMAL_PIN = '123456';
+    const ADMIN_PIN = '999999';
+
+    if (groupPin !== NORMAL_PIN && groupPin !== ADMIN_PIN) {
+      throw new Error('รหัสกลุ่มไม่ถูกต้อง');
+    }
+
+    const email = formatEmail(username);
+    const { createUserWithEmailAndPassword } = await import('firebase/auth');
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const firebaseUser = userCredential.user;
+
+    const role = groupPin === ADMIN_PIN ? UserRole.ADMIN : UserRole.USER;
+    
+    const newUser: User = {
+      uid: firebaseUser.uid,
+      displayName,
+      email,
+      role,
+      points: 0,
+      round1_wrong_count: 0,
+      yellow_cards: 0,
+      red_cards: 0,
+      bannedMatchIds: [],
+      mustChangePassword: false
+    };
+
+    const userDocRef = doc(db, 'users', firebaseUser.uid);
+    await setDoc(userDocRef, newUser);
+    setUser(newUser);
   };
 
   const logout = () => {

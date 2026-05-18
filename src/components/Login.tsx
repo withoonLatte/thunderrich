@@ -1,14 +1,20 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Trophy, User as UserIcon, Lock, AlertCircle } from 'lucide-react';
+import { Trophy, User as UserIcon, Lock, AlertCircle, UserPlus } from 'lucide-react';
 import { motion } from 'motion/react';
+import Register from './Register';
 
 const Login: React.FC = () => {
   const { signIn } = useAuth();
+  const [showRegister, setShowRegister] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  if (showRegister) {
+    return <Register onBack={() => setShowRegister(false)} />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,6 +104,15 @@ const Login: React.FC = () => {
           ) : (
             'เข้าสู่สนาม'
           )}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setShowRegister(true)}
+          className="w-full bg-white/5 text-gray-400 py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-white/10 transition-all text-xs uppercase tracking-widest border border-white/5"
+        >
+          <UserPlus className="w-4 h-4" />
+          สมัครสมาชิกใหม่
         </button>
       </form>
 
