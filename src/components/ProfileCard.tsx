@@ -28,24 +28,51 @@ const ProfileCard: React.FC = () => {
 
     setIsUploading(true);
     const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64String = reader.result as string;
-      try {
-        if (user.uid !== 'hardcoded-admin-id') {
-          const userDocRef = doc(db, 'users', user.uid);
-          await updateDoc(userDocRef, { photoURL: base64String });
+    reader.onload = async (event) => {
+      const img = new Image();
+      img.onload = async () => {
+        const canvas = document.createElement('canvas');
+        const MAX_SIZE = 300;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height *= MAX_SIZE / width;
+            width = MAX_SIZE;
+          }
         } else {
-          // For hardcoded admin, save to local storage to persist change in this session
-          const mockUser = JSON.parse(localStorage.getItem('wc_mock_user') || '{}');
-          mockUser.photoURL = base64String;
-          localStorage.setItem('wc_mock_user', JSON.stringify(mockUser));
-          window.location.reload(); // Refresh to show the new mock photo
+          if (height > MAX_SIZE) {
+            width *= MAX_SIZE / height;
+            height = MAX_SIZE;
+          }
         }
-      } catch (error) {
-        console.error('Error updating profile photo:', error);
-      } finally {
-        setIsUploading(false);
-      }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        
+        try {
+          if (user.uid !== 'hardcoded-admin-id') {
+            const userDocRef = doc(db, 'users', user.uid);
+            await updateDoc(userDocRef, { photoURL: dataUrl });
+          } else {
+            const mockUser = JSON.parse(localStorage.getItem('wc_mock_user') || '{}');
+            mockUser.photoURL = dataUrl;
+            localStorage.setItem('wc_mock_user', JSON.stringify(mockUser));
+            window.location.reload();
+          }
+        } catch (error) {
+          console.error('Error updating profile photo:', error);
+          alert('ไม่สามารถบันทึกรูปได้ โปรดลองอีกครั้ง');
+        } finally {
+          setIsUploading(false);
+        }
+      };
+      img.src = event.target?.result as string;
     };
     reader.readAsDataURL(file);
   };
