@@ -11,9 +11,15 @@
 }
 
 body {
-  background-color: #0A1931; /* Use hex instead of var for safety in body */
+  background-color: #0A1931;
+  background-image: linear-gradient(rgba(10, 25, 49, 0.8), rgba(21, 14, 86, 0.85)), url('/background.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
   color: white;
   font-family: var(--font-sans);
+  min-height: 100vh;
 }
 
 .wc-glass {

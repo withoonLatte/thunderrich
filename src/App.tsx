@@ -38,7 +38,7 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-world-cup-blue pb-20">
+    <div className="min-h-screen pb-20">
       <header className="p-4 flex justify-between items-center bg-world-cup-purple/50 backdrop-blur-md sticky top-0 z-50">
         <div className="flex items-center gap-2">
           <img src="/logo.png" alt="Logo" className="w-10 h-10 object-contain drop-shadow-[0_0_8px_rgba(255,215,0,0.5)]" />
