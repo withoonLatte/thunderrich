@@ -241,7 +241,8 @@ const AdminDashboard: React.FC = () => {
       const contentType = resp.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
         const data = await resp.json();
-        alert(`API Connection: ${data.message} at ${data.time}\nStatus: ${resp.status}`);
+        const msg = data.message || data.msg || 'No message';
+        alert(`API Connection: ${msg}\nStatus: ${resp.status}\nTime: ${data.time}\nFirebase Vars: ${data.hasFirebaseVars ? 'OK' : 'MISSING'}\nVercel: ${data.vercel ? 'Yes' : 'No'}`);
       } else {
         const text = await resp.text();
         console.error('Ping Non-JSON:', text);
