@@ -29,9 +29,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     // Check for mock session first
-    const mockUser = localStorage.getItem('wc_mock_user');
-    if (mockUser) {
-      setUser(JSON.parse(mockUser));
+    const mockUserStr = localStorage.getItem('wc_mock_user');
+    if (mockUserStr) {
+      const mockUser = JSON.parse(mockUserStr);
+      setUser(mockUser);
+      // Sync mock admin to firestore if it's the hardcoded one
+      if (mockUser.uid === 'hardcoded-admin-id') {
+        const userDocRef = doc(db, 'users', mockUser.uid);
+        setDoc(userDocRef, mockUser, { merge: true }).catch(console.error);
+      }
       setLoading(false);
       return;
     }
