@@ -1,123 +1,98 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Trophy, User as UserIcon, Lock, AlertCircle, UserPlus } from 'lucide-react';
+import { Trophy, AlertCircle } from 'lucide-react';
 import { motion } from 'motion/react';
-import Register from './Register';
 
 const Login: React.FC = () => {
-  const { signIn } = useAuth();
-  const [showRegister, setShowRegister] = useState(false);
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const { signInWithGoogle } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (showRegister) {
-    return <Register onBack={() => setShowRegister(false)} />;
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!username || !password) return;
-    
+  const handleGoogleLogin = async () => {
     setLoading(true);
     setError(null);
     try {
-      await signIn(username, password);
+      await signInWithGoogle();
     } catch (err: any) {
-      setError('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง');
+      console.error(err);
+      setError('ไม่สามารถเข้าสู่ระบบด้วย Google ได้ กรุณาลองใหม่อีกครั้ง');
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-world-cup-blue text-center">
-      <motion.div 
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="mb-6 w-32 h-32 flex items-center justify-center p-4 bg-world-cup-green/10 rounded-full"
-      >
-        <img 
-          src="/logo.png" 
-          alt="Logo" 
-          className="w-full h-full object-contain drop-shadow-[0_0_20px_rgba(29,185,84,0.5)]" 
-          onError={(e) => {
-            e.currentTarget.style.display = 'none';
-            e.currentTarget.parentElement!.innerHTML = '<div class="text-world-cup-green"><svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trophy"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg></div>';
-          }}
-        />
-      </motion.div>
-      
-      <h1 className="text-4xl mb-2 text-white italic tracking-tighter uppercase">
-        รวยฟ้าผ่า <br />
-        <span className="text-world-cup-green">#20</span>
-      </h1>
-      
-      <p className="text-gray-400 mb-8 max-w-xs text-sm">
-        เข้าร่วมกลุ่มเพื่อนซี้ 15 คน <br />
-        ทำนายผลเพื่อชิงความเป็นหนึ่ง
-      </p>
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-world-cup-blue text-center overflow-hidden">
+      {/* Decorative patterns */}
+      <div className="absolute top-[-10%] right-[-10%] w-[300px] h-[300px] bg-world-cup-green/5 rounded-full blur-[100px]" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[250px] h-[250px] bg-world-cup-purple/10 rounded-full blur-[80px]" />
 
-      <form onSubmit={handleSubmit} className="w-full max-w-xs space-y-4">
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+      >
+        <div className="w-24 h-24 bg-gradient-to-br from-world-cup-gold to-amber-600 rounded-full mb-6 mx-auto flex items-center justify-center shadow-[0_0_30px_rgba(255,215,0,0.3)]">
+          <Trophy className="w-12 h-12 text-white" />
+        </div>
+        
+        <h1 className="text-4xl text-white italic tracking-tighter uppercase font-black mb-2">
+          รวยฟ้าผ่า <br />
+          <span className="text-world-cup-green">#20</span>
+        </h1>
+        <p className="text-gray-400 mb-12 max-w-xs text-sm mx-auto">
+          ทำนายผลฟุตบอลโลก 2026 <br />
+          แข่งขันกันในกลุ่มเพื่อนซี้ 15 คน
+        </p>
+      </motion.div>
+
+      <motion.div 
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.2, duration: 0.8 }}
+        className="w-full max-w-xs space-y-4 z-10"
+      >
         {error && (
-          <motion.div 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-red-500/10 border border-red-500/20 text-red-500 text-xs p-3 rounded-xl flex items-center gap-2"
-          >
-            <AlertCircle className="w-4 h-4" />
-            {error}
-          </motion.div>
+          <div className="bg-red-500/10 border border-red-500/20 text-red-500 text-xs p-4 rounded-2xl flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+            <p className="text-left">{error}</p>
+          </div>
         )}
 
-        <div className="relative">
-          <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-          <input
-            type="text"
-            placeholder="ชื่อผู้ใช้"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-world-cup-green transition-all placeholder:text-gray-600"
-            required
-          />
-        </div>
-
-        <div className="relative">
-          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-          <input
-            type="password"
-            placeholder="รหัสผ่าน"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-world-cup-green transition-all placeholder:text-gray-600"
-            required
-          />
-        </div>
-
         <button
-          type="submit"
+          onClick={handleGoogleLogin}
           disabled={loading}
-          className="w-full bg-world-cup-green text-white py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-green-600 transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100 shadow-lg shadow-world-cup-green/20"
+          className="w-full bg-white text-black py-4 rounded-full flex items-center justify-center gap-3 hover:bg-gray-100 transition-all active:scale-95 disabled:opacity-50 font-bold shadow-xl group"
         >
           {loading ? (
-            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+            <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin"></div>
           ) : (
-            'เข้าสู่สนาม'
+            <>
+              <svg className="w-5 h-5 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
+                <path
+                  fill="#EA4335"
+                  d="M5.266 9.765A7.077 7.077 0 0 1 12 4.909c1.69 0 3.218.6 4.418 1.582L19.91 3C17.782 1.145 15.055 0 12 0 7.27 0 3.198 2.698 1.24 6.65l4.026 3.115z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M16.04 18.013c-1.09.593-2.325.896-3.791.896-2.58 0-4.854-1.572-5.79-3.784l-4.026 3.116C4.41 21.05 8.01 24 12 24c3.08 0 5.864-1.058 7.91-2.846l-3.87-3.141z"
+                />
+                <path
+                  fill="#4285F4"
+                  d="M19.91 21.154c1.694-1.127 2.871-2.825 3.141-4.757h-11.05v4.264h6.05c-.324 1.487-1.18 2.748-2.43 3.633l3.87 3.141c2.148-1.92 3.42-4.757 3.42-8.281z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.266 9.765 1.24 6.65C.448 8.243 0 10.065 0 12c0 1.935.448 3.757 1.24 5.35l4.026-3.116A7.096 7.096 0 0 1 4.909 12c0-1.258.336-2.433.914-3.468l-.557-1.233z"
+                />
+              </svg>
+              เข้าสู่สนามด้วย Google
+            </>
           )}
         </button>
+      </motion.div>
 
-        <button
-          type="button"
-          onClick={() => setShowRegister(true)}
-          className="w-full bg-white/5 text-gray-400 py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-white/10 transition-all text-xs uppercase tracking-widest border border-white/5"
-        >
-          <UserPlus className="w-4 h-4" />
-          สมัครสมาชิกใหม่
-        </button>
-      </form>
-
-      <div className="mt-12 text-[10px] uppercase tracking-widest text-world-cup-green opacity-50">
-        FIFA WORLD CUP 2026 EDITION
+      <div className="mt-12 text-[10px] uppercase tracking-widest text-world-cup-green opacity-50 z-10">
+        MOBILE FIRST • REAL-TIME • 15 PLAYERS
       </div>
     </div>
   );

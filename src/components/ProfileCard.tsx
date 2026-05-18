@@ -56,15 +56,8 @@ const ProfileCard: React.FC = () => {
         const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
         
         try {
-          if (user.uid !== 'hardcoded-admin-id') {
-            const userDocRef = doc(db, 'users', user.uid);
-            await updateDoc(userDocRef, { photoURL: dataUrl });
-          } else {
-            const mockUser = JSON.parse(localStorage.getItem('wc_mock_user') || '{}');
-            mockUser.photoURL = dataUrl;
-            localStorage.setItem('wc_mock_user', JSON.stringify(mockUser));
-            window.location.reload();
-          }
+          const userDocRef = doc(db, 'users', user.uid);
+          await updateDoc(userDocRef, { photoURL: dataUrl });
         } catch (error) {
           console.error('Error updating profile photo:', error);
           alert('ไม่สามารถบันทึกรูปได้ โปรดลองอีกครั้ง');
@@ -123,9 +116,9 @@ const ProfileCard: React.FC = () => {
               className="hidden" 
             />
           </div>
-          <div>
+          <div className="flex-1">
             <h2 className="text-lg text-white italic tracking-tight">{user.displayName}</h2>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 mt-0.5">
               <Trophy className="w-3.5 h-3.5 text-world-cup-gold" />
               <span className="text-world-cup-gold text-xl italic">{user.points} <small className="text-[10px] uppercase opacity-70">คะแนน</small></span>
             </div>

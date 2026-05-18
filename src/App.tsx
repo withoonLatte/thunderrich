@@ -15,10 +15,11 @@ import Dashboard from './components/Dashboard';
 import AdminDashboard from './components/AdminDashboard';
 import Login from './components/Login';
 import Navigation from './components/Navigation';
-import ChangePassword from './components/ChangePassword';
+
+import JoinGroup from './components/JoinGroup';
 
 function AppContent() {
-  const { user, loading } = useAuth();
+  const { user, firebaseUser, loading } = useAuth();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'admin'>('dashboard');
 
   if (loading) {
@@ -29,12 +30,14 @@ function AppContent() {
     );
   }
 
-  if (!user) {
+  // Case 1: No auth at all
+  if (!firebaseUser) {
     return <Login />;
   }
 
-  if (user.mustChangePassword) {
-    return <ChangePassword />;
+  // Case 2: Authed with Google, but hasn't joined the group yet
+  if (!user) {
+    return <JoinGroup />;
   }
 
   return (

@@ -15,13 +15,6 @@ const AdminDashboard: React.FC = () => {
   const [activeAdminTab, setActiveAdminTab] = useState<'matches' | 'players'>('matches');
   const [showAdd, setShowAdd] = useState(false);
   
-  // Create User State
-  const [newUsername, setNewUsername] = useState('');
-  const [newDisplayName, setNewDisplayName] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [userCreationLoading, setUserCreationLoading] = useState(false);
-  const [userCreationMessage, setUserCreationMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-
   // Match Form State
   const [homeTeam, setHomeTeam] = useState('');
   const [awayTeam, setAwayTeam] = useState('');
@@ -71,46 +64,6 @@ const AdminDashboard: React.FC = () => {
     await batch.commit();
     setResetLoading(false);
     alert('รีเซ็ตใบเหลือง/แดงและจำนวนการทายผิดสำหรับรอบน็อกเอาต์เรียบร้อยแล้ว!');
-  };
-
-  const handleCreateUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setUserCreationLoading(true);
-    setUserCreationMessage(null);
-    
-    try {
-      const response = await fetch('/api/admin/create-user', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          adminUid: user?.uid,
-          username: newUsername,
-          password: newPassword,
-          displayName: newDisplayName
-        })
-      });
-
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.error || data.message || 'สร้างผู้ใช้ไม่สำเร็จ');
-        }
-        setUserCreationMessage({ type: 'success', text: `สร้างผู้ใช้ ${newUsername} สำเร็จ!` });
-        setNewUsername('');
-        setNewDisplayName('');
-        setNewPassword('');
-      } else {
-        const text = await response.text();
-        console.error('Non-JSON response:', text);
-        // If it's a 404 from the platform/proxy, text usually starts with "The page..."
-        throw new Error(`เกิดข้อผิดพลาดจากเซิร์ฟเวอร์ (รหัส: ${response.status})\nข้อมูล: ${text.substring(0, 100)}...`);
-      }
-    } catch (err: any) {
-      setUserCreationMessage({ type: 'error', text: err.message });
-    } finally {
-      setUserCreationLoading(false);
-    }
   };
 
   const handleAddMatch = async (e: React.FormEvent) => {
