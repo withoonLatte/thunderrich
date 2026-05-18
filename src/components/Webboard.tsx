@@ -50,12 +50,12 @@ const Webboard: React.FC = () => {
   return (
     <div className="flex flex-col h-[600px] wc-glass rounded-3xl overflow-hidden border border-white/5">
       <div className="p-4 border-b border-white/5 bg-white/5 flex items-center justify-between">
-        <h3 className="text-xs font-black text-world-cup-gold uppercase tracking-[0.2em] flex items-center gap-2">
+        <h3 className="text-xs text-world-cup-gold uppercase tracking-[0.2em] flex items-center gap-2">
           <MessageSquare className="w-4 h-4" /> ห้องแชทส่วนรวม
         </h3>
         <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 bg-world-cup-green rounded-full animate-pulse shadow-[0_0_8px_#1DB954]"></div>
-          <span className="text-[10px] font-bold text-gray-500">สด</span>
+          <span className="text-[10px] text-gray-500">สด</span>
         </div>
       </div>
       
@@ -70,7 +70,7 @@ const Webboard: React.FC = () => {
           return (
             <div key={msg.id} className={`flex gap-3 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
               {/* Avatar Placeholder */}
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 shadow-lg ${
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] shrink-0 shadow-lg ${
                 isMe ? 'bg-world-cup-green text-white' : 'bg-white/10 text-gray-400 border border-white/10'
               }`}>
                 {initials}
@@ -78,12 +78,12 @@ const Webboard: React.FC = () => {
 
               <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[80%]`}>
                 <div className="flex items-center gap-2 mb-1 px-1">
-                  <span className="text-[10px] font-black text-gray-500 uppercase tracking-wider">{msg.displayName}</span>
-                  <span className="text-[9px] text-gray-600 font-bold">
-                    {msg.createdAt ? format(new Date(msg.createdAt.seconds * 1000), 'HH:mm') : '...'}
-                  </span>
+                   <span className="text-[10px] text-gray-500 uppercase tracking-wider">{msg.displayName}</span>
+                   <span className="text-[9px] text-gray-600">
+                     {msg.createdAt ? format(new Date(msg.createdAt.seconds * 1000), 'HH:mm') : '...'}
+                   </span>
                 </div>
-                <div className={`px-4 py-3 rounded-2xl text-sm font-medium leading-relaxed shadow-xl ${
+                <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-xl ${
                   isMe 
                     ? 'bg-world-cup-green text-white rounded-tr-none' 
                     : 'bg-white/10 text-gray-100 rounded-tl-none border border-white/5'

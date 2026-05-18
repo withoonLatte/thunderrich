@@ -22,7 +22,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
           className={`flex flex-col items-center gap-1 p-2 transition-all ${activeTab === 'dashboard' ? 'text-world-cup-green scale-110' : 'text-gray-500'}`}
         >
           <Home className="w-6 h-6" />
-          <span className="text-[8px] font-black uppercase tracking-widest">หน้าแรก</span>
+          <span className="text-[8px] uppercase tracking-widest">หน้าแรก</span>
         </button>
 
         <button 
@@ -30,7 +30,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
           className="flex flex-col items-center gap-1 p-2 text-gray-500"
         >
           <MessageSquare className="w-6 h-6" />
-          <span className="text-[8px] font-black uppercase tracking-widest">พูดคุย</span>
+          <span className="text-[8px] uppercase tracking-widest">พูดคุย</span>
         </button>
 
         <div className="w-px h-8 bg-white/10"></div>
@@ -41,7 +41,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
             className={`flex flex-col items-center gap-1 p-2 transition-all ${activeTab === 'admin' ? 'text-orange-400 scale-110' : 'text-gray-500'}`}
           >
             <Settings className="w-6 h-6" />
-            <span className="text-[8px] font-black uppercase tracking-widest">จัดการ</span>
+            <span className="text-[8px] uppercase tracking-widest">จัดการ</span>
           </button>
         )}
 
@@ -50,7 +50,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
           className="flex flex-col items-center gap-1 p-2 text-red-500 hover:text-red-400"
         >
           <LogOut className="w-6 h-6" />
-          <span className="text-[8px] font-black uppercase tracking-widest">ออก</span>
+          <span className="text-[8px] uppercase tracking-widest">ออก</span>
         </button>
       </div>
     </nav>

@@ -77,8 +77,8 @@ const MatchList: React.FC = () => {
           >
             {/* Round & Date Header */}
             <div className="bg-white/10 px-4 py-2.5 flex justify-between items-center border-b border-white/5">
-              <span className="text-[9px] font-black text-world-cup-green uppercase tracking-[0.2em]">{match.round.replace('_', ' ')}</span>
-              <div className="flex items-center gap-2 text-[10px] font-black text-gray-400">
+              <span className="text-[9px] text-world-cup-green uppercase tracking-[0.2em]">{match.round.replace('_', ' ')}</span>
+              <div className="flex items-center gap-2 text-[10px] text-gray-400">
                 <Clock className="w-3 h-3 text-world-cup-gold" />
                 {isStarted ? 'เริ่มการแข่งขันแล้ว' : format(startTime, 'MMM d, HH:mm')}
               </div>
@@ -93,8 +93,8 @@ const MatchList: React.FC = () => {
                       {match.homeFlag ? <img src={match.homeFlag} alt={match.homeTeam} className="w-full h-full object-cover rounded-lg" /> : <div className="text-xs text-gray-500 h-full flex items-center justify-center">🏳️</div>}
                     </div>
                   </div>
-                  <span className="text-xs font-black text-white uppercase tracking-tight truncate w-full">{match.homeTeam}</span>
-                  <div className="bg-world-cup-green/20 text-world-cup-green text-[10px] font-black px-2 py-0.5 rounded-full border border-world-cup-green/30">
+                  <span className="text-xs text-white uppercase tracking-tight truncate w-full">{match.homeTeam}</span>
+                  <div className="bg-world-cup-green/20 text-world-cup-green text-[10px] px-2 py-0.5 rounded-full border border-world-cup-green/30">
                     {match.handicap}
                   </div>
                 </div>
@@ -103,17 +103,17 @@ const MatchList: React.FC = () => {
                 <div className="flex flex-col items-center gap-1 min-w-[60px]">
                   {match.status === MatchStatus.FINISHED ? (
                     <div className="flex flex-col items-center">
-                      <span className="text-3xl font-black italic tracking-tighter text-white drop-shadow-lg">
+                      <span className="text-3xl italic tracking-tighter text-white drop-shadow-lg">
                         {match.homeScore} <span className="text-world-cup-green">-</span> {match.awayScore}
                       </span>
-                      <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest mt-1">จบการแข่งขัน</span>
+                      <span className="text-[9px] text-gray-500 uppercase tracking-widest mt-1">จบการแข่งขัน</span>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center">
-                      <span className="text-lg font-black text-gray-700 italic tracking-[0.3em]">VS</span>
+                      <span className="text-lg text-gray-700 italic tracking-[0.3em]">VS</span>
                       {!isStarted && (
                         <div className="animate-pulse bg-world-cup-gold/10 px-2 py-0.5 rounded-full mt-2">
-                           <span className="text-[8px] font-black text-world-cup-gold uppercase tracking-widest">เปิด</span>
+                           <span className="text-[8px] text-world-cup-gold uppercase tracking-widest">เปิด</span>
                         </div>
                       )}
                     </div>
@@ -127,8 +127,8 @@ const MatchList: React.FC = () => {
                       {match.awayFlag ? <img src={match.awayFlag} alt={match.awayTeam} className="w-full h-full object-cover rounded-lg" /> : <div className="text-xs text-gray-500 h-full flex items-center justify-center">🏳️</div>}
                     </div>
                   </div>
-                  <span className="text-xs font-black text-white uppercase tracking-tight truncate w-full">{match.awayTeam}</span>
-                  <div className="bg-white/5 text-gray-500 text-[10px] font-black px-2 py-0.5 rounded-full border border-white/10">
+                  <span className="text-xs text-white uppercase tracking-tight truncate w-full">{match.awayTeam}</span>
+                  <div className="bg-white/5 text-gray-500 text-[10px] px-2 py-0.5 rounded-full border border-white/10">
                     0.00
                   </div>
                 </div>
@@ -136,7 +136,7 @@ const MatchList: React.FC = () => {
 
               {/* Deadline & Warning */}
               {!isStarted && !isBanned && (
-                <div className="flex items-center justify-center gap-2 text-[9px] font-black text-world-cup-gold/60 uppercase tracking-widest bg-world-cup-gold/5 py-1.5 rounded-lg border border-world-cup-gold/10">
+                <div className="flex items-center justify-center gap-2 text-[9px] text-world-cup-gold/60 uppercase tracking-widest bg-world-cup-gold/5 py-1.5 rounded-lg border border-world-cup-gold/10">
                   <Clock className="w-3 h-3" />
                   ทายผลก่อนเวลา {format(startTime, 'HH:mm')}
                 </div>
@@ -147,7 +147,7 @@ const MatchList: React.FC = () => {
                 <button
                   disabled={!canPredict}
                   onClick={() => handlePredict(match.id, PredictionChoice.HOME)}
-                  className={`group relative overflow-hidden py-4 rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-2 border-2 ${
+                  className={`group relative overflow-hidden py-4 rounded-2xl text-xs transition-all flex items-center justify-center gap-2 border-2 ${
                     prediction?.choice === PredictionChoice.HOME 
                       ? 'bg-world-cup-green border-world-cup-green text-white shadow-[0_0_20px_rgba(29,185,84,0.3)]' 
                       : canPredict 
@@ -162,7 +162,7 @@ const MatchList: React.FC = () => {
                 <button
                   disabled={!canPredict}
                   onClick={() => handlePredict(match.id, PredictionChoice.AWAY)}
-                  className={`group relative overflow-hidden py-4 rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-2 border-2 ${
+                  className={`group relative overflow-hidden py-4 rounded-2xl text-xs transition-all flex items-center justify-center gap-2 border-2 ${
                     prediction?.choice === PredictionChoice.AWAY 
                       ? 'bg-world-cup-green border-world-cup-green text-white shadow-[0_0_20px_rgba(29,185,84,0.3)]' 
                       : canPredict 
@@ -178,7 +178,7 @@ const MatchList: React.FC = () => {
 
               <AnimatePresence>
                 {isBanned && (
-                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="flex items-center gap-2 text-[10px] font-black text-red-500 bg-red-500/10 p-3 rounded-2xl border border-red-500/20">
+                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="flex items-center gap-2 text-[10px] text-red-500 bg-red-500/10 p-3 rounded-2xl border border-red-500/20">
                     <Info className="w-3.5 h-3.5" />
                     ถูกแบน: อยู่ระหว่างรับโทษทางวินัย
                   </motion.div>
@@ -188,7 +188,7 @@ const MatchList: React.FC = () => {
                   <motion.div 
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className={`text-xs font-black text-center py-3 rounded-2xl border ${
+                    className={`text-xs text-center py-3 rounded-2xl border ${
                       prediction.isResultCorrect 
                         ? 'bg-world-cup-green/20 border-world-cup-green/30 text-world-cup-green' 
                         : 'bg-red-500/20 border-red-500/30 text-red-400'

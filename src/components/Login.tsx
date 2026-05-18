@@ -34,7 +34,7 @@ const Login: React.FC = () => {
         <img src="/logo.png" alt="Logo" className="w-32 h-32 object-contain drop-shadow-[0_0_20px_rgba(29,185,84,0.5)]" />
       </motion.div>
       
-      <h1 className="text-4xl font-black mb-2 text-white italic tracking-tighter uppercase">
+      <h1 className="text-4xl mb-2 text-white italic tracking-tighter uppercase">
         รวยฟ้าผ่า <br />
         <span className="text-world-cup-green">#20</span>
       </h1>
@@ -49,7 +49,7 @@ const Login: React.FC = () => {
           <motion.div 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-bold p-3 rounded-xl flex items-center gap-2"
+            className="bg-red-500/10 border border-red-500/20 text-red-500 text-xs p-3 rounded-xl flex items-center gap-2"
           >
             <AlertCircle className="w-4 h-4" />
             {error}
@@ -83,7 +83,7 @@ const Login: React.FC = () => {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-world-cup-green text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-green-600 transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100 shadow-lg shadow-world-cup-green/20"
+          className="w-full bg-world-cup-green text-white py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-green-600 transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100 shadow-lg shadow-world-cup-green/20"
         >
           {loading ? (
             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
@@ -93,7 +93,7 @@ const Login: React.FC = () => {
         </button>
       </form>
 
-      <div className="mt-12 text-[10px] uppercase tracking-widest text-world-cup-green font-bold opacity-50">
+      <div className="mt-12 text-[10px] uppercase tracking-widest text-world-cup-green opacity-50">
         FIFA WORLD CUP 2026 EDITION
       </div>
     </div>

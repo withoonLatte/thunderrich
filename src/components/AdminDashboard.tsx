@@ -230,17 +230,17 @@ const AdminDashboard: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col gap-4">
         <div className="flex justify-between items-center text-world-cup-green">
-          <h2 className="text-xl font-black italic">ระบบจัดการแอดมิน</h2>
+          <h2 className="text-xl italic">ระบบจัดการแอดมิน</h2>
           <div className="bg-white/5 p-1 rounded-lg flex">
             <button 
               onClick={() => setActiveAdminTab('matches')}
-              className={`px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${activeAdminTab === 'matches' ? 'bg-world-cup-green text-white shadow-lg' : 'text-gray-500'}`}
+              className={`px-3 py-1.5 rounded-md text-[10px] uppercase tracking-widest transition-all ${activeAdminTab === 'matches' ? 'bg-world-cup-green text-white shadow-lg' : 'text-gray-500'}`}
             >
               แมตช์การแข่งขัน
             </button>
             <button 
               onClick={() => setActiveAdminTab('players')}
-              className={`px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${activeAdminTab === 'players' ? 'bg-world-cup-green text-white shadow-lg' : 'text-gray-500'}`}
+              className={`px-3 py-1.5 rounded-md text-[10px] uppercase tracking-widest transition-all ${activeAdminTab === 'players' ? 'bg-world-cup-green text-white shadow-lg' : 'text-gray-500'}`}
             >
               ผู้เล่น
             </button>
@@ -252,14 +252,14 @@ const AdminDashboard: React.FC = () => {
             <button 
               disabled={resetLoading}
               onClick={handleResetForKnockout}
-              className="flex-1 flex items-center justify-center gap-2 bg-amber-600 text-white px-4 py-3 rounded-2xl text-xs font-bold disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-2 bg-amber-600 text-white px-4 py-3 rounded-2xl text-xs disabled:opacity-50"
             >
               <RefreshCw className={`w-4 h-4 ${resetLoading ? 'animate-spin' : ''}`} />
               รีเซ็ตเฟส
             </button>
             <button 
               onClick={() => setShowAdd(!showAdd)}
-              className="flex-1 flex items-center justify-center gap-2 bg-world-cup-green text-white px-4 py-3 rounded-2xl text-xs font-bold"
+              className="flex-1 flex items-center justify-center gap-2 bg-world-cup-green text-white px-4 py-3 rounded-2xl text-xs"
             >
               {showAdd ? 'ปิด' : <><PlusCircle className="w-4 h-4" /> เพิ่มแมตช์</>}
             </button>
@@ -270,26 +270,26 @@ const AdminDashboard: React.FC = () => {
       {activeAdminTab === 'players' && (
         <div className="space-y-6">
           <form onSubmit={handleCreateUser} className="wc-glass p-6 rounded-3xl space-y-4 border-t-2 border-world-cup-green/20">
-            <h3 className="text-sm font-black text-white italic uppercase tracking-wider mb-2">สร้างบัญชีผู้เล่น</h3>
+            <h3 className="text-sm text-white italic uppercase tracking-wider mb-2">สร้างบัญชีผู้เล่น</h3>
             
             {userCreationMessage && (
-              <div className={`p-4 rounded-2xl text-xs font-bold ${userCreationMessage.type === 'success' ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'}`}>
+              <div className={`p-4 rounded-2xl text-xs ${userCreationMessage.type === 'success' ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'}`}>
                 {userCreationMessage.text}
               </div>
             )}
 
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-gray-500 uppercase px-2">ชื่อที่ใช้แสดง</label>
+              <label className="text-[10px] text-gray-500 uppercase px-2">ชื่อที่ใช้แสดง</label>
               <input required value={newDisplayName} onChange={e => setNewDisplayName(e.target.value)} placeholder="เช่น Messi FC" className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm focus:outline-none focus:border-world-cup-green" />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-gray-500 uppercase px-2">ชื่อผู้ใช้</label>
+                <label className="text-[10px] text-gray-500 uppercase px-2">ชื่อผู้ใช้</label>
                 <input required value={newUsername} onChange={e => setNewUsername(e.target.value)} placeholder="leo10" className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm focus:outline-none focus:border-world-cup-green" />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-gray-500 uppercase px-2">รหัสผ่าน</label>
+                <label className="text-[10px] text-gray-500 uppercase px-2">รหัสผ่าน</label>
                 <input required type="text" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="secret" className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm focus:outline-none focus:border-world-cup-green" />
               </div>
             </div>
@@ -297,19 +297,19 @@ const AdminDashboard: React.FC = () => {
             <button 
               disabled={userCreationLoading}
               type="submit" 
-              className="w-full bg-world-cup-green text-white font-black py-4 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+              className="w-full bg-world-cup-green text-white py-4 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
             >
               {userCreationLoading ? 'กำลังสร้าง...' : 'เพิ่มเพื่อนเข้าระบบ'}
             </button>
           </form>
 
           <div className="space-y-3">
-            <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] px-2 text-center">รายชื่อผู้เล่น ({users.length}/15)</h3>
+            <h3 className="text-[10px] text-gray-500 uppercase tracking-[0.2em] px-2 text-center">รายชื่อผู้เล่น ({users.length}/15)</h3>
             {users.map(u => (
               <div key={u.uid} className="wc-glass p-4 rounded-2xl flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="relative group">
-                    <div className="w-12 h-12 rounded-full bg-world-cup-green/20 overflow-hidden flex items-center justify-center font-black text-xs text-world-cup-green border-2 border-world-cup-green/30">
+                    <div className="w-12 h-12 rounded-full bg-world-cup-green/20 overflow-hidden flex items-center justify-center text-xs text-world-cup-green border-2 border-world-cup-green/30">
                       {u.photoURL ? (
                         <img src={u.photoURL} alt={u.displayName} className="w-full h-full object-cover" />
                       ) : (
@@ -334,12 +334,12 @@ const AdminDashboard: React.FC = () => {
                     </label>
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-white">{u.displayName}</p>
-                    <p className="text-[10px] text-gray-500 font-bold tracking-tight">{u.email}</p>
+                    <p className="text-sm text-white">{u.displayName}</p>
+                    <p className="text-[10px] text-gray-500 tracking-tight">{u.email}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs font-black text-world-cup-gold">{u.points} คะแนน</p>
+                  <p className="text-xs text-world-cup-gold">{u.points} คะแนน</p>
                 </div>
               </div>
             ))}
@@ -355,7 +355,7 @@ const AdminDashboard: React.FC = () => {
                 <button 
                   type="button"
                   onClick={() => setShowMockList(!showMockList)}
-                  className="flex items-center justify-between w-full bg-white/5 p-4 rounded-xl border border-white/10 text-sm font-bold text-world-cup-gold"
+                  className="flex items-center justify-between w-full bg-white/5 p-4 rounded-xl border border-white/10 text-sm text-world-cup-gold"
                 >
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
@@ -378,9 +378,9 @@ const AdminDashboard: React.FC = () => {
                             <img src={m.homeFlag} className="w-6 h-4 rounded-sm border border-white/20" />
                             <img src={m.awayFlag} className="w-6 h-4 rounded-sm border border-white/20" />
                           </div>
-                          <span className="text-xs font-bold text-white">{m.homeTeam} vs {m.awayTeam}</span>
+                          <span className="text-xs text-white">{m.homeTeam} vs {m.awayTeam}</span>
                         </div>
-                        <span className="text-[10px] text-gray-500 font-bold">{format(new Date(m.startTime), 'MMM d, HH:mm')}</span>
+                        <span className="text-[10px] text-gray-500">{format(new Date(m.startTime), 'MMM d, HH:mm')}</span>
                       </button>
                     ))}
                   </div>
@@ -390,21 +390,21 @@ const AdminDashboard: React.FC = () => {
               <form onSubmit={handleAddMatch} className="wc-glass p-6 rounded-2xl space-y-4 border-t-2 border-world-cup-gold/30">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase">เจ้าบ้าน</label>
+                    <label className="text-[10px] text-gray-500 uppercase">เจ้าบ้าน</label>
                     <input required value={homeTeam} onChange={e => setHomeTeam(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:border-world-cup-green" />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase">ทีมเยือน</label>
+                    <label className="text-[10px] text-gray-500 uppercase">ทีมเยือน</label>
                     <input required value={awayTeam} onChange={e => setAwayTeam(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:border-world-cup-green" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase">แต้มต่อ (เจ้าบ้าน)</label>
+                    <label className="text-[10px] text-gray-500 uppercase">แต้มต่อ (เจ้าบ้าน)</label>
                     <input type="text" required value={handicap} onChange={e => setHandicap(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:border-world-cup-green" placeholder="เช่น 0/0.5 หรือ เสมอ" />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase">รอบการแข่งขัน</label>
+                    <label className="text-[10px] text-gray-500 uppercase">รอบการแข่งขัน</label>
                     <select value={round} onChange={e => setRound(e.target.value as TournamentRound)} className="w-full bg-world-cup-purple border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:border-world-cup-green">
                       <option value={TournamentRound.GROUP}>รอบแบ่งกลุ่ม</option>
                       <option value={TournamentRound.TOP16}>รอบ 16 ทีม</option>
@@ -416,10 +416,10 @@ const AdminDashboard: React.FC = () => {
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase">เวลาแข่ง</label>
+                  <label className="text-[10px] text-gray-500 uppercase">เวลาแข่ง</label>
                   <input type="datetime-local" required value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:border-world-cup-green text-white" />
                 </div>
-                <button type="submit" className="w-full bg-world-cup-green text-white font-black py-4 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all">
+                <button type="submit" className="w-full bg-world-cup-green text-white py-4 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all">
                   บันทึกแมตช์
                 </button>
               </form>
@@ -431,7 +431,7 @@ const AdminDashboard: React.FC = () => {
           <div key={match.id} className="wc-glass rounded-2xl p-4 flex flex-col gap-4 border-l-4 border-world-cup-green">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-[10px] font-black text-world-cup-green uppercase">
+                <p className="text-[10px] text-world-cup-green uppercase">
                   {match.round === TournamentRound.GROUP && 'รอบแบ่งกลุ่ม'}
                   {match.round === TournamentRound.TOP16 && 'รอบ 16 ทีม'}
                   {match.round === TournamentRound.TOP8 && 'รอบ 8 ทีม'}
@@ -439,7 +439,7 @@ const AdminDashboard: React.FC = () => {
                   {match.round === TournamentRound.THIRD_PLACE && 'ชิงอันดับ 3'}
                   {match.round === TournamentRound.FINAL && 'รอบชิงชนะเลิศ'}
                 </p>
-                <h3 className="font-bold">{match.homeTeam} vs {match.awayTeam}</h3>
+                <h3 className="">{match.homeTeam} vs {match.awayTeam}</h3>
                 <p className="text-[10px] text-gray-500">{format(new Date(match.startTime.seconds * 1000), 'MMM d, HH:mm')} | H: {match.handicap}</p>
               </div>
               <button onClick={() => deleteMatch(match.id)} className="text-red-500 p-2"><Trash2 className="w-4 h-4" /></button>
@@ -456,16 +456,16 @@ const AdminDashboard: React.FC = () => {
                     const a = (document.getElementById(`away-${match.id}`) as HTMLInputElement).value;
                     if (h && a) setScores(match.id, Number(h), Number(a));
                   }}
-                  className="flex-1 bg-world-cup-green text-white py-2 rounded-lg text-xs font-black flex items-center justify-center gap-2"
+                  className="flex-1 bg-world-cup-green text-white py-2 rounded-lg text-xs flex items-center justify-center gap-2"
                 >
                   {calcLoading === match.id ? 'กำลังคำนวณ...' : <><CheckCircle className="w-4 h-4" /> ใส่ผลการแข่ง</>}
                 </button>
               </div>
             ) : (
               <div className="flex justify-between items-center bg-white/5 p-3 rounded-xl border border-white/10">
-                <span className="text-xs font-bold text-gray-500 uppercase">จบการแข่งขัน</span>
-                <span className="font-black text-world-cup-gold">{match.homeScore} - {match.awayScore}</span>
-                <span className="text-xs font-black text-green-500">เสร็จสมบูรณ์</span>
+                <span className="text-xs text-gray-500 uppercase">จบการแข่งขัน</span>
+                <span className="text-world-cup-gold">{match.homeScore} - {match.awayScore}</span>
+                <span className="text-xs text-green-500">เสร็จสมบูรณ์</span>
               </div>
             )}
           </div>

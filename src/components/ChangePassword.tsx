@@ -50,7 +50,7 @@ const ChangePassword: React.FC = () => {
               <CheckCircle2 className="w-10 h-10" />
             </div>
           </div>
-          <h2 className="text-2xl font-black text-white">เปลี่ยนรหัสผ่านสำเร็จ!</h2>
+          <h2 className="text-2xl text-white">เปลี่ยนรหัสผ่านสำเร็จ!</h2>
           <p className="text-gray-400 text-sm">กำลังเข้าสู่ระบบด้วยรหัสผ่านใหม่...</p>
         </div>
       </div>
@@ -66,13 +66,13 @@ const ChangePassword: React.FC = () => {
               <KeyRound className="w-6 h-6" />
             </div>
           </div>
-          <h2 className="text-2xl font-black text-white">เปลี่ยนรหัสผ่าน</h2>
+          <h2 className="text-2xl text-white">เปลี่ยนรหัสผ่าน</h2>
           <p className="text-xs text-gray-400">กรุณาตั้งรหัสผ่านใหม่เพื่อความปลอดภัยในการเริ่มใช้ครั้งแรก</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-500 uppercase ml-2">รหัสผ่านใหม่ (ขั้นต่ำ 4 ตัว)</label>
+            <label className="text-[10px] text-gray-500 uppercase ml-2">รหัสผ่านใหม่ (ขั้นต่ำ 4 ตัว)</label>
             <input
               type="password"
               required
@@ -84,7 +84,7 @@ const ChangePassword: React.FC = () => {
           </div>
 
           <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-500 uppercase ml-2">ยืนยันรหัสผ่านใหม่</label>
+            <label className="text-[10px] text-gray-500 uppercase ml-2">ยืนยันรหัสผ่านใหม่</label>
             <input
               type="password"
               required
@@ -105,7 +105,7 @@ const ChangePassword: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-world-cup-gold text-world-cup-blue font-black py-4 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+            className="w-full bg-world-cup-gold text-world-cup-blue py-4 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
           >
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'บันทึกรหัสผ่านใหม่'}
           </button>

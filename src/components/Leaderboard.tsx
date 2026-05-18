@@ -36,7 +36,7 @@ const Leaderboard: React.FC = () => {
                 : 'wc-glass border-white/5'
             }`}
           >
-            <div className="w-8 text-center font-black italic text-lg text-gray-500">
+            <div className="w-8 text-center italic text-lg text-gray-500">
               {index + 1}
             </div>
             
@@ -54,13 +54,13 @@ const Leaderboard: React.FC = () => {
             </div>
 
             <div className="flex-1 min-w-0">
-              <p className={`font-bold truncate text-sm ${index === 0 ? 'text-white' : 'text-gray-300'}`}>{u.displayName}</p>
-              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">
+              <p className={`truncate text-sm ${index === 0 ? 'text-white' : 'text-gray-300'}`}>{u.displayName}</p>
+              <p className="text-[10px] text-gray-500 uppercase tracking-wider">
                 ทายผิด {u.round1_wrong_count}/24 ครั้ง
               </p>
             </div>
 
-            <div className={`text-right ${index === 0 ? 'text-world-cup-gold' : 'text-world-cup-green'} font-black text-lg italic tracking-tighter`}>
+            <div className={`text-right ${index === 0 ? 'text-world-cup-gold' : 'text-world-cup-green'} text-lg italic tracking-tighter`}>
               {u.points} คะแนน
             </div>
           </motion.div>
