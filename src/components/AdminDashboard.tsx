@@ -100,11 +100,8 @@ const AdminDashboard: React.FC = () => {
       } else {
         const text = await response.text();
         console.error('Non-JSON response:', text);
-        // If it's a 404, suggest a retry or check
-        if (response.status === 404) {
-          throw new Error(`ไม่พบเส้นทาง API (404) - ${text.substring(0, 100)}`);
-        }
-        throw new Error(`เกิดข้อผิดพลาดจากเซิร์ฟเวอร์ (รหัส: ${response.status})`);
+        // If it's a 404 from the platform/proxy, text usually starts with "The page..."
+        throw new Error(`เกิดข้อผิดพลาดจากเซิร์ฟเวอร์ (รหัส: ${response.status})\nข้อมูล: ${text.substring(0, 100)}...`);
       }
     } catch (err: any) {
       setUserCreationMessage({ type: 'error', text: err.message });
@@ -241,10 +238,17 @@ const AdminDashboard: React.FC = () => {
   const handleTestPing = async () => {
     try {
       const resp = await fetch('/api/ping');
-      const data = await resp.json();
-      alert(`API Connection: ${data.message} at ${data.time}`);
+      const contentType = resp.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await resp.json();
+        alert(`API Connection: ${data.message} at ${data.time}\nStatus: ${resp.status}`);
+      } else {
+        const text = await resp.text();
+        console.error('Ping Non-JSON:', text);
+        alert(`API Error (Non-JSON): ${resp.status}\nBody: ${text.substring(0, 200)}`);
+      }
     } catch (err: any) {
-      alert(`API Error: ${err.message}`);
+      alert(`Fetch Error: ${err.message}`);
     }
   };
 

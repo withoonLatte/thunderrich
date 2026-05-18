@@ -28,63 +28,38 @@ async function startServer() {
   });
 
   // API routes
-  const apiRouter = express.Router();
-  app.use("/api", apiRouter);
+  const api = express.Router();
+  app.use("/api", api);
 
-  apiRouter.get("/health", (req, res) => {
-    console.log("[API] Health check");
-    res.json({ status: "ok" });
-  });
-
-  apiRouter.get("/ping", (req, res) => {
-    console.log("[API] Ping check");
+  api.get("/health", (req, res) => res.json({ status: "ok" }));
+  api.get("/ping", (req, res) => {
     res.json({ 
       message: "pong", 
       time: new Date().toISOString(),
-      headers: req.headers
+      env: process.env.NODE_ENV
     });
   });
 
-  // Route to create a new friend account
-  apiRouter.post("/admin/create-user", async (req, res) => {
-    console.log("[API] Create user request");
+  // Admin: Create User
+  api.post("/admin/create-user", async (req, res) => {
     const { adminUid, username, password, displayName } = req.body;
-
-    if (!adminUid) {
-      console.warn("[CREATE-USER] Missing adminUid");
-      return res.status(400).json({ error: "adminUid is required" });
-    }
-
+    
     try {
-      // 1. Verify Requesting User is Admin
-      let isAdmin = false;
-      if (adminUid === 'hardcoded-admin-id') {
-        isAdmin = true;
-        console.log("[CREATE-USER] Bypassing auth check for hardcoded admin");
-      } else {
-        const adminDoc = await db.collection('users').doc(adminUid).get();
-        if (adminDoc.exists && adminDoc.data()?.role === 'admin') {
-          isAdmin = true;
-        }
-      }
+      if (!adminUid) return res.status(400).json({ error: "Missing adminUid" });
 
+      // Check Admin
+      let isAdmin = adminUid === 'hardcoded-admin-id';
       if (!isAdmin) {
-        console.error("[CREATE-USER] Unauthorized access attempt by:", adminUid);
-        return res.status(403).json({ error: "Unauthorized. Admin access required." });
+        const adminDoc = await db.collection('users').doc(adminUid).get();
+        isAdmin = adminDoc.exists && adminDoc.data()?.role === 'admin';
       }
 
-      // 2. Create Auth User
-      const email = `${username.toLowerCase().trim()}@wcpro.app`;
-      console.log(`[CREATE-USER] Creating auth user: ${email}`);
-      const userRecord = await auth.createUser({
-        email,
-        password,
-        displayName,
-      });
+      if (!isAdmin) return res.status(403).json({ error: "Access Denied" });
 
-      // 3. Create Firestore Profile
-      console.log(`[CREATE-USER] Creating firestore profile for: ${userRecord.uid}`);
-      const newUserProfile = {
+      const email = `${username.toLowerCase().trim()}@wcpro.app`;
+      const userRecord = await auth.createUser({ email, password, displayName });
+
+      const profile = {
         uid: userRecord.uid,
         displayName,
         email,
@@ -97,24 +72,17 @@ async function startServer() {
         mustChangePassword: true
       };
 
-      await db.collection('users').doc(userRecord.uid).set(newUserProfile);
-
-      console.log(`[CREATE-USER] User created successfully: ${userRecord.uid}`);
+      await db.collection('users').doc(userRecord.uid).set(profile);
       res.json({ success: true, uid: userRecord.uid });
-    } catch (error: any) {
-      console.error("[CREATE-USER] Error:", error);
-      res.status(500).json({ error: error.message });
+    } catch (err: any) {
+      console.error("Create User Error:", err);
+      res.status(500).json({ error: err.message });
     }
   });
 
-  // Catch-all for any other /api route
-  app.all("/api/*", (req, res) => {
-    console.warn(`[API-404] ${req.method} ${req.url} - Not found`);
-    res.status(404).json({ 
-      error: "เส้นทาง API ไม่ถูกต้อง",
-      method: req.method,
-      url: req.url 
-    });
+  // Catch all for API
+  app.use("/api/*", (req, res) => {
+    res.status(404).json({ error: `API route not found: ${req.originalUrl}` });
   });
 
   // Vite middleware for development
