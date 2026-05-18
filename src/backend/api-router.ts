@@ -1,37 +1,30 @@
 import express from "express";
-import admin from "firebase-admin";
+import { getFirebaseAdmin } from "./firebase";
 
-// Inline Firebase helper
-function getFirebaseAdmin() {
-  if (!admin.apps.length) {
-    try {
-      if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PRIVATE_KEY) {
-        admin.initializeApp({
-          credential: admin.credential.cert({
-            projectId: process.env.FIREBASE_PROJECT_ID,
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-            privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-          }),
-        });
-      } else {
-        admin.initializeApp();
-      }
-    } catch (error) {
-      console.error("Firebase init error:", error);
-    }
-  }
-  return admin;
-}
+const router = express.Router();
 
-const app = express();
-app.use(express.json());
-
-app.get("/api/ping", (req, res) => {
-  res.json({ msg: "pong v5", vercel: true, time: new Date().toISOString() });
+// Logging middleware specifically for API
+router.use((req, res, next) => {
+  console.log(`[API-ROUTER] ${new Date().toISOString()} - ${req.method} ${req.url}`);
+  next();
 });
 
-app.post("/api/admin/create-user", async (req, res) => {
+router.get("/health", (req, res) => res.json({ status: "ok" }));
+
+router.get("/ping", (req, res) => {
+  res.json({ 
+    message: "pong from AIS API v4", 
+    time: new Date().toISOString(),
+    vercel: !!process.env.VERCEL,
+    env: process.env.NODE_ENV,
+    hasFirebaseVars: !!(process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PRIVATE_KEY)
+  });
+});
+
+// Admin: Create User
+router.post("/admin/create-user", async (req, res) => {
   const { adminUid, username, password, displayName } = req.body;
+  
   try {
     const firebaseAdmin = getFirebaseAdmin();
     const auth = firebaseAdmin.auth();
@@ -39,6 +32,7 @@ app.post("/api/admin/create-user", async (req, res) => {
 
     if (!adminUid) return res.status(400).json({ error: "Missing adminUid" });
 
+    // Check Admin
     let isAdmin = adminUid === 'hardcoded-admin-id';
     if (!isAdmin) {
       const adminDoc = await db.collection('users').doc(adminUid).get();
@@ -64,10 +58,21 @@ app.post("/api/admin/create-user", async (req, res) => {
     };
 
     await db.collection('users').doc(userRecord.uid).set(profile);
+    console.log(`[API] User created: ${userRecord.uid}`);
     res.json({ success: true, uid: userRecord.uid });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    console.error("Create User Error EXCEPTION:", err);
+    res.status(500).json({ 
+      error: err.message || "Unknown error",
+      code: err.code,
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
   }
 });
 
-export default app;
+// Catch-all API 404
+router.use("*", (req, res) => {
+  res.status(404).json({ error: `API route not found: ${req.originalUrl}` });
+});
+
+export default router;

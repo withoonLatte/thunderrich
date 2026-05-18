@@ -1,128 +1,41 @@
 import express from "express";
 import path from "path";
-import admin from "firebase-admin";
+import apiRouter from "./src/backend/api-router";
 
 const app = express();
-
-// Middleware
 app.use(express.json());
 
-// Logging
-app.use((req, res, next) => {
-  if (req.url.startsWith('/api')) {
-    console.log(`[API] ${new Date().toISOString()} - ${req.method} ${req.url}`);
-  }
-  next();
-});
-
-// Helper for Firebase Admin (Lazy init)
-function getFirebaseAdmin() {
-  if (!admin.apps.length) {
-    try {
-      if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PRIVATE_KEY) {
-        admin.initializeApp({
-          credential: admin.credential.cert({
-            projectId: process.env.FIREBASE_PROJECT_ID,
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-            privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-          }),
-        });
-        console.log("Firebase Admin initialized with credentials");
-      } else {
-        admin.initializeApp();
-        console.log("Firebase Admin initialized with defaults");
-      }
-    } catch (error) {
-      console.error("Firebase Admin initialization error:", error);
-    }
-  }
-  return admin;
-}
-
 // API routes
-app.get("/api/health", (req, res) => res.json({ status: "ok" }));
-app.get("/api/ping", (req, res) => {
-  res.json({ 
-    message: "pong from AIS (v3)", 
-    time: new Date().toISOString(),
-    vercel: !!process.env.VERCEL,
-    env: process.env.NODE_ENV,
-    hasFirebaseVars: !!(process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PRIVATE_KEY)
-  });
-});
+app.use("/api", apiRouter);
 
-// Admin: Create User
-app.post("/api/admin/create-user", async (req, res) => {
-  const { adminUid, username, password, displayName } = req.body;
-  
-  try {
-    const firebaseAdmin = getFirebaseAdmin();
-    const auth = firebaseAdmin.auth();
-    const db = firebaseAdmin.firestore();
-
-    if (!adminUid) return res.status(400).json({ error: "Missing adminUid" });
-
-    // Check Admin
-    let isAdmin = adminUid === 'hardcoded-admin-id';
-    if (!isAdmin) {
-      const adminDoc = await db.collection('users').doc(adminUid).get();
-      isAdmin = adminDoc.exists && adminDoc.data()?.role === 'admin';
-    }
-
-    if (!isAdmin) return res.status(403).json({ error: "Access Denied" });
-
-    const email = `${username.toLowerCase().trim()}@wcpro.app`;
-    const userRecord = await auth.createUser({ email, password, displayName });
-
-    const profile = {
-      uid: userRecord.uid,
-      displayName,
-      email,
-      role: 'user',
-      points: 0,
-      round1_wrong_count: 0,
-      yellow_cards: 0,
-      red_cards: 0,
-      bannedMatchIds: [],
-      mustChangePassword: true
-    };
-
-    await db.collection('users').doc(userRecord.uid).set(profile);
-    res.json({ success: true, uid: userRecord.uid });
-  } catch (err: any) {
-    console.error("Create User Error:", err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Catch-all API 404
-app.use("/api/*", (req, res) => {
-  res.status(404).json({ error: `API route not found: ${req.originalUrl}` });
-});
-
-// Static assets & SPA fallback (NOT for Vercel functions, but for Cloud Run)
+// Static assets & SPA fallback (Cloud Run / Local)
 async function setupStatic() {
   if (process.env.NODE_ENV !== "production") {
-    const { createServer: createViteServer } = await import("vite");
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
+    // Lazy import vite only in dev
+    try {
+      const { createServer: createViteServer } = await import("vite");
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: "spa",
+      });
+      app.use(vite.middlewares);
+    } catch (e) {
+      console.warn("Vite not found, skipping middleware");
+    }
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
-      // If it's a Vercel function request, we might not want to serve index.html here
-      // but on Cloud Run we definitely do.
+      // Don't serve index.html for API routes
       if (!req.url.startsWith('/api')) {
-        res.sendFile(path.join(distPath, 'index.html'));
+        const indexPath = path.join(distPath, 'index.html');
+        res.sendFile(indexPath);
       }
     });
   }
 }
 
-// Start listener for Cloud Run / Local
+// Only start the server if not on Vercel
 if (!process.env.VERCEL) {
   setupStatic().then(() => {
     const PORT = 3000;
