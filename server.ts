@@ -27,54 +27,13 @@ async function startServer() {
     next();
   });
 
-  // API routes go here FIRST
-  app.get("/api/health", (req, res) => {
-    res.json({ status: "ok" });
-  });
+  // API routes
+  app.get("/api/health", (req, res) => res.json({ status: "ok" }));
+  app.get("/api/ping", (req, res) => res.json({ message: "pong", time: new Date().toISOString() }));
 
-  app.get("/api/test", (req, res) => {
-    res.json({ message: "Test route works!", time: new Date().toISOString() });
-  });
-
-  // Developer route to seed the first admin (USE ONLY IN SETUP)
-  app.post("/api/dev/seed-admin", async (req, res) => {
-    const { username, password, displayName, secret } = req.body;
-    
-    // Very basic protection for this dev route
-    if (secret !== "wc2026-setup") {
-      return res.status(403).json({ error: "Invalid setup secret." });
-    }
-
-    try {
-      const email = `${username.toLowerCase().trim()}@wcpro.app`;
-      const userRecord = await auth.createUser({
-        email,
-        password,
-        displayName,
-      });
-
-      await db.collection('users').doc(userRecord.uid).set({
-        uid: userRecord.uid,
-        displayName,
-        email,
-        role: 'admin',
-        points: 0,
-        round1_wrong_count: 0,
-        yellow_cards: 0,
-        red_cards: 0,
-        bannedMatchIds: []
-      });
-
-      res.json({ success: true, message: "Admin seeded successfully!" });
-    } catch (error: any) {
-      console.error("Seed error:", error);
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // API Route to create a new friend account
+  // Route to create a new friend account
   app.post("/api/admin/create-user", async (req, res) => {
-    console.log(`[CREATE-USER] Request received: ${req.method} ${req.url}`);
+    console.log(`[API] POST /api/admin/create-user`);
     const { adminUid, username, password, displayName } = req.body;
 
     if (!adminUid) {
@@ -134,12 +93,13 @@ async function startServer() {
     }
   });
 
-  // 404 handler for API routes to prevent falling through to Vite for missing endpoints
-  app.use("/api/*", (req, res) => {
-    console.warn(`API 404 caught: ${req.method} ${req.url} (original: ${req.originalUrl})`);
+  // Catch-all for any other /api route
+  app.all("/api/*", (req, res) => {
+    console.warn(`[API-404] ${req.method} ${req.url} - Not found`);
     res.status(404).json({ 
-      error: `API route not found: ${req.method} ${req.url}`,
-      path: req.originalUrl
+      error: "เส้นทาง API ไม่ถูกต้อง",
+      method: req.method,
+      url: req.url 
     });
   });
 

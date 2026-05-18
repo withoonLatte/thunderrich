@@ -102,7 +102,7 @@ const AdminDashboard: React.FC = () => {
         console.error('Non-JSON response:', text);
         // If it's a 404, suggest a retry or check
         if (response.status === 404) {
-          throw new Error('ไม่พบเส้นทาง API (404) โปรดลองรีเฟรชหน้าแล้วลองใหม่');
+          throw new Error(`ไม่พบเส้นทาง API (404) - ${text.substring(0, 100)}`);
         }
         throw new Error(`เกิดข้อผิดพลาดจากเซิร์ฟเวอร์ (รหัส: ${response.status})`);
       }
@@ -238,11 +238,29 @@ const AdminDashboard: React.FC = () => {
     setCalcLoading(null);
   };
 
+  const handleTestPing = async () => {
+    try {
+      const resp = await fetch('/api/ping');
+      const data = await resp.json();
+      alert(`API Connection: ${data.message} at ${data.time}`);
+    } catch (err: any) {
+      alert(`API Error: ${err.message}`);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4">
         <div className="flex justify-between items-center text-world-cup-green">
-          <h2 className="text-xl italic">ระบบจัดการแอดมิน</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl italic">ระบบจัดการแอดมิน</h2>
+            <button 
+              onClick={handleTestPing}
+              className="text-[8px] bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded border border-white/10 text-gray-500 uppercase tracking-tighter"
+            >
+              Ping API
+            </button>
+          </div>
           <div className="bg-white/5 p-1 rounded-lg flex">
             <button 
               onClick={() => setActiveAdminTab('matches')}
