@@ -25,7 +25,7 @@ const AdminDashboard: React.FC = () => {
   // Match Form State
   const [homeTeam, setHomeTeam] = useState('');
   const [awayTeam, setAwayTeam] = useState('');
-  const [handicap, setHandicap] = useState(0);
+  const [handicap, setHandicap] = useState('0');
   const [round, setRound] = useState<TournamentRound>(TournamentRound.GROUP);
   const [startTime, setStartTime] = useState('');
   
@@ -115,7 +115,7 @@ const AdminDashboard: React.FC = () => {
       awayTeam,
       homeFlag: `https://flagcdn.com/w80/${getCountryCode(homeTeam)}.png`, 
       awayFlag: `https://flagcdn.com/w80/${getCountryCode(awayTeam)}.png`,
-      handicap: Number(handicap),
+      handicap: handicap,
       round,
       startTime: Timestamp.fromDate(date),
       status: MatchStatus.SCHEDULED
@@ -204,7 +204,7 @@ const AdminDashboard: React.FC = () => {
   const resetForm = () => {
     setHomeTeam('');
     setAwayTeam('');
-    setHandicap(0);
+    setHandicap('0');
     setStartTime('');
   };
 
@@ -401,7 +401,7 @@ const AdminDashboard: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold text-gray-500 uppercase">แต้มต่อ (เจ้าบ้าน)</label>
-                    <input type="number" step="0.25" required value={handicap} onChange={e => setHandicap(Number(e.target.value))} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:border-world-cup-green" />
+                    <input type="text" required value={handicap} onChange={e => setHandicap(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:border-world-cup-green" placeholder="เช่น 0/0.5 หรือ เสมอ" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold text-gray-500 uppercase">รอบการแข่งขัน</label>

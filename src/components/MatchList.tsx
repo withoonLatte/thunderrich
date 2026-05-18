@@ -95,7 +95,7 @@ const MatchList: React.FC = () => {
                   </div>
                   <span className="text-xs font-black text-white uppercase tracking-tight truncate w-full">{match.homeTeam}</span>
                   <div className="bg-world-cup-green/20 text-world-cup-green text-[10px] font-black px-2 py-0.5 rounded-full border border-world-cup-green/30">
-                    {match.handicap > 0 ? `+${match.handicap}` : match.handicap}
+                    {match.handicap}
                   </div>
                 </div>
 

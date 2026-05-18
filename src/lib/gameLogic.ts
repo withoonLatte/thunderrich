@@ -26,6 +26,33 @@ const SCORING_MATRIX = {
   [TournamentRound.FINAL]: { correct: 7, wrong: -3 },
 };
 
+const parseHandicap = (h: string | number): number => {
+  if (typeof h === 'number') return h;
+  if (!h) return 0;
+
+  const str = h.toString().trim().toLowerCase();
+  
+  // Handle common Thai terms
+  if (str === 'เสมอ' || str === 'ขาว' || str === '0') return 0;
+
+  // Handle formats like "0.5/1" or "0.5-1"
+  if (str.includes('/') || str.includes('-')) {
+    const parts = str.split(/[\/-]/);
+    if (parts.length === 2) {
+      const p1 = parseFloat(parts[0]);
+      const p2 = parseFloat(parts[1]);
+      if (!isNaN(p1) && !isNaN(p2)) {
+        // For positive handicap, e.g. "0.5/1" -> 0.75
+        // For negative handicap, e.g. "-0.5/-1" -> -0.75
+        return (p1 + p2) / 2;
+      }
+    }
+  }
+
+  const num = parseFloat(str);
+  return isNaN(num) ? 0 : num;
+};
+
 export const calculateMatchResults = async (matchId: string) => {
   // 1. Fetch match and all predictions
   const matchDocRef = doc(db, 'matches', matchId);
@@ -41,7 +68,8 @@ export const calculateMatchResults = async (matchId: string) => {
 
   // 2. Determine match outcome with handicap
   // Formula: Diff = Home Score - Away Score + Handicap
-  const handicapDiff = match.homeScore - match.awayScore + match.handicap;
+  const numericHandicap = parseHandicap(match.handicap);
+  const handicapDiff = match.homeScore - match.awayScore + numericHandicap;
   
   let matchWinner: 'home' | 'away' | 'push';
   if (handicapDiff > 0) matchWinner = 'home';

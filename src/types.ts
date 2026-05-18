@@ -44,7 +44,7 @@ export interface Match {
   homeFlag: string;
   awayFlag: string;
   startTime: any; // Firestore Timestamp
-  handicap: number;
+  handicap: string;
   round: TournamentRound;
   homeScore?: number;
   awayScore?: number;
