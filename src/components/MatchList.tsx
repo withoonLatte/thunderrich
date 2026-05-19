@@ -10,6 +10,8 @@ import { Clock, Info, CheckCircle2 } from 'lucide-react';
 const MatchList: React.FC = () => {
   const [matches, setMatches] = useState<Match[]>([]);
   const [predictions, setPredictions] = useState<Record<string, Prediction>>({});
+  const [stagedChoices, setStagedChoices] = useState<Record<string, PredictionChoice | null>>({});
+  const [savingMap, setSavingMap] = useState<Record<string, boolean>>({});
   const { user } = useAuth();
   const [now, setNow] = useState(new Date());
 
@@ -41,8 +43,11 @@ const MatchList: React.FC = () => {
     return () => unsubMatches();
   }, [user]);
 
-  const handlePredict = async (matchId: string, choice: PredictionChoice) => {
-    if (!user) return;
+  const handlePredict = async (matchId: string) => {
+    const choice = stagedChoices[matchId];
+    if (!user || !choice) return;
+    
+    setSavingMap(prev => ({ ...prev, [matchId]: true }));
     
     // Check if match already started or reached deadline
     const match = matches.find(m => m.id === matchId);
@@ -51,29 +56,55 @@ const MatchList: React.FC = () => {
     const deadline = match.predictionDeadline ? match.predictionDeadline.seconds : match.startTime.seconds;
     if (deadline < Timestamp.now().seconds) {
       alert('หมดเวลาทายผลสำหรับแมตช์นี้แล้ว');
+      setSavingMap(prev => ({ ...prev, [matchId]: false }));
       return;
     }
 
     // Check if user is banned for this match
-    if (user.bannedMatchIds?.includes(matchId)) return;
+    if (user.bannedMatchIds?.includes(matchId)) {
+      setSavingMap(prev => ({ ...prev, [matchId]: false }));
+      return;
+    }
 
-    const predId = `${user.uid}_${matchId}`;
-    const predRef = doc(db, 'predictions', predId);
-    
-    await setDoc(predRef, {
-      id: predId,
-      userId: user.uid,
-      matchId,
-      choice,
-      createdAt: Timestamp.now(),
-      isVoided: false
-    });
+    try {
+      const predId = `${user.uid}_${matchId}`;
+      const predRef = doc(db, 'predictions', predId);
+      
+      await setDoc(predRef, {
+        id: predId,
+        userId: user.uid,
+        matchId,
+        choice,
+        createdAt: Timestamp.now(),
+        isVoided: false
+      });
+      
+      // Clear staged choice after successful save
+      setStagedChoices(prev => {
+        const next = { ...prev };
+        delete next[matchId];
+        return next;
+      });
+    } catch (error) {
+      console.error('Error saving prediction:', error);
+    } finally {
+      setSavingMap(prev => ({ ...prev, [matchId]: false }));
+    }
+  };
+
+  const setStaged = (matchId: string, choice: PredictionChoice) => {
+    setStagedChoices(prev => ({ ...prev, [matchId]: choice }));
   };
 
   return (
     <div className="space-y-4">
       {matches.map((match, index) => {
         const prediction = predictions[match.id];
+        const stagedChoice = stagedChoices[match.id];
+        const activeChoice = stagedChoice || prediction?.choice;
+        const isSaving = savingMap[match.id];
+        const hasChanges = stagedChoice !== undefined && stagedChoice !== prediction?.choice;
+
         const startTime = new Date(match.startTime.seconds * 1000);
         const deadline = match.predictionDeadline ? new Date(match.predictionDeadline.seconds * 1000) : startTime;
         
@@ -102,9 +133,12 @@ const MatchList: React.FC = () => {
               <div className="flex flex-col">
                 <span className="text-[11px] font-black text-world-cup-green uppercase tracking-[0.2em]">{match.round.replace('_', ' ')}</span>
                 {match.customWinScore !== undefined && match.customWinScore !== null ? (
-                  <span className="text-[10px] font-black text-red-500 uppercase tracking-tighter animate-pulse">
-                    Special: +{match.customWinScore} / {match.customLossScore} pts
-                  </span>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 mt-1.5 rounded-xl bg-red-500 border-2 border-red-600 shadow-lg shadow-red-500/30 animate-[pulse_1s_infinite]">
+                    <div className="w-2 h-2 rounded-full bg-white animate-ping" />
+                    <span className="text-[13px] font-black text-white uppercase tracking-tighter">
+                      คู่เอก: +{match.customWinScore} / {match.customLossScore} PTS
+                    </span>
+                  </div>
                 ) : (
                   <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter">
                     {match.round === 'group' ? '+2 / -1' : 
@@ -125,10 +159,10 @@ const MatchList: React.FC = () => {
               <div className="flex items-center justify-between gap-4">
                 {/* Home Team */}
                 <button 
-                  disabled={!canPredict}
-                  onClick={() => handlePredict(match.id, PredictionChoice.HOME)}
+                  disabled={!canPredict || isSaving}
+                  onClick={() => setStaged(match.id, PredictionChoice.HOME)}
                   className={`flex flex-col items-center gap-3 text-center flex-1 p-3 rounded-3xl transition-all border-2 ${
-                    prediction?.choice === PredictionChoice.HOME 
+                    activeChoice === PredictionChoice.HOME 
                       ? 'bg-world-cup-green/10 border-world-cup-green scale-[1.05] shadow-lg shadow-world-cup-green/10' 
                       : canPredict 
                         ? 'border-transparent hover:bg-gray-50' 
@@ -136,16 +170,16 @@ const MatchList: React.FC = () => {
                   }`}
                 >
                   <div className="relative">
-                    <div className={`w-20 h-14 rounded-2xl bg-white overflow-hidden border-2 shadow-sm p-1 transition-all ${prediction?.choice === PredictionChoice.HOME ? 'border-world-cup-green' : 'border-gray-100'}`}>
+                    <div className={`w-20 h-14 rounded-2xl bg-white overflow-hidden border-2 shadow-sm p-1 transition-all ${activeChoice === PredictionChoice.HOME ? 'border-world-cup-green' : 'border-gray-100'}`}>
                       {match.homeFlag ? <img src={match.homeFlag} alt={match.homeTeam} className="w-full h-full object-cover rounded-xl" /> : <div className="text-xl text-gray-300 h-full flex items-center justify-center">🏴</div>}
                     </div>
-                    {prediction?.choice === PredictionChoice.HOME && (
-                      <div className="absolute -top-2 -right-2 bg-world-cup-green text-white rounded-full p-1 shadow-lg ring-4 ring-white">
+                    {activeChoice === PredictionChoice.HOME && (
+                      <div className={`absolute -top-2 -right-2 bg-world-cup-green text-white rounded-full p-1 shadow-lg ring-4 ring-white ${stagedChoice === PredictionChoice.HOME ? 'animate-pulse bg-world-cup-gold' : ''}`}>
                         <CheckCircle2 className="w-4 h-4" />
                       </div>
                     )}
                   </div>
-                  <span className={`text-sm font-black uppercase tracking-tight truncate w-full transition-colors ${prediction?.choice === PredictionChoice.HOME ? 'text-world-cup-green' : 'text-slate-800'}`}>
+                  <span className={`text-sm font-black uppercase tracking-tight truncate w-full transition-colors ${activeChoice === PredictionChoice.HOME ? 'text-world-cup-green' : 'text-slate-800'}`}>
                     {match.homeTeam}
                   </span>
                 </button>
@@ -171,10 +205,10 @@ const MatchList: React.FC = () => {
 
                 {/* Away Team */}
                 <button 
-                  disabled={!canPredict}
-                  onClick={() => handlePredict(match.id, PredictionChoice.AWAY)}
+                  disabled={!canPredict || isSaving}
+                  onClick={() => setStaged(match.id, PredictionChoice.AWAY)}
                   className={`flex flex-col items-center gap-3 text-center flex-1 p-3 rounded-3xl transition-all border-2 ${
-                    prediction?.choice === PredictionChoice.AWAY 
+                    activeChoice === PredictionChoice.AWAY 
                       ? 'bg-world-cup-green/10 border-world-cup-green scale-[1.05] shadow-lg shadow-world-cup-green/10' 
                       : canPredict 
                         ? 'border-transparent hover:bg-gray-50' 
@@ -182,20 +216,42 @@ const MatchList: React.FC = () => {
                   }`}
                 >
                   <div className="relative">
-                    <div className={`w-20 h-14 rounded-2xl bg-white overflow-hidden border-2 shadow-sm p-1 transition-all ${prediction?.choice === PredictionChoice.AWAY ? 'border-world-cup-green' : 'border-gray-100'}`}>
+                    <div className={`w-20 h-14 rounded-2xl bg-white overflow-hidden border-2 shadow-sm p-1 transition-all ${activeChoice === PredictionChoice.AWAY ? 'border-world-cup-green' : 'border-gray-100'}`}>
                       {match.awayFlag ? <img src={match.awayFlag} alt={match.awayTeam} className="w-full h-full object-cover rounded-xl" /> : <div className="text-xl text-gray-300 h-full flex items-center justify-center">🏴</div>}
                     </div>
-                    {prediction?.choice === PredictionChoice.AWAY && (
-                      <div className="absolute -top-2 -right-2 bg-world-cup-green text-white rounded-full p-1 shadow-lg ring-4 ring-white">
+                    {activeChoice === PredictionChoice.AWAY && (
+                      <div className={`absolute -top-2 -right-2 bg-world-cup-green text-white rounded-full p-1 shadow-lg ring-4 ring-white ${stagedChoice === PredictionChoice.AWAY ? 'animate-pulse bg-world-cup-gold' : ''}`}>
                         <CheckCircle2 className="w-4 h-4" />
                       </div>
                     )}
                   </div>
-                  <span className={`text-sm font-black uppercase tracking-tight truncate w-full transition-colors ${prediction?.choice === PredictionChoice.AWAY ? 'text-world-cup-green' : 'text-slate-800'}`}>
+                  <span className={`text-sm font-black uppercase tracking-tight truncate w-full transition-colors ${activeChoice === PredictionChoice.AWAY ? 'text-world-cup-green' : 'text-slate-800'}`}>
                     {match.awayTeam}
                   </span>
                 </button>
               </div>
+
+              <AnimatePresence>
+                {hasChanges && canPredict && (
+                  <motion.button
+                    initial={{ height: 0, opacity: 0, y: 10 }}
+                    animate={{ height: 'auto', opacity: 1, y: 0 }}
+                    exit={{ height: 0, opacity: 0, y: 10 }}
+                    disabled={isSaving}
+                    onClick={() => handlePredict(match.id)}
+                    className="w-full bg-world-cup-gold text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-world-cup-gold/30 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 mb-2"
+                  >
+                    {isSaving ? (
+                      <Clock className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-5 h-5" />
+                        ยืนยันส่งคำทายผล
+                      </>
+                    )}
+                  </motion.button>
+                )}
+              </AnimatePresence>
 
               {!isPastDeadline && !isBanned && (
                 <div className="flex flex-col items-center gap-2 bg-world-cup-gold/5 py-4 rounded-[1.5rem] border border-world-cup-gold/10">
