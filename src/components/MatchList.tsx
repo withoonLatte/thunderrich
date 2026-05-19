@@ -22,7 +22,8 @@ const MatchList: React.FC = () => {
 
   useEffect(() => {
     const unsubMatches = onSnapshot(query(collection(db, 'matches'), orderBy('startTime', 'asc')), (snap) => {
-      setMatches(snap.docs.map(d => ({ id: d.id, ...d.data() } as Match)));
+      const allMatches = snap.docs.map(d => ({ id: d.id, ...d.data() } as Match));
+      setMatches(allMatches.filter(m => m.isPublished === true));
     });
 
     if (user) {

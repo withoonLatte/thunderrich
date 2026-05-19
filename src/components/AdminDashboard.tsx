@@ -32,6 +32,7 @@ const AdminDashboard: React.FC = () => {
   const [customLossScore, setCustomLossScore] = useState('');
   const [isSpecialMatch, setIsSpecialMatch] = useState(false);
   
+  const [editingMatchId, setEditingMatchId] = useState<string | null>(null);
   const [calcLoading, setCalcLoading] = useState<string | null>(null);
   const [resetLoading, setResetLoading] = useState(false);
   const [hardResetLoading, setHardResetLoading] = useState(false);
@@ -130,7 +131,8 @@ const AdminDashboard: React.FC = () => {
               round: TournamentRound.GROUP,
               homeFlag: `https://flagcdn.com/w80/${getCountryCode(h)}.png`,
               awayFlag: `https://flagcdn.com/w80/${getCountryCode(a)}.png`,
-              status: MatchStatus.SCHEDULED
+              status: MatchStatus.SCHEDULED,
+              isPublished: false
             });
           }
         });
@@ -209,7 +211,8 @@ const AdminDashboard: React.FC = () => {
                   round: TournamentRound.GROUP,
                   homeFlag: `https://flagcdn.com/w80/${getCountryCode(h)}.png`,
                   awayFlag: `https://flagcdn.com/w80/${getCountryCode(a)}.png`,
-                  status: MatchStatus.SCHEDULED
+                  status: MatchStatus.SCHEDULED,
+                  isPublished: false
                 });
               }
             });
@@ -378,22 +381,63 @@ const AdminDashboard: React.FC = () => {
     const date = new Date(startTime);
     const deadlineDate = predictionDeadline ? new Date(predictionDeadline) : date;
     
-    await addDoc(collection(db, 'matches'), {
-      homeTeam,
-      awayTeam,
-      homeFlag: `https://flagcdn.com/w80/${getCountryCode(homeTeam)}.png`, 
-      awayFlag: `https://flagcdn.com/w80/${getCountryCode(awayTeam)}.png`,
-      handicap: handicap,
-      round: round,
-      startTime: Timestamp.fromDate(date),
-      predictionDeadline: Timestamp.fromDate(deadlineDate),
-      status: MatchStatus.SCHEDULED,
-      customWinScore: isSpecialMatch ? Number(customWinScore) : null,
-      customLossScore: isSpecialMatch ? Number(customLossScore) : null,
-    } as any);
+    if (editingMatchId) {
+      await updateDoc(doc(db, 'matches', editingMatchId), {
+        homeTeam,
+        awayTeam,
+        homeFlag: `https://flagcdn.com/w80/${getCountryCode(homeTeam)}.png`, 
+        awayFlag: `https://flagcdn.com/w80/${getCountryCode(awayTeam)}.png`,
+        handicap: handicap,
+        round: round,
+        startTime: Timestamp.fromDate(date),
+        predictionDeadline: Timestamp.fromDate(deadlineDate),
+        customWinScore: isSpecialMatch ? Number(customWinScore) : null,
+        customLossScore: isSpecialMatch ? Number(customLossScore) : null,
+        isPublished: true // Auto publish on save edit
+      });
+      setEditingMatchId(null);
+    } else {
+      await addDoc(collection(db, 'matches'), {
+        homeTeam,
+        awayTeam,
+        homeFlag: `https://flagcdn.com/w80/${getCountryCode(homeTeam)}.png`, 
+        awayFlag: `https://flagcdn.com/w80/${getCountryCode(awayTeam)}.png`,
+        handicap: handicap,
+        round: round,
+        startTime: Timestamp.fromDate(date),
+        predictionDeadline: Timestamp.fromDate(deadlineDate),
+        status: MatchStatus.SCHEDULED,
+        customWinScore: isSpecialMatch ? Number(customWinScore) : null,
+        customLossScore: isSpecialMatch ? Number(customLossScore) : null,
+        isPublished: true // Auto publish on manual add
+      } as any);
+    }
 
     setShowAdd(false);
     resetForm();
+  };
+
+  const handleEditMatch = (match: Match) => {
+    setEditingMatchId(match.id);
+    setHomeTeam(match.homeTeam);
+    setAwayTeam(match.awayTeam);
+    setHandicap(match.handicap);
+    setRound(match.round);
+    setStartTime(format(new Date(match.startTime.seconds * 1000), "yyyy-MM-dd'T'HH:mm"));
+    setPredictionDeadline(format(new Date(match.predictionDeadline.seconds * 1000), "yyyy-MM-dd'T'HH:mm"));
+    
+    if (match.customWinScore !== undefined && match.customWinScore !== null) {
+      setIsSpecialMatch(true);
+      setCustomWinScore(String(match.customWinScore));
+      setCustomLossScore(String(match.customLossScore));
+    } else {
+      setIsSpecialMatch(false);
+      setCustomWinScore('');
+      setCustomLossScore('');
+    }
+    
+    setShowAdd(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const getCountryCode = (team: string) => {
@@ -458,7 +502,8 @@ const AdminDashboard: React.FC = () => {
           round: m.round,
           startTime: Timestamp.fromDate(date),
           predictionDeadline: Timestamp.fromDate(deadlineDate),
-          status: MatchStatus.SCHEDULED
+          status: MatchStatus.SCHEDULED,
+          isPublished: false
         });
       }
       await batch.commit();
@@ -589,6 +634,7 @@ const AdminDashboard: React.FC = () => {
   };
 
   const resetForm = () => {
+    setEditingMatchId(null);
     setHomeTeam('');
     setAwayTeam('');
     setHandicap('0');
@@ -690,8 +736,9 @@ const AdminDashboard: React.FC = () => {
                       ...m,
                       startTime: Timestamp.fromDate(new Date(m.startTime)),
                       predictionDeadline: Timestamp.fromDate(new Date(new Date(m.startTime).getTime() - 3600000)),
-                      status: 'pending',
-                      handicap: '0.0'
+                      status: MatchStatus.SCHEDULED,
+                      handicap: '0.0',
+                      isPublished: false
                     });
                   }
                   await batch.commit();
@@ -825,6 +872,16 @@ const AdminDashboard: React.FC = () => {
         <>
           {showAdd && (
             <div className="space-y-4">
+              <div className="flex items-center justify-between px-2">
+                <h3 className="text-xl font-black text-slate-800 italic uppercase">
+                  {editingMatchId ? 'แก้ไขแมตช์' : 'เพิ่มแมตช์ใหม่'}
+                </h3>
+                {editingMatchId && (
+                  <button onClick={resetForm} className="text-xs font-bold text-red-500 uppercase underline">
+                    ยกเลิกการแก้ไข
+                  </button>
+                )}
+              </div>
               <div className="wc-glass p-4 rounded-2xl flex flex-col gap-3">
                 <button 
                   type="button"
@@ -1048,7 +1105,7 @@ const AdminDashboard: React.FC = () => {
                 </div>
 
                 <button type="submit" className="w-full bg-world-cup-green text-white py-5 rounded-2xl font-black uppercase text-huge shadow-lg shadow-world-cup-green/30 hover:scale-[1.02] active:scale-[0.98] transition-all">
-                  บันทึกข้อมูลแมตช์
+                  {editingMatchId ? 'ตกลงแก้ไขข้อมูล' : 'บันทึกข้อมูลแมตช์'}
                 </button>
               </form>
             </div>
@@ -1134,14 +1191,21 @@ const AdminDashboard: React.FC = () => {
                       </button>
                     )}
                     <div className="space-y-1">
-                    <p className="text-xs font-bold text-world-cup-green uppercase tracking-widest">
-                      {match.round === TournamentRound.GROUP && 'รอบแบ่งกลุ่ม'}
-                      {match.round === TournamentRound.TOP16 && 'รอบ 16 ทีม'}
-                      {match.round === TournamentRound.TOP8 && 'รอบ 8 ทีม'}
-                      {match.round === TournamentRound.TOP4 && 'รอบรองชนะเลิศ'}
-                      {match.round === TournamentRound.THIRD_PLACE && 'ชิงอันดับ 3'}
-                      {match.round === TournamentRound.FINAL && 'รอบชิงชนะเลิศ'}
-                    </p>
+                    <div className="flex items-center gap-2">
+                        <p className="text-xs font-bold text-world-cup-green uppercase tracking-widest">
+                          {match.round === TournamentRound.GROUP && 'รอบแบ่งกลุ่ม'}
+                          {match.round === TournamentRound.TOP16 && 'รอบ 16 ทีม'}
+                          {match.round === TournamentRound.TOP8 && 'รอบ 8 ทีม'}
+                          {match.round === TournamentRound.TOP4 && 'รอบรองชนะเลิศ'}
+                          {match.round === TournamentRound.THIRD_PLACE && 'ชิงอันดับ 3'}
+                          {match.round === TournamentRound.FINAL && 'รอบชิงชนะเลิศ'}
+                        </p>
+                        {!match.isPublished && (
+                          <span className="bg-slate-800 text-white text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest animate-pulse">
+                            ยังไม่แก้ไข / ดรอฟต์
+                          </span>
+                        )}
+                    </div>
                     <h3 className="text-giant font-black text-slate-800">{match.homeTeam} vs {match.awayTeam}</h3>
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-medium text-gray-500">{format(new Date(match.startTime.seconds * 1000), 'dd/MM/yyyy HH:mm')}</span>
@@ -1155,6 +1219,24 @@ const AdminDashboard: React.FC = () => {
                     </div>
                   </div>
                 </div>
+                  <button 
+                    onClick={async () => {
+                      await updateDoc(doc(db, 'matches', match.id), {
+                        isPublished: !match.isPublished
+                      });
+                    }}
+                    className={`p-2 rounded-xl transition-all ${match.isPublished ? 'bg-green-50 text-green-500 hover:bg-green-100' : 'bg-slate-100 text-slate-400 hover:bg-slate-200 shadow-inner'}`}
+                    title={match.isPublished ? "คลิกเพื่อซ่อนแมตช์" : "คลิกเพื่อเปิดให้สมาชิกเห็น"}
+                  >
+                    <CheckCircle className={`w-6 h-6 ${match.isPublished ? 'fill-current' : ''}`} />
+                  </button>
+                  <button 
+                    onClick={() => handleEditMatch(match)}
+                    className="p-2 rounded-xl bg-blue-50 text-blue-500 hover:bg-blue-100 transition-all"
+                    title="แก้ไขข้อมูลแมตช์"
+                  >
+                    <Edit3 className="w-6 h-6" />
+                  </button>
                   <button 
                     onClick={async () => {
                       const isSpecial = match.customWinScore !== undefined && match.customWinScore !== null;

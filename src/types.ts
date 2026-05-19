@@ -54,6 +54,7 @@ export interface Match {
   predictionDeadline?: any; // Firestore Timestamp
   customWinScore?: number;
   customLossScore?: number;
+  isPublished?: boolean;
 }
 
 export interface Prediction {
