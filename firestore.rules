@@ -1,44 +1,8 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper functions
-    function isSignedIn() {
-      return request.auth != null;
-    }
-    
-    function isAdmin() {
-      return isSignedIn() && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
-    
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    match /users/{userId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.auth.uid == userId;
-      allow update: if isAdmin() || isOwner(userId);
-      allow delete: if isAdmin();
-    }
-
-    match /matches/{matchId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-    }
-
-    match /predictions/{predictionId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if isSignedIn() && 
-        (resource.data.userId == request.auth.uid || isAdmin());
-      allow delete: if isAdmin();
-    }
-
-    match /webboard/{msgId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow delete: if isAdmin() || resource.data.userId == request.auth.uid;
+    match /{document=**} {
+      allow read, write: if true;
     }
   }
 }

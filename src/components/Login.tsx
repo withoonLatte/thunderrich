@@ -1,21 +1,26 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Trophy, AlertCircle } from 'lucide-react';
+import { Trophy, AlertCircle, User, Hash } from 'lucide-react';
 import { motion } from 'motion/react';
 
 const Login: React.FC = () => {
-  const { signInWithGoogle } = useAuth();
+  const { login } = useAuth();
+  const [nickname, setNickname] = useState('');
+  const [pin, setPin] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleGoogleLogin = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nickname || !pin) return;
+
     setLoading(true);
     setError(null);
     try {
-      await signInWithGoogle();
+      await login(nickname, pin);
     } catch (err: any) {
       console.error(err);
-      setError('ไม่สามารถเข้าสู่ระบบด้วย Google ได้ กรุณาลองใหม่อีกครั้ง');
+      setError(err.message || 'รหัสกลุ่มไม่ถูกต้อง');
       setLoading(false);
     }
   };
@@ -45,12 +50,7 @@ const Login: React.FC = () => {
         </p>
       </motion.div>
 
-      <motion.div 
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.2, duration: 0.8 }}
-        className="w-full max-w-xs space-y-4 z-10"
-      >
+      <form onSubmit={handleSubmit} className="w-full max-w-xs space-y-4 z-10">
         {error && (
           <div className="bg-red-500/10 border border-red-500/20 text-red-500 text-xs p-4 rounded-2xl flex items-center gap-3">
             <AlertCircle className="w-5 h-5 flex-shrink-0" />
@@ -58,38 +58,42 @@ const Login: React.FC = () => {
           </div>
         )}
 
+        <div className="relative">
+          <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+          <input
+            type="text"
+            placeholder="ชื่อเล่น / นามแฝง"
+            value={nickname}
+            onChange={(e) => setNickname(e.target.value)}
+            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-world-cup-green transition-all placeholder:text-gray-600"
+            required
+          />
+        </div>
+
+        <div className="relative">
+          <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-world-cup-green" />
+          <input
+            type="password"
+            placeholder="รหัสกลุ่ม (PIN)"
+            value={pin}
+            onChange={(e) => setPin(e.target.value)}
+            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-world-cup-green transition-all placeholder:text-gray-600"
+            required
+          />
+        </div>
+
         <button
-          onClick={handleGoogleLogin}
+          type="submit"
           disabled={loading}
-          className="w-full bg-white text-black py-4 rounded-full flex items-center justify-center gap-3 hover:bg-gray-100 transition-all active:scale-95 disabled:opacity-50 font-bold shadow-xl group"
+          className="w-full bg-world-cup-green text-white py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-green-600 transition-all active:scale-95 disabled:opacity-50 shadow-lg shadow-world-cup-green/20 font-bold"
         >
           {loading ? (
-            <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin"></div>
+            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
           ) : (
-            <>
-              <svg className="w-5 h-5 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
-                <path
-                  fill="#EA4335"
-                  d="M5.266 9.765A7.077 7.077 0 0 1 12 4.909c1.69 0 3.218.6 4.418 1.582L19.91 3C17.782 1.145 15.055 0 12 0 7.27 0 3.198 2.698 1.24 6.65l4.026 3.115z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M16.04 18.013c-1.09.593-2.325.896-3.791.896-2.58 0-4.854-1.572-5.79-3.784l-4.026 3.116C4.41 21.05 8.01 24 12 24c3.08 0 5.864-1.058 7.91-2.846l-3.87-3.141z"
-                />
-                <path
-                  fill="#4285F4"
-                  d="M19.91 21.154c1.694-1.127 2.871-2.825 3.141-4.757h-11.05v4.264h6.05c-.324 1.487-1.18 2.748-2.43 3.633l3.87 3.141c2.148-1.92 3.42-4.757 3.42-8.281z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.266 9.765 1.24 6.65C.448 8.243 0 10.065 0 12c0 1.935.448 3.757 1.24 5.35l4.026-3.116A7.096 7.096 0 0 1 4.909 12c0-1.258.336-2.433.914-3.468l-.557-1.233z"
-                />
-              </svg>
-              เข้าสู่สนามด้วย Google
-            </>
+            'เข้าสู่สนาม'
           )}
         </button>
-      </motion.div>
+      </form>
 
       <div className="mt-12 text-[10px] uppercase tracking-widest text-world-cup-green opacity-50 z-10">
         MOBILE FIRST • REAL-TIME • 15 PLAYERS
