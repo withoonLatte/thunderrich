@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Trophy, AlertCircle, User, Hash } from 'lucide-react';
+import { Zap, AlertCircle, User, Hash } from 'lucide-react';
 import { motion } from 'motion/react';
 
 const Login: React.FC = () => {
@@ -38,16 +38,16 @@ const Login: React.FC = () => {
         className="z-10"
       >
         <div className="w-28 h-28 bg-gradient-to-br from-world-cup-gold to-amber-500 rounded-3xl mb-8 mx-auto flex items-center justify-center shadow-xl shadow-world-cup-gold/20 transform rotate-12">
-          <Trophy className="w-14 h-14 text-white" />
+          <Zap className="w-14 h-14 text-white fill-current" />
         </div>
         
         <h1 className="text-5xl text-slate-900 italic tracking-tighter uppercase font-black mb-3">
           รวยฟ้าผ่า <br />
-          <span className="text-world-cup-green drop-shadow-sm">#20</span>
+          <span className="text-world-cup-green drop-shadow-sm">#11</span>
         </h1>
         <p className="text-slate-500 mb-12 max-w-xs text-base font-medium mx-auto">
           ทำนายผลฟุตบอลโลก 2026 <br />
-          แข่งขันกันในกลุ่มเพื่อนซี้ 15 คน
+          ค้นหาสุดยอดแช้มป์แก๊งค์ถั่วงอก
         </p>
       </motion.div>
 
