@@ -1039,11 +1039,11 @@ const AdminDashboard: React.FC = () => {
 
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-xs text-gray-500 font-bold uppercase tracking-widest">เจ้าบ้าน (Home)</label>
+                    <label className="text-xs text-gray-500 font-bold uppercase tracking-widest">ทีม 1 (Team 1)</label>
                     <input required value={homeTeam} onChange={e => setHomeTeam(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-4 text-huge focus:outline-none focus:ring-2 focus:ring-world-cup-green/20 focus:border-world-cup-green transition-all" placeholder="เช่น Argentina" />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs text-gray-500 font-bold uppercase tracking-widest">ทีมเยือน (Away)</label>
+                    <label className="text-xs text-gray-500 font-bold uppercase tracking-widest">ทีม 2 (Team 2)</label>
                     <input required value={awayTeam} onChange={e => setAwayTeam(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-4 text-huge focus:outline-none focus:ring-2 focus:ring-world-cup-green/20 focus:border-world-cup-green transition-all" placeholder="เช่น France" />
                   </div>
                 </div>
@@ -1291,13 +1291,13 @@ const AdminDashboard: React.FC = () => {
                   <div className="space-y-6">
                     <div className="flex items-center justify-center gap-6 py-4 bg-gray-50 rounded-2xl border border-gray-100">
                       <div className="text-center space-y-2">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Home Score</label>
-                        <input id={`home-${match.id}`} type="number" placeholder="-" className="w-20 h-20 bg-white border-2 border-gray-200 rounded-2xl text-center text-giant font-black focus:border-world-cup-green focus:outline-none transition-all shadow-inner" />
+                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Team 1</label>
+                        <input id={`home-${match.id}`} type="number" placeholder="-" className="w-14 h-14 bg-white border-2 border-gray-200 rounded-xl text-center text-2xl font-black focus:border-world-cup-green focus:outline-none transition-all shadow-inner" />
                       </div>
-                      <div className="text-giant font-black text-gray-300 self-end mb-4">:</div>
+                      <div className="text-3xl font-black text-gray-300 self-end mb-3">:</div>
                       <div className="text-center space-y-2">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Away Score</label>
-                        <input id={`away-${match.id}`} type="number" placeholder="-" className="w-20 h-20 bg-white border-2 border-gray-200 rounded-2xl text-center text-giant font-black focus:border-world-cup-green focus:outline-none transition-all shadow-inner" />
+                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Team 2</label>
+                        <input id={`away-${match.id}`} type="number" placeholder="-" className="w-14 h-14 bg-white border-2 border-gray-200 rounded-xl text-center text-2xl font-black focus:border-world-cup-green focus:outline-none transition-all shadow-inner" />
                       </div>
                     </div>
 
@@ -1308,7 +1308,7 @@ const AdminDashboard: React.FC = () => {
                           onClick={() => setWinners({...winners, [match.id]: 'home'})}
                           className={`py-4 rounded-xl text-sm font-black border-2 transition-all ${winners[match.id] === 'home' ? 'bg-world-cup-green border-world-cup-green text-white shadow-lg' : 'bg-white border-gray-200 text-gray-400 hover:border-world-cup-green/50'}`}
                         >
-                          เจ้าบ้านชนะ
+                          ทีม 1 ชนะ
                         </button>
                         <button 
                           onClick={() => setWinners({...winners, [match.id]: 'push'})}
@@ -1320,7 +1320,7 @@ const AdminDashboard: React.FC = () => {
                           onClick={() => setWinners({...winners, [match.id]: 'away'})}
                           className={`py-4 rounded-xl text-sm font-black border-2 transition-all ${winners[match.id] === 'away' ? 'bg-blue-500 border-blue-500 text-white shadow-lg' : 'bg-white border-gray-200 text-gray-400 hover:border-blue-500/50'}`}
                         >
-                          ทีมเยือนชนะ
+                          ทีม 2 ชนะ
                         </button>
                       </div>
                     </div>
@@ -1372,8 +1372,8 @@ const AdminDashboard: React.FC = () => {
                     <div className="flex items-center justify-center gap-2 text-sm font-black italic">
                        <span className="text-gray-400">ฝั่งชนะ:</span>
                        <span className="text-world-cup-green uppercase tracking-tighter">
-                         {match.manualWinner === 'home' && `เจ้าบ้าน (${match.homeTeam})`}
-                         {match.manualWinner === 'away' && `ทีมเยือน (${match.awayTeam})`}
+                         {match.manualWinner === 'home' && `ทีม 1 (${match.homeTeam})`}
+                         {match.manualWinner === 'away' && `ทีม 2 (${match.awayTeam})`}
                          {match.manualWinner === 'push' && 'ยกเลิก/เสมอ'}
                        </span>
                        <Check className="w-4 h-4 text-green-500" />
