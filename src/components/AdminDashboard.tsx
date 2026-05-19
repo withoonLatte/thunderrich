@@ -886,11 +886,41 @@ const AdminDashboard: React.FC = () => {
                       <span className="text-sm font-medium text-gray-500">{format(new Date(match.startTime.seconds * 1000), 'dd/MM/yyyy HH:mm')}</span>
                       <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
                       <span className="bg-world-cup-green/10 text-world-cup-green px-3 py-1 rounded-full text-xs font-black">{match.handicap}</span>
+                      {match.customWinScore !== undefined && match.customWinScore !== null && (
+                        <span className="bg-red-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase animate-pulse">
+                          คู่เอก (+{match.customWinScore} / {match.customLossScore})
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
-                <button 
-                  onClick={() => deleteMatch(match.id)} 
+                  <button 
+                    onClick={async () => {
+                      if (match.customWinScore !== undefined && match.customWinScore !== null) {
+                        if (window.confirm('ยกเลิกสถานะคู่เอก?')) {
+                          await updateDoc(doc(db, 'matches', match.id), {
+                            customWinScore: null,
+                            customLossScore: null
+                          });
+                        }
+                      } else {
+                        const win = prompt('คะแนนทายถูกสำหรับคู่เอก:', '5');
+                        const loss = prompt('คะแนนทายผิดสำหรับคู่เอก (ใส่ลบด้วย):', '-3');
+                        if (win && loss) {
+                          await updateDoc(doc(db, 'matches', match.id), {
+                            customWinScore: Number(win),
+                            customLossScore: Number(loss)
+                          });
+                        }
+                      }
+                    }}
+                    className={`p-2 rounded-xl transition-all ${match.customWinScore !== undefined && match.customWinScore !== null ? 'bg-red-50 text-red-500 hover:bg-red-100' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}
+                    title="Toggle Special Match"
+                  >
+                    <Info className="w-6 h-6" />
+                  </button>
+                  <button 
+                    onClick={() => deleteMatch(match.id)} 
                     className="text-red-400 hover:text-red-600 p-2 hover:bg-red-50 rounded-xl transition-all"
                   >
                     <Trash2 className="w-6 h-6" />
