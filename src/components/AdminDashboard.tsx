@@ -31,6 +31,7 @@ const AdminDashboard: React.FC = () => {
   const [resetLoading, setResetLoading] = useState(false);
   const [hardResetLoading, setHardResetLoading] = useState(false);
   const [showMockList, setShowMockList] = useState(false);
+  const [stagedMatches, setStagedMatches] = useState<(MockMatch & { stagedHandicap: string, stagedDeadline: string })[]>([]);
   const [uploadingUid, setUploadingUid] = useState<string | null>(null);
   const [winnerSelections, setWinnerSelections] = useState<Record<string, 'home' | 'away' | 'push'>>({});
 
@@ -231,13 +232,53 @@ const AdminDashboard: React.FC = () => {
     return codes[team] || team.substring(0, 2).toLowerCase();
   };
 
-  const selectMockMatch = (m: MockMatch) => {
-    setHomeTeam(m.homeTeam);
-    setAwayTeam(m.awayTeam);
-    setRound(m.round);
-    setStartTime(format(new Date(m.startTime), "yyyy-MM-dd'T'HH:mm"));
-    setPredictionDeadline(format(new Date(m.startTime), "yyyy-MM-dd'T'HH:mm"));
-    setShowMockList(false);
+  const toggleMockMatch = (m: MockMatch) => {
+    const exists = stagedMatches.find(sm => sm.homeTeam === m.homeTeam && sm.awayTeam === m.awayTeam && sm.startTime === m.startTime);
+    if (exists) {
+      setStagedMatches(stagedMatches.filter(sm => !(sm.homeTeam === m.homeTeam && sm.awayTeam === m.awayTeam && sm.startTime === m.startTime)));
+    } else {
+      setStagedMatches([...stagedMatches, { 
+        ...m, 
+        stagedHandicap: '0', 
+        stagedDeadline: format(new Date(m.startTime), "yyyy-MM-dd'T'HH:mm") 
+      }]);
+    }
+  };
+
+  const handleBatchAdd = async () => {
+    if (stagedMatches.length === 0) return;
+    
+    setResetLoading(true); // Using resetLoading as a general loading for batch
+    try {
+      const batch = writeBatch(db);
+      for (const m of stagedMatches) {
+        const matchRef = doc(collection(db, 'matches'));
+        const date = new Date(m.startTime);
+        const deadlineDate = new Date(m.stagedDeadline);
+        
+        batch.set(matchRef, {
+          homeTeam: m.homeTeam,
+          awayTeam: m.awayTeam,
+          homeFlag: m.homeFlag,
+          awayFlag: m.awayFlag,
+          handicap: m.stagedHandicap,
+          round: m.round,
+          startTime: Timestamp.fromDate(date),
+          predictionDeadline: Timestamp.fromDate(deadlineDate),
+          status: MatchStatus.SCHEDULED
+        });
+      }
+      await batch.commit();
+      setStagedMatches([]);
+      setShowMockList(false);
+      setShowAdd(false);
+      alert('เพิ่มแมตช์ทั้งหมดเรียบร้อยแล้ว!');
+    } catch (err) {
+      console.error(err);
+      alert('เกิดข้อผิดพลาดในการเพิ่มแบบกลุ่ม');
+    } finally {
+      setResetLoading(false);
+    }
   };
 
   const handlePhotoUpload = async (userId: string, file: File) => {
@@ -506,24 +547,85 @@ const AdminDashboard: React.FC = () => {
                 </button>
 
                 {showMockList && (
-                  <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto no-scrollbar pt-2">
-                    {WORLD_CUP_2026_SCHEDULE.map((m, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => selectMockMatch(m)}
-                        className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-world-cup-green/50 hover:bg-world-cup-green/5 shadow-sm transition-all text-left"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="flex -space-x-2">
-                            <img src={m.homeFlag} className="w-8 h-5 rounded-sm border border-gray-200" />
-                            <img src={m.awayFlag} className="w-8 h-5 rounded-sm border border-gray-200" />
-                          </div>
-                          <span className="text-sm font-bold text-slate-700">{m.homeTeam} vs {m.awayTeam}</span>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto no-scrollbar pt-2">
+                      {WORLD_CUP_2026_SCHEDULE.map((m, idx) => {
+                        const isSelected = stagedMatches.some(sm => sm.homeTeam === m.homeTeam && sm.awayTeam === m.awayTeam && sm.startTime === m.startTime);
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => toggleMockMatch(m)}
+                            className={`flex items-center justify-between p-4 rounded-xl border transition-all text-left shadow-sm ${
+                              isSelected 
+                                ? 'border-world-cup-green bg-world-cup-green/10' 
+                                : 'bg-white border-gray-100 hover:border-world-cup-green/50 hover:bg-world-cup-green/5'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="flex -space-x-2">
+                                <img src={m.homeFlag} className="w-8 h-5 rounded-sm border border-gray-200" />
+                                <img src={m.awayFlag} className="w-8 h-5 rounded-sm border border-gray-200" />
+                              </div>
+                              <span className="text-sm font-bold text-slate-700">{m.homeTeam} vs {m.awayTeam}</span>
+                              {isSelected && <Check className="w-4 h-4 text-world-cup-green" />}
+                            </div>
+                            <span className="text-xs text-gray-400 font-medium">{format(new Date(m.startTime), 'MMM d, HH:mm')}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {stagedMatches.length > 0 && (
+                      <div className="space-y-4 pt-4 border-t border-gray-100">
+                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest text-center">แมตช์ที่เลือก ({stagedMatches.length})</h4>
+                        <div className="space-y-3">
+                          {stagedMatches.map((m, idx) => (
+                            <div key={idx} className="bg-white p-4 rounded-2xl border border-gray-100 space-y-3 shadow-inner">
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm font-black text-slate-800">{m.homeTeam} vs {m.awayTeam}</span>
+                                <button type="button" onClick={() => toggleMockMatch(m)} className="text-red-400 p-1"><Trash2 className="w-4 h-4" /></button>
+                              </div>
+                              <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Handicap</label>
+                                  <input 
+                                    type="text" 
+                                    value={m.stagedHandicap} 
+                                    onChange={(e) => {
+                                      const newStaged = [...stagedMatches];
+                                      newStaged[idx].stagedHandicap = e.target.value;
+                                      setStagedMatches(newStaged);
+                                    }}
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-bold focus:outline-none focus:border-world-cup-green"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Deadline</label>
+                                  <input 
+                                    type="datetime-local" 
+                                    value={m.stagedDeadline} 
+                                    onChange={(e) => {
+                                      const newStaged = [...stagedMatches];
+                                      newStaged[idx].stagedDeadline = e.target.value;
+                                      setStagedMatches(newStaged);
+                                    }}
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 text-[10px] focus:outline-none focus:border-world-cup-green"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                        <span className="text-xs text-gray-400 font-medium">{format(new Date(m.startTime), 'MMM d, HH:mm')}</span>
-                      </button>
-                    ))}
+                        <button 
+                          type="button"
+                          onClick={handleBatchAdd}
+                          className="w-full bg-world-cup-gold text-white py-4 rounded-2xl font-black uppercase text-sm shadow-lg shadow-world-cup-gold/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                        >
+                          บันทึกแมตช์ที่เลือกทั้งหมด ({stagedMatches.length})
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
