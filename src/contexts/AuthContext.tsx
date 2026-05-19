@@ -1,11 +1,17 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { 
+  onAuthStateChanged,
+  signInAnonymously,
+  signOut,
+  User as FirebaseUser
+} from 'firebase/auth';
+import { 
   doc, 
   setDoc, 
   onSnapshot, 
   getDoc,
 } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { auth, db } from '../lib/firebase';
 import { User, UserRole } from '../types';
 
 interface AuthContextType {
@@ -25,25 +31,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Check local storage for persistent session
     const savedUserId = localStorage.getItem('wc_player_id');
     
-    if (savedUserId) {
-      const userDocRef = doc(db, 'users', savedUserId);
-      const unsubscribeUser = onSnapshot(userDocRef, (docSnap) => {
-        if (docSnap.exists()) {
-          setUser(docSnap.data() as User);
-        } else {
-          setUser(null);
-          localStorage.removeItem('wc_player_id');
-        }
-        setLoading(false);
-      }, (err) => {
-        console.error("Auth Listener Error:", err);
-        setLoading(false);
-      });
+    // Listen for Firebase Auth state changes
+    const unsubscribeAuth = onAuthStateChanged(auth, async (fUser) => {
+      if (savedUserId) {
+        const userDocRef = doc(db, 'users', savedUserId);
+        const unsubscribeUser = onSnapshot(userDocRef, (docSnap) => {
+          if (docSnap.exists()) {
+            setUser(docSnap.data() as User);
+          } else {
+            setUser(null);
+            localStorage.removeItem('wc_player_id');
+          }
+          setLoading(false);
+        }, (err) => {
+          console.error("Firestore Listener Error:", err);
+          setLoading(false);
+        });
 
-      return () => unsubscribeUser();
-    } else {
-      setLoading(false);
-    }
+        return () => unsubscribeUser();
+      } else {
+        setLoading(false);
+      }
+    });
+
+    return () => unsubscribeAuth();
   }, []);
 
   const login = async (nickname: string, pin: string) => {
@@ -54,21 +65,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error('รหัสกลุ่มไม่ถูกต้อง');
     }
 
-    // Standardize nickname for ID
+    // Ensure we are signed in anonymously to satisfy Firestore rules
+    if (!auth.currentUser) {
+      await signInAnonymously(auth);
+    }
+
     const sanitizedNickname = nickname.trim().toLowerCase();
     const userId = `user_${sanitizedNickname}`;
 
-    // Check if user exists
     const userDocRef = doc(db, 'users', userId);
     const userSnap = await getDoc(userDocRef);
 
     if (userSnap.exists()) {
-      // Existing user: Login
       const userData = userSnap.data() as User;
       setUser(userData);
       localStorage.setItem('wc_player_id', userId);
     } else {
-      // New user: Register
       const role = pin === ADMIN_PIN ? UserRole.ADMIN : UserRole.USER;
       
       const newUser: User = {
@@ -92,6 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     setUser(null);
     localStorage.removeItem('wc_player_id');
+    await signOut(auth);
   };
 
   return (
