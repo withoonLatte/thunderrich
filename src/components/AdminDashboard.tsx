@@ -745,7 +745,7 @@ const AdminDashboard: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="wc-glass p-6 rounded-2xl border-2 border-dashed border-gray-200 space-y-4">
+                <div className="p-6 rounded-2xl border-2 border-dashed border-gray-100 space-y-4">
                   <label className="flex items-center gap-3 cursor-pointer group">
                     <div 
                       onClick={() => setIsSpecialMatch(!isSpecialMatch)}
@@ -793,205 +793,207 @@ const AdminDashboard: React.FC = () => {
             </div>
           )}
 
-      <div className="space-y-6">
-        {calcStagedIds.length > 0 && (
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="wc-glass p-6 rounded-[2rem] border-2 border-world-cup-gold bg-world-cup-gold/5 sticky top-4 z-40 shadow-2xl backdrop-blur-xl space-y-4"
-          >
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-world-cup-gold rounded-full flex items-center justify-center text-white shadow-lg">
-                  <CheckCircle className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">BATCH CALCULATION</h3>
-                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tight">เลือกแล้ว {calcStagedIds.length} คู่</p>
-                </div>
-              </div>
-              <button 
-                onClick={() => setCalcStagedIds([])}
-                className="text-gray-400 hover:text-red-500 text-[10px] font-black uppercase tracking-widest bg-gray-100 px-3 py-1 rounded-full"
+        {!showAdd && (
+          <div className="space-y-6">
+            {calcStagedIds.length > 0 && (
+              <motion.div 
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="wc-glass p-6 rounded-[2rem] border-2 border-world-cup-gold bg-world-cup-gold/5 sticky top-4 z-40 shadow-2xl backdrop-blur-xl space-y-4"
               >
-                ล้างที่เลือก
-              </button>
-            </div>
-
-            {/* Compact List of Selected Matches */}
-            <div className="max-h-32 overflow-y-auto no-scrollbar py-2 border-y border-world-cup-gold/10 space-y-2">
-              {calcStagedIds.map(id => {
-                const match = matches.find(m => m.id === id);
-                const h = (document.getElementById(`home-${id}`) as HTMLInputElement)?.value || '?';
-                const a = (document.getElementById(`away-${id}`) as HTMLInputElement)?.value || '?';
-                const winner = winners[id];
-                
-                return (
-                  <div key={id} className="flex justify-between items-center text-[11px] font-bold bg-white/50 px-3 py-2 rounded-xl">
-                    <span className="text-slate-700 truncate max-w-[120px]">{match?.homeTeam} vs {match?.awayTeam}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="bg-slate-800 text-white px-2 py-0.5 rounded-lg">{h} - {a}</span>
-                      {winner && (
-                        <span className={`px-2 py-0.5 rounded-lg text-white ${winner === 'home' ? 'bg-world-cup-green' : winner === 'away' ? 'bg-blue-500' : 'bg-amber-500'}`}>
-                          {winner === 'home' ? 'H' : winner === 'away' ? 'A' : 'P'}
-                        </span>
-                      )}
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-world-cup-gold rounded-full flex items-center justify-center text-white shadow-lg">
+                      <CheckCircle className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">BATCH CALCULATION</h3>
+                      <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tight">เลือกแล้ว {calcStagedIds.length} คู่</p>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-
-            <button 
-              disabled={batchLoading}
-              onClick={handleBatchCalculate}
-              className="w-full bg-slate-900 text-white py-5 rounded-2xl text-huge font-black flex items-center justify-center gap-3 shadow-xl hover:bg-black transition-all active:scale-[0.98] disabled:opacity-50"
-            >
-              {batchLoading ? (
-                <Loader2 className="w-6 h-6 animate-spin text-world-cup-gold" />
-              ) : (
-                <>
-                  <RefreshCw className="w-5 h-5 text-world-cup-gold" />
-                  คำนวณผลทั้งหมด ({calcStagedIds.length} คู่)
-                </>
-              )}
-            </button>
-          </motion.div>
-        )}
-
-        {matches.map(match => (
-          <div key={match.id} className={`wc-glass rounded-3xl p-6 flex flex-col gap-6 border-l-8 transition-all ${calcStagedIds.includes(match.id) ? 'border-world-cup-gold bg-world-cup-gold/5 ring-2 ring-world-cup-gold/20' : 'border-world-cup-green shadow-xl'}`}>
-            <div className="flex justify-between items-start">
-              <div className="flex items-start gap-4">
-                {match.status !== MatchStatus.FINISHED && (
                   <button 
-                    onClick={() => toggleCalcStage(match.id)}
-                    className={`mt-1 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${calcStagedIds.includes(match.id) ? 'bg-world-cup-gold border-world-cup-gold text-white' : 'border-gray-200'}`}
+                    onClick={() => setCalcStagedIds([])}
+                    className="text-gray-400 hover:text-red-500 text-[10px] font-black uppercase tracking-widest bg-gray-100 px-3 py-1 rounded-full"
                   >
-                    {calcStagedIds.includes(match.id) && <Check className="w-4 h-4 font-black" />}
+                    ล้างที่เลือก
                   </button>
-                )}
-                <div className="space-y-1">
-                <p className="text-xs font-bold text-world-cup-green uppercase tracking-widest">
-                  {match.round === TournamentRound.GROUP && 'รอบแบ่งกลุ่ม'}
-                  {match.round === TournamentRound.TOP16 && 'รอบ 16 ทีม'}
-                  {match.round === TournamentRound.TOP8 && 'รอบ 8 ทีม'}
-                  {match.round === TournamentRound.TOP4 && 'รอบรองชนะเลิศ'}
-                  {match.round === TournamentRound.THIRD_PLACE && 'ชิงอันดับ 3'}
-                  {match.round === TournamentRound.FINAL && 'รอบชิงชนะเลิศ'}
-                </p>
-                <h3 className="text-giant font-black text-slate-800">{match.homeTeam} vs {match.awayTeam}</h3>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-medium text-gray-500">{format(new Date(match.startTime.seconds * 1000), 'dd/MM/yyyy HH:mm')}</span>
-                  <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                  <span className="bg-world-cup-green/10 text-world-cup-green px-3 py-1 rounded-full text-xs font-black">{match.handicap}</span>
-                </div>
-              </div>
-            </div>
-            <button 
-              onClick={() => deleteMatch(match.id)} 
-                className="text-red-400 hover:text-red-600 p-2 hover:bg-red-50 rounded-xl transition-all"
-              >
-                <Trash2 className="w-6 h-6" />
-              </button>
-            </div>
-
-            {match.status !== MatchStatus.FINISHED ? (
-              <div className="space-y-6">
-                <div className="flex items-center justify-center gap-6 py-4 bg-gray-50 rounded-2xl border border-gray-100">
-                  <div className="text-center space-y-2">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Home Score</label>
-                    <input id={`home-${match.id}`} type="number" placeholder="-" className="w-20 h-20 bg-white border-2 border-gray-200 rounded-2xl text-center text-giant font-black focus:border-world-cup-green focus:outline-none transition-all shadow-inner" />
-                  </div>
-                  <div className="text-giant font-black text-gray-300 self-end mb-4">:</div>
-                  <div className="text-center space-y-2">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Away Score</label>
-                    <input id={`away-${match.id}`} type="number" placeholder="-" className="w-20 h-20 bg-white border-2 border-gray-200 rounded-2xl text-center text-giant font-black focus:border-world-cup-green focus:outline-none transition-all shadow-inner" />
-                  </div>
                 </div>
 
-                <div className="space-y-3">
-                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest block text-center">ใครชนะในราคาต่อรอง? (Handicap Winner)</label>
-                  <div className="grid grid-cols-3 gap-3">
-                    <button 
-                      onClick={() => setWinners({...winners, [match.id]: 'home'})}
-                      className={`py-4 rounded-xl text-sm font-black border-2 transition-all ${winners[match.id] === 'home' ? 'bg-world-cup-green border-world-cup-green text-white shadow-lg' : 'bg-white border-gray-200 text-gray-400 hover:border-world-cup-green/50'}`}
-                    >
-                      เจ้าบ้านชนะ
-                    </button>
-                    <button 
-                      onClick={() => setWinners({...winners, [match.id]: 'push'})}
-                      className={`py-4 rounded-xl text-sm font-black border-2 transition-all ${winners[match.id] === 'push' ? 'bg-amber-500 border-amber-500 text-white shadow-lg' : 'bg-white border-gray-200 text-gray-400 hover:border-amber-500/50'}`}
-                    >
-                      ยกเลิก/เสมอ
-                    </button>
-                    <button 
-                      onClick={() => setWinners({...winners, [match.id]: 'away'})}
-                      className={`py-4 rounded-xl text-sm font-black border-2 transition-all ${winners[match.id] === 'away' ? 'bg-blue-500 border-blue-500 text-white shadow-lg' : 'bg-white border-gray-200 text-gray-400 hover:border-blue-500/50'}`}
-                    >
-                      ทีมเยือนชนะ
-                    </button>
-                  </div>
+                {/* Compact List of Selected Matches */}
+                <div className="max-h-32 overflow-y-auto no-scrollbar py-2 border-y border-world-cup-gold/10 space-y-2">
+                  {calcStagedIds.map(id => {
+                    const match = matches.find(m => m.id === id);
+                    const h = (document.getElementById(`home-${id}`) as HTMLInputElement)?.value || '?';
+                    const a = (document.getElementById(`away-${id}`) as HTMLInputElement)?.value || '?';
+                    const winner = winners[id];
+                    
+                    return (
+                      <div key={id} className="flex justify-between items-center text-[11px] font-bold bg-white/50 px-3 py-2 rounded-xl">
+                        <span className="text-slate-700 truncate max-w-[120px]">{match?.homeTeam} vs {match?.awayTeam}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="bg-slate-800 text-white px-2 py-0.5 rounded-lg">{h} - {a}</span>
+                          {winner && (
+                            <span className={`px-2 py-0.5 rounded-lg text-white ${winner === 'home' ? 'bg-world-cup-green' : winner === 'away' ? 'bg-blue-500' : 'bg-amber-500'}`}>
+                              {winner === 'home' ? 'H' : winner === 'away' ? 'A' : 'P'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
 
-                {!calcStagedIds.includes(match.id) && (
-                  <button 
-                    onClick={() => {
-                      const h = (document.getElementById(`home-${match.id}`) as HTMLInputElement).value;
-                      const a = (document.getElementById(`away-${match.id}`) as HTMLInputElement).value;
-                      const manualWinner = winners[match.id];
-                      
-                      if (!h || !a) {
-                        alert('กรุณาใส่ผลสกอร์');
-                        return;
-                      }
-                      if (!manualWinner) {
-                        alert('กรุณาเลือกฝั่งที่ชนะในราคาต่อรอง');
-                        return;
-                      }
-                      
-                      setScores(match.id, Number(h), Number(a), manualWinner);
-                    }}
-                    className="w-full bg-slate-900 text-white py-5 rounded-2xl text-huge font-black flex items-center justify-center gap-3 shadow-xl hover:bg-black transition-all active:scale-[0.98]"
-                  >
-                    {calcLoading === match.id ? (
-                      <Loader2 className="w-6 h-6 animate-spin text-world-cup-green" />
-                    ) : (
-                      <>
-                        <CheckCircle className="w-6 h-6 text-world-cup-green" />
-                        คำนวณและสรุปคะแนน
-                      </>
-                    )}
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="flex flex-col gap-4">
-                <div className="flex justify-between items-center bg-gray-50 p-6 rounded-2xl border border-gray-200 shadow-inner">
-                  <div className="text-center">
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{match.homeTeam}</p>
-                    <p className="text-giant font-black text-slate-800">{match.homeScore}</p>
-                  </div>
-                  <div className="text-giant font-black text-gray-300">-</div>
-                  <div className="text-center">
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{match.awayTeam}</p>
-                    <p className="text-giant font-black text-slate-800">{match.awayScore}</p>
-                  </div>
-                </div>
-                <div className="flex items-center justify-center gap-2 text-sm font-black italic">
-                   <span className="text-gray-400">ฝั่งชนะ:</span>
-                   <span className="text-world-cup-green uppercase tracking-tighter">
-                     {match.manualWinner === 'home' && `เจ้าบ้าน (${match.homeTeam})`}
-                     {match.manualWinner === 'away' && `ทีมเยือน (${match.awayTeam})`}
-                     {match.manualWinner === 'push' && 'ยกเลิก/เสมอ'}
-                   </span>
-                   <Check className="w-4 h-4 text-green-500" />
-                </div>
-              </div>
+                <button 
+                  disabled={batchLoading}
+                  onClick={handleBatchCalculate}
+                  className="w-full bg-slate-900 text-white py-5 rounded-2xl text-huge font-black flex items-center justify-center gap-3 shadow-xl hover:bg-black transition-all active:scale-[0.98] disabled:opacity-50"
+                >
+                  {batchLoading ? (
+                    <Loader2 className="w-6 h-6 animate-spin text-world-cup-gold" />
+                  ) : (
+                    <>
+                      <RefreshCw className="w-5 h-5 text-world-cup-gold" />
+                      คำนวณผลทั้งหมด ({calcStagedIds.length} คู่)
+                    </>
+                  )}
+                </button>
+              </motion.div>
             )}
+
+            {matches.map(match => (
+              <div key={match.id} className={`wc-glass rounded-3xl p-6 flex flex-col gap-6 border-l-8 transition-all ${calcStagedIds.includes(match.id) ? 'border-world-cup-gold bg-world-cup-gold/5 ring-2 ring-world-cup-gold/20' : 'border-world-cup-green shadow-xl'}`}>
+                <div className="flex justify-between items-start">
+                  <div className="flex items-start gap-4">
+                    {match.status !== MatchStatus.FINISHED && (
+                      <button 
+                        onClick={() => toggleCalcStage(match.id)}
+                        className={`mt-1 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${calcStagedIds.includes(match.id) ? 'bg-world-cup-gold border-world-cup-gold text-white' : 'border-gray-200'}`}
+                      >
+                        {calcStagedIds.includes(match.id) && <Check className="w-4 h-4 font-black" />}
+                      </button>
+                    )}
+                    <div className="space-y-1">
+                    <p className="text-xs font-bold text-world-cup-green uppercase tracking-widest">
+                      {match.round === TournamentRound.GROUP && 'รอบแบ่งกลุ่ม'}
+                      {match.round === TournamentRound.TOP16 && 'รอบ 16 ทีม'}
+                      {match.round === TournamentRound.TOP8 && 'รอบ 8 ทีม'}
+                      {match.round === TournamentRound.TOP4 && 'รอบรองชนะเลิศ'}
+                      {match.round === TournamentRound.THIRD_PLACE && 'ชิงอันดับ 3'}
+                      {match.round === TournamentRound.FINAL && 'รอบชิงชนะเลิศ'}
+                    </p>
+                    <h3 className="text-giant font-black text-slate-800">{match.homeTeam} vs {match.awayTeam}</h3>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium text-gray-500">{format(new Date(match.startTime.seconds * 1000), 'dd/MM/yyyy HH:mm')}</span>
+                      <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                      <span className="bg-world-cup-green/10 text-world-cup-green px-3 py-1 rounded-full text-xs font-black">{match.handicap}</span>
+                    </div>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => deleteMatch(match.id)} 
+                    className="text-red-400 hover:text-red-600 p-2 hover:bg-red-50 rounded-xl transition-all"
+                  >
+                    <Trash2 className="w-6 h-6" />
+                  </button>
+                </div>
+
+                {match.status !== MatchStatus.FINISHED ? (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-center gap-6 py-4 bg-gray-50 rounded-2xl border border-gray-100">
+                      <div className="text-center space-y-2">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Home Score</label>
+                        <input id={`home-${match.id}`} type="number" placeholder="-" className="w-20 h-20 bg-white border-2 border-gray-200 rounded-2xl text-center text-giant font-black focus:border-world-cup-green focus:outline-none transition-all shadow-inner" />
+                      </div>
+                      <div className="text-giant font-black text-gray-300 self-end mb-4">:</div>
+                      <div className="text-center space-y-2">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Away Score</label>
+                        <input id={`away-${match.id}`} type="number" placeholder="-" className="w-20 h-20 bg-white border-2 border-gray-200 rounded-2xl text-center text-giant font-black focus:border-world-cup-green focus:outline-none transition-all shadow-inner" />
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <label className="text-xs font-black text-slate-500 uppercase tracking-widest block text-center">ใครชนะในราคาต่อรอง? (Handicap Winner)</label>
+                      <div className="grid grid-cols-3 gap-3">
+                        <button 
+                          onClick={() => setWinners({...winners, [match.id]: 'home'})}
+                          className={`py-4 rounded-xl text-sm font-black border-2 transition-all ${winners[match.id] === 'home' ? 'bg-world-cup-green border-world-cup-green text-white shadow-lg' : 'bg-white border-gray-200 text-gray-400 hover:border-world-cup-green/50'}`}
+                        >
+                          เจ้าบ้านชนะ
+                        </button>
+                        <button 
+                          onClick={() => setWinners({...winners, [match.id]: 'push'})}
+                          className={`py-4 rounded-xl text-sm font-black border-2 transition-all ${winners[match.id] === 'push' ? 'bg-amber-500 border-amber-500 text-white shadow-lg' : 'bg-white border-gray-200 text-gray-400 hover:border-amber-500/50'}`}
+                        >
+                          ยกเลิก/เสมอ
+                        </button>
+                        <button 
+                          onClick={() => setWinners({...winners, [match.id]: 'away'})}
+                          className={`py-4 rounded-xl text-sm font-black border-2 transition-all ${winners[match.id] === 'away' ? 'bg-blue-500 border-blue-500 text-white shadow-lg' : 'bg-white border-gray-200 text-gray-400 hover:border-blue-500/50'}`}
+                        >
+                          ทีมเยือนชนะ
+                        </button>
+                      </div>
+                    </div>
+
+                    {!calcStagedIds.includes(match.id) && (
+                      <button 
+                        onClick={() => {
+                          const h = (document.getElementById(`home-${match.id}`) as HTMLInputElement).value;
+                          const a = (document.getElementById(`away-${match.id}`) as HTMLInputElement).value;
+                          const manualWinner = winners[match.id];
+                          
+                          if (!h || !a) {
+                            alert('กรุณาใส่ผลสกอร์');
+                            return;
+                          }
+                          if (!manualWinner) {
+                            alert('กรุณาเลือกฝั่งที่ชนะในราคาต่อรอง');
+                            return;
+                          }
+                          
+                          setScores(match.id, Number(h), Number(a), manualWinner);
+                        }}
+                        className="w-full bg-slate-900 text-white py-5 rounded-2xl text-huge font-black flex items-center justify-center gap-3 shadow-xl hover:bg-black transition-all active:scale-[0.98]"
+                      >
+                        {calcLoading === match.id ? (
+                          <Loader2 className="w-6 h-6 animate-spin text-world-cup-green" />
+                        ) : (
+                          <>
+                            <CheckCircle className="w-6 h-6 text-world-cup-green" />
+                            คำนวณและสรุปคะแนน
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-4">
+                    <div className="flex justify-between items-center bg-gray-50 p-6 rounded-2xl border border-gray-200 shadow-inner">
+                      <div className="text-center">
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{match.homeTeam}</p>
+                        <p className="text-giant font-black text-slate-800">{match.homeScore}</p>
+                      </div>
+                      <div className="text-giant font-black text-gray-300">-</div>
+                      <div className="text-center">
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{match.awayTeam}</p>
+                        <p className="text-giant font-black text-slate-800">{match.awayScore}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-center gap-2 text-sm font-black italic">
+                       <span className="text-gray-400">ฝั่งชนะ:</span>
+                       <span className="text-world-cup-green uppercase tracking-tighter">
+                         {match.manualWinner === 'home' && `เจ้าบ้าน (${match.homeTeam})`}
+                         {match.manualWinner === 'away' && `ทีมเยือน (${match.awayTeam})`}
+                         {match.manualWinner === 'push' && 'ยกเลิก/เสมอ'}
+                       </span>
+                       <Check className="w-4 h-4 text-green-500" />
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        )}
     </>
   )}
 </div>
