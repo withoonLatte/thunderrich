@@ -195,10 +195,15 @@ const MatchList: React.FC = () => {
                       <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest mt-1">FINAL</span>
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center gap-2">
+                    <div className="flex flex-col items-center gap-1">
                       <span className="text-2xl text-gray-100 italic font-black tracking-[0.2em]">VS</span>
-                      <div className="bg-world-cup-green text-white text-sm font-black px-6 py-2 rounded-full shadow-xl shadow-world-cup-green/30 transform -rotate-1">
-                        {match.handicap}
+                      <div className="flex flex-col items-center relative -mt-1">
+                        <div className="bg-world-cup-green text-white text-[9px] font-black px-4 py-1 rounded-t-xl uppercase tracking-[0.1em] shadow-lg z-10">
+                          ราคาบอล
+                        </div>
+                        <div className="bg-white border-2 border-world-cup-green text-slate-800 text-xl font-black px-6 py-2 rounded-b-2xl rounded-tr-2xl shadow-xl transform -rotate-1 min-w-[90px] text-center -mt-0.5">
+                          {match.handicap || '0.0'}
+                        </div>
                       </div>
                     </div>
                   )}

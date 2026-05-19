@@ -1210,11 +1210,15 @@ const AdminDashboard: React.FC = () => {
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-medium text-gray-500">{format(new Date(match.startTime.seconds * 1000), 'dd/MM/yyyy HH:mm')}</span>
                       <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                      <span className="bg-world-cup-green/10 text-world-cup-green px-3 py-1 rounded-full text-xs font-black">{match.handicap}</span>
+                      <div className="flex flex-col">
+                        <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest text-center">ราคา</span>
+                        <span className="bg-world-cup-green/10 text-world-cup-green px-3 py-1 rounded-lg text-sm font-black border border-world-cup-green/20">{match.handicap}</span>
+                      </div>
                       {match.customWinScore !== undefined && match.customWinScore !== null && (
-                        <span className="bg-red-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase animate-pulse">
-                          คู่เอก (+{match.customWinScore} / {match.customLossScore})
-                        </span>
+                        <div className="bg-red-500 text-white px-2 py-1 rounded-lg text-[8px] font-black uppercase flex flex-col items-center justify-center min-w-[50px]">
+                          <span>คู่เอก</span>
+                          <span>(+{match.customWinScore} / -{match.customLossScore})</span>
+                        </div>
                       )}
                     </div>
                   </div>
