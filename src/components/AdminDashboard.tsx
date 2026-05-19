@@ -4,10 +4,11 @@ import { db } from '../lib/firebase';
 import { TournamentRound, Match, MatchStatus, User } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { calculateMatchResults } from '../lib/gameLogic';
-import { Trash2, Edit3, CheckCircle, PlusCircle, RefreshCw, Calendar, ChevronDown, Check, Camera, Loader2, Info, Zap } from 'lucide-react';
+import { Trash2, Edit3, CheckCircle, PlusCircle, RefreshCw, Calendar, ChevronDown, Check, Camera, Loader2, Info, Zap, Star, FileUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'motion/react';
 import { WORLD_CUP_2026_SCHEDULE, MockMatch } from '../data/worldCupSchedule';
+import * as XLSX from 'xlsx';
 
 const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -41,6 +42,7 @@ const AdminDashboard: React.FC = () => {
   const [winners, setWinners] = useState<Record<string, 'home' | 'away' | 'push'>>({});
   const [calcStagedIds, setCalcStagedIds] = useState<string[]>([]);
   const [batchLoading, setBatchLoading] = useState(false);
+  const [bulkText, setBulkText] = useState('');
 
   useEffect(() => {
     const unsubMatches = onSnapshot(query(collection(db, 'matches'), orderBy('startTime', 'desc')), (snap) => {
@@ -66,6 +68,168 @@ const AdminDashboard: React.FC = () => {
       unsubConfig();
     };
   }, []);
+
+  const handleBulkImportText = async () => {
+    if (!bulkText.trim()) return;
+
+    const lines = bulkText.split('\n').filter(l => l.trim().length > 0);
+    const processedLines = lines.map(line => {
+      let cols: string[] = [];
+      if (line.includes('|')) cols = line.split('|').map(s => s.trim());
+      else if (line.includes('\t')) cols = line.split('\t').map(s => s.trim());
+      
+      // Handle the user's specific 3-column format: [DateStr, Team1, Team2]
+      if (cols.length === 3) {
+        const [rawDate, team1, team2] = cols;
+        // Clean date: "Thursday, June 11, at 3:00 PM" -> "June 11, 2026 3:00 PM"
+        let cleanDateStr = rawDate.replace(/^[A-Za-z]+,\s+/, '').replace(/at\s+/g, '');
+        if (!cleanDateStr.includes('2026')) {
+           // If it's something like "June 11", we add ", 2026"
+           if (cleanDateStr.includes(',')) {
+             cleanDateStr = cleanDateStr.replace(',', ', 2026,');
+           } else {
+             // Split by space to insert year after month and day
+             const parts = cleanDateStr.split(' ');
+             if (parts.length >= 2) {
+                // June 11 3:00 PM -> June 11, 2026 3:00 PM
+                cleanDateStr = `${parts[0]} ${parts[1]}, 2026 ${parts.slice(2).join(' ')}`;
+             }
+           }
+        }
+        return [team1, team2, "0.0", cleanDateStr];
+      }
+      
+      if (cols.length >= 4) return cols;
+      return null;
+    }).filter(l => l !== null);
+
+    if (processedLines.length === 0) {
+      alert('ไม่พบข้อมูลที่ถูกต้อง (รูปแบบ: ทีมเหย้า | ทีมเยือน | ราคา | เวลา หรือ ตารางจาก Excel)');
+      return;
+    }
+
+    if (window.confirm(`ตรวจพบ ${processedLines.length} คู่ ต้องการเพิ่มทั้งหมดหรือไม่?`)) {
+      setBatchLoading(true);
+      try {
+        const batch = writeBatch(db);
+        const now = Date.now();
+        processedLines.forEach((cols, idx) => {
+          const [h, a, hc, st] = cols as string[];
+          if (h && a && hc && st) {
+            const matchId = `${h.replace(/\s+/g, '_')}_${a.replace(/\s+/g, '_')}_${now}_${idx}`;
+            const matchRef = doc(db, 'matches', matchId);
+            const startDate = new Date(st);
+            
+            batch.set(matchRef, {
+              id: matchId,
+              homeTeam: h,
+              awayTeam: a,
+              handicap: hc,
+              startTime: Timestamp.fromDate(startDate),
+              predictionDeadline: Timestamp.fromDate(new Date(startDate.getTime() - 3600000)),
+              round: TournamentRound.GROUP,
+              homeFlag: `https://flagcdn.com/w80/${getCountryCode(h)}.png`,
+              awayFlag: `https://flagcdn.com/w80/${getCountryCode(a)}.png`,
+              status: MatchStatus.SCHEDULED
+            });
+          }
+        });
+        await batch.commit();
+        setBulkText('');
+        alert('เพิ่มแมตช์สำเร็จ!');
+      } catch (err) {
+        console.error(err);
+        alert('เกิดข้อผิดพลาดในการนำเข้าข้อมูล: ' + (err as Error).message);
+      } finally {
+        setBatchLoading(false);
+      }
+    }
+  };
+
+  const handleExcelImport = async (file: File) => {
+    if (!file) return;
+    setBatchLoading(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+          
+          // Filter out header or empty rows
+          const rows = json.filter(row => row.length >= 3 && row[0] && row[1]);
+          
+          if (rows.length === 0) {
+            alert('ไม่พบข้อมูลในไฟล์ Excel (ต้องการอย่างน้อย 3-4 คอลัมน์)');
+            setBatchLoading(false);
+            return;
+          }
+
+          if (window.confirm(`ตรวจพบ ${rows.length} คู่ในไฟล์ Excel ต้องการเพิ่มทั้งหมดหรือไม่?`)) {
+            const batch = writeBatch(db);
+            const now = Date.now();
+            rows.forEach((row, idx) => {
+              let h, a, hc, st;
+              
+              if (row.length === 3) {
+                // Time, Team1, Team2
+                const [rawDate, team1, team2] = row.map(s => String(s || '').trim());
+                h = team1;
+                a = team2;
+                hc = "0.0";
+                
+                // Clean date: "Thursday, June 11, at 3:00 PM" -> "June 11, 2026 3:00 PM"
+                let cleanDateStr = rawDate.replace(/^[A-Za-z]+,\s+/, '').replace(/at\s+/g, '');
+                if (!cleanDateStr.includes('2026') && cleanDateStr.length > 5) {
+                   const parts = cleanDateStr.split(' ');
+                   if (parts.length >= 2) {
+                      cleanDateStr = `${parts[0]} ${parts[1]}, 2026 ${parts.slice(2).join(' ')}`;
+                   }
+                }
+                st = cleanDateStr;
+              } else {
+                [h, a, hc, st] = row.map(s => String(s || '').trim());
+              }
+
+              if (h && a && hc && st) {
+                const matchId = `${h.replace(/\s+/g, '_')}_${a.replace(/\s+/g, '_')}_${now}_${idx}`;
+                const matchRef = doc(db, 'matches', matchId);
+                const startDate = new Date(st);
+                
+                batch.set(matchRef, {
+                  id: matchId,
+                  homeTeam: h,
+                  awayTeam: a,
+                  handicap: hc,
+                  startTime: Timestamp.fromDate(startDate),
+                  predictionDeadline: Timestamp.fromDate(new Date(startDate.getTime() - 3600000)),
+                  round: TournamentRound.GROUP,
+                  homeFlag: `https://flagcdn.com/w80/${getCountryCode(h)}.png`,
+                  awayFlag: `https://flagcdn.com/w80/${getCountryCode(a)}.png`,
+                  status: MatchStatus.SCHEDULED
+                });
+              }
+            });
+            await batch.commit();
+            alert('นำเข้าจาก Excel สำเร็จ!');
+          }
+        } catch (err) {
+          console.error('XLSX parsing error:', err);
+          alert('รูปแบบไฟล์ไม่ถูกต้อง หรือ ไม่สามารถอ่านวันเวลาได้');
+        } finally {
+          setBatchLoading(false);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } catch (err) {
+      console.error(err);
+      alert('เกิดข้อผิดพลาดในการอ่านไฟล์');
+      setBatchLoading(false);
+    }
+  };
 
   const handleResetForKnockout = async () => {
     if (!window.confirm('คุณแน่ใจหรือไม่ว่าต้องการรีเซ็ตใบเหลือง/แดงและจำนวนการทายผิดสำหรับรอบ 16 ทีม? คะแนนสะสมจะยังคงอยู่')) return;
@@ -234,10 +398,22 @@ const AdminDashboard: React.FC = () => {
 
   const getCountryCode = (team: string) => {
     const codes: Record<string, string> = {
-      'Mexico': 'mx', 'USA': 'us', 'Canada': 'ca', 'England': 'gb',
+      'Mexico': 'mx', 'USA': 'us', 'United States': 'us', 'Canada': 'ca', 'England': 'gb',
       'Argentina': 'ar', 'France': 'fr', 'Brazil': 'br', 'Germany': 'de',
-      'Japan': 'jp', 'Spain': 'es', 'Thailand': 'th', 'South Korea': 'kr'
+      'Japan': 'jp', 'Spain': 'es', 'Thailand': 'th', 'South Korea': 'kr',
+      'South Africa': 'za', 'Paraguay': 'py', 'Qatar': 'qa', 'Switzerland': 'ch',
+      'Morocco': 'ma', 'Haiti': 'ht', 'Scotland': 'gb-sct', 'Australia': 'au',
+      'Netherlands': 'nl', 'Ivory Coast': 'ci', 'Ecuador': 'ec', 'Tunisia': 'tn',
+      'Cape Verde': 'cv', 'Belgium': 'be', 'Egypt': 'eg', 'Saudi Arabia': 'sa',
+      'Uruguay': 'uy', 'Iran': 'ir', 'New Zealand': 'nz', 'Senegal': 'sn',
+      'Norway': 'no', 'Algeria': 'dz', 'Austria': 'at', 'Jordan': 'jo',
+      'Portugal': 'pt', 'Croatia': 'hr', 'Ghana': 'gh', 'Panama': 'pa',
+      'Uzbekistan': 'uz', 'Colombia': 'co', 'Iraq': 'iq', 'Italy': 'it'
     };
+    
+    const teamLower = team.toUpperCase();
+    if (teamLower.includes('UEFA') || teamLower.includes('FIFA')) return 'un';
+    
     return codes[team] || team.substring(0, 2).toLowerCase();
   };
 
@@ -749,53 +925,47 @@ const AdminDashboard: React.FC = () => {
               <form onSubmit={handleAddMatch} className="wc-glass p-8 rounded-3xl space-y-6 border-t-4 border-world-cup-gold">
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center justify-between">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">เพิ่มครั้งละหลายคู่ (Bulk Import)</label>
-                    <button 
-                      type="button"
-                      onClick={() => {
-                        setHomeTeam('France');
-                        setAwayTeam('Senegal');
-                        setStartTime('2026-06-19T20:00');
-                        setPredictionDeadline('2026-06-19T19:00');
-                        setHandicap('0.5/1');
-                      }}
-                      className="text-[10px] font-black text-world-cup-gold uppercase underline"
-                    >
-                      ดูตัวอย่าง
-                    </button>
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">นำเข้าจาก Excel / Google Sheets</label>
+                    <div className="flex gap-4 items-center">
+                      <label className="cursor-pointer text-[10px] font-black text-blue-500 uppercase flex items-center gap-1 hover:underline">
+                        <FileUp className="w-3 h-3" /> เลือกไฟล์ .xlsx
+                        <input 
+                          type="file" 
+                          className="hidden" 
+                          accept=".xlsx, .xls, .csv" 
+                          onChange={(e) => e.target.files?.[0] && handleExcelImport(e.target.files[0])}
+                        />
+                      </label>
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          setBulkText("France | Senegal | -0.5 | 2026-06-19 20:00\nArgentina | Italy | +0.25 | 2026-06-20 18:00");
+                        }}
+                        className="text-[10px] font-black text-world-cup-gold uppercase underline"
+                      >
+                        ดูตัวอย่าง
+                      </button>
+                    </div>
                   </div>
-                  <textarea 
-                    placeholder="รูปแบบ: ทีมเหย้า | ทีมเยือน | ราคาต่อรอง | วันเวลา (YYYY-MM-DD HH:MM)&#10;ตัวอย่าง: Argentina | France | -0.5 | 2026-06-20 20:00"
-                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-xs font-bold focus:border-world-cup-green focus:outline-none min-h-[100px]"
-                    onBlur={async (e) => {
-                      const lines = e.target.value.split('\n').filter(l => l.trim().includes('|'));
-                      if (lines.length > 0 && window.confirm(`ตรวจพบ ${lines.length} คู่ ต้องการเพิ่มทั้งหมดหรือไม่?`)) {
-                        const batch = writeBatch(db);
-                        for (const line of lines) {
-                          const [h, a, hc, st] = line.split('|').map(s => s.trim());
-                          if (h && a && hc && st) {
-                            const matchId = `${h.replace(/\s+/g, '_')}_${a.replace(/\s+/g, '_')}_${Date.now()}`;
-                            const matchRef = doc(db, 'matches', matchId);
-                            batch.set(matchRef, {
-                              id: matchId,
-                              homeTeam: h,
-                              awayTeam: a,
-                              handicap: hc,
-                              startTime: Timestamp.fromDate(new Date(st)),
-                              predictionDeadline: Timestamp.fromDate(new Date(new Date(st).getTime() - 3600000)),
-                              round: TournamentRound.GROUP,
-                              homeFlag: `https://flagcdn.com/w80/${h.substring(0,2).toLowerCase()}.png`,
-                              awayFlag: `https://flagcdn.com/w80/${a.substring(0,2).toLowerCase()}.png`,
-                              status: 'pending'
-                            });
-                          }
-                        }
-                        await batch.commit();
-                        e.target.value = '';
-                        alert('เพิ่มแมตช์สำเร็จ!');
-                      }
-                    }}
-                  />
+                  <div className="space-y-3">
+                    <textarea 
+                      placeholder="Copy คอลัมน์จาก Excel แล้วมา 'วาง' (Paste) ที่นี่ได้เลยครับ..."
+                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-xs font-bold focus:border-world-cup-green focus:outline-none min-h-[120px]"
+                      value={bulkText}
+                      onChange={(e) => setBulkText(e.target.value)}
+                    />
+                    {bulkText.trim() && (
+                      <button 
+                        type="button"
+                        onClick={handleBulkImportText}
+                        disabled={batchLoading}
+                        className="w-full bg-slate-800 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-2"
+                      >
+                        {batchLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
+                        ดำเนินการเพิ่ม {bulkText.split('\n').filter(l => l.trim()).length} คู่
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-6">
@@ -987,28 +1157,23 @@ const AdminDashboard: React.FC = () => {
                 </div>
                   <button 
                     onClick={async () => {
-                      if (match.customWinScore !== undefined && match.customWinScore !== null) {
-                        if (window.confirm('ยกเลิกสถานะคู่เอก?')) {
-                          await updateDoc(doc(db, 'matches', match.id), {
-                            customWinScore: null,
-                            customLossScore: null
-                          });
-                        }
+                      const isSpecial = match.customWinScore !== undefined && match.customWinScore !== null;
+                      if (isSpecial) {
+                        await updateDoc(doc(db, 'matches', match.id), {
+                          customWinScore: null,
+                          customLossScore: null
+                        });
                       } else {
-                        const win = prompt('คะแนนทายถูกสำหรับคู่เอก:', '5');
-                        const loss = prompt('คะแนนทายผิดสำหรับคู่เอก (ใส่ลบด้วย):', '-3');
-                        if (win && loss) {
-                          await updateDoc(doc(db, 'matches', match.id), {
-                            customWinScore: Number(win),
-                            customLossScore: Number(loss)
-                          });
-                        }
+                        await updateDoc(doc(db, 'matches', match.id), {
+                          customWinScore: 5,
+                          customLossScore: -3
+                        });
                       }
                     }}
-                    className={`p-2 rounded-xl transition-all ${match.customWinScore !== undefined && match.customWinScore !== null ? 'bg-red-50 text-red-500 hover:bg-red-100' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}
-                    title="Toggle Special Match"
+                    className={`p-2 rounded-xl transition-all ${match.customWinScore !== undefined && match.customWinScore !== null ? 'bg-world-cup-gold text-white shadow-lg' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}
+                    title={match.customWinScore !== undefined && match.customWinScore !== null ? "ยกเลิกคู่เอก" : "ตั้งเป็นคู่เอก (+5/-3)"}
                   >
-                    <Info className="w-6 h-6" />
+                    <Star className={`w-6 h-6 ${match.customWinScore !== undefined && match.customWinScore !== null ? 'fill-current' : ''}`} />
                   </button>
                   <button 
                     onClick={() => deleteMatch(match.id)} 
