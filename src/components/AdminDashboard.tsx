@@ -4,7 +4,7 @@ import { db } from '../lib/firebase';
 import { TournamentRound, Match, MatchStatus, User } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { calculateMatchResults } from '../lib/gameLogic';
-import { Trash2, Edit3, CheckCircle, PlusCircle, RefreshCw, Calendar, ChevronDown, Check, Camera, Loader2, Info } from 'lucide-react';
+import { Trash2, Edit3, CheckCircle, PlusCircle, RefreshCw, Calendar, ChevronDown, Check, Camera, Loader2, Info, Zap } from 'lucide-react';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'motion/react';
 import { WORLD_CUP_2026_SCHEDULE, MockMatch } from '../data/worldCupSchedule';
@@ -487,6 +487,46 @@ const AdminDashboard: React.FC = () => {
             >
               {showAdd ? 'ยกเลิก' : <><PlusCircle className="w-3 h-3" /> เพิ่มแมตช์</>}
             </button>
+            <button 
+              onClick={async () => {
+                if (window.confirm('⚠️ ลบแมตช์ทั้งหมด? ข้อมูลการทายผลที่เกี่ยวข้องจะหายไปด้วย')) {
+                  const matchSnap = await getDocs(collection(db, 'matches'));
+                  const batch = writeBatch(db);
+                  matchSnap.forEach(d => batch.delete(d.ref));
+                  await batch.commit();
+                  alert('ลบข้อมูลแมตช์ทั้งหมดแล้ว');
+                }
+              }}
+              className="px-4 bg-red-100 text-red-500 rounded-2xl p-2 hover:bg-red-500 hover:text-white transition-all shadow-sm"
+              title="Delete All Matches"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+            <button 
+              onClick={async () => {
+                if (window.confirm('ต้องการเพิ่มแมตช์จริงจากตาราง World Cup 2026 หรือไม่?')) {
+                  const batch = writeBatch(db);
+                  for (const m of WORLD_CUP_2026_SCHEDULE) {
+                    const matchId = `${m.homeTeam.replace(/\s+/g, '_')}_${m.awayTeam.replace(/\s+/g, '_')}_${Date.now()}`;
+                    const matchRef = doc(db, 'matches', matchId);
+                    batch.set(matchRef, {
+                      id: matchId,
+                      ...m,
+                      startTime: Timestamp.fromDate(new Date(m.startTime)),
+                      predictionDeadline: Timestamp.fromDate(new Date(new Date(m.startTime).getTime() - 3600000)),
+                      status: 'pending',
+                      handicap: '0.0'
+                    });
+                  }
+                  await batch.commit();
+                  alert('เพิ่มข้อมูลแมตช์สำเร็จ!');
+                }
+              }}
+              className="px-4 bg-blue-100 text-blue-600 rounded-2xl p-2 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+              title="Add Real Schedule"
+            >
+              <Zap className="w-4 h-4" />
+            </button>
           </div>
         )}
       </div>
@@ -707,6 +747,57 @@ const AdminDashboard: React.FC = () => {
               </div>
 
               <form onSubmit={handleAddMatch} className="wc-glass p-8 rounded-3xl space-y-6 border-t-4 border-world-cup-gold">
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">เพิ่มครั้งละหลายคู่ (Bulk Import)</label>
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setHomeTeam('France');
+                        setAwayTeam('Senegal');
+                        setStartTime('2026-06-19T20:00');
+                        setPredictionDeadline('2026-06-19T19:00');
+                        setHandicap('0.5/1');
+                      }}
+                      className="text-[10px] font-black text-world-cup-gold uppercase underline"
+                    >
+                      ดูตัวอย่าง
+                    </button>
+                  </div>
+                  <textarea 
+                    placeholder="รูปแบบ: ทีมเหย้า | ทีมเยือน | ราคาต่อรอง | วันเวลา (YYYY-MM-DD HH:MM)&#10;ตัวอย่าง: Argentina | France | -0.5 | 2026-06-20 20:00"
+                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-xs font-bold focus:border-world-cup-green focus:outline-none min-h-[100px]"
+                    onBlur={async (e) => {
+                      const lines = e.target.value.split('\n').filter(l => l.trim().includes('|'));
+                      if (lines.length > 0 && window.confirm(`ตรวจพบ ${lines.length} คู่ ต้องการเพิ่มทั้งหมดหรือไม่?`)) {
+                        const batch = writeBatch(db);
+                        for (const line of lines) {
+                          const [h, a, hc, st] = line.split('|').map(s => s.trim());
+                          if (h && a && hc && st) {
+                            const matchId = `${h.replace(/\s+/g, '_')}_${a.replace(/\s+/g, '_')}_${Date.now()}`;
+                            const matchRef = doc(db, 'matches', matchId);
+                            batch.set(matchRef, {
+                              id: matchId,
+                              homeTeam: h,
+                              awayTeam: a,
+                              handicap: hc,
+                              startTime: Timestamp.fromDate(new Date(st)),
+                              predictionDeadline: Timestamp.fromDate(new Date(new Date(st).getTime() - 3600000)),
+                              round: TournamentRound.GROUP,
+                              homeFlag: `https://flagcdn.com/w80/${h.substring(0,2).toLowerCase()}.png`,
+                              awayFlag: `https://flagcdn.com/w80/${a.substring(0,2).toLowerCase()}.png`,
+                              status: 'pending'
+                            });
+                          }
+                        }
+                        await batch.commit();
+                        e.target.value = '';
+                        alert('เพิ่มแมตช์สำเร็จ!');
+                      }
+                    }}
+                  />
+                </div>
+
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-xs text-gray-500 font-bold uppercase tracking-widest">เจ้าบ้าน (Home)</label>

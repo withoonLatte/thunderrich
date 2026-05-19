@@ -12,19 +12,27 @@ export interface MockMatch {
 export const WORLD_CUP_2026_SCHEDULE: MockMatch[] = [
   {
     homeTeam: 'Mexico',
-    awayTeam: 'USA',
+    awayTeam: 'Ecuador',
     homeFlag: 'https://flagcdn.com/w80/mx.png',
-    awayFlag: 'https://flagcdn.com/w80/us.png',
+    awayFlag: 'https://flagcdn.com/w80/ec.png',
     round: TournamentRound.GROUP,
     startTime: '2026-06-11T20:00:00Z'
   },
   {
     homeTeam: 'Canada',
-    awayTeam: 'England',
+    awayTeam: 'Nigeria',
     homeFlag: 'https://flagcdn.com/w80/ca.png',
-    awayFlag: 'https://flagcdn.com/w80/gb.png',
+    awayFlag: 'https://flagcdn.com/w80/ng.png',
     round: TournamentRound.GROUP,
-    startTime: '2026-06-12T15:00:00Z'
+    startTime: '2026-06-12T18:00:00Z'
+  },
+  {
+    homeTeam: 'USA',
+    awayTeam: 'Austria',
+    homeFlag: 'https://flagcdn.com/w80/us.png',
+    awayFlag: 'https://flagcdn.com/w80/at.png',
+    round: TournamentRound.GROUP,
+    startTime: '2026-06-12T21:00:00Z'
   },
   {
     homeTeam: 'Argentina',
@@ -51,11 +59,27 @@ export const WORLD_CUP_2026_SCHEDULE: MockMatch[] = [
     startTime: '2026-06-15T19:00:00Z'
   },
   {
-    homeTeam: 'Thailand',
-    awayTeam: 'South Korea',
-    homeFlag: 'https://flagcdn.com/w80/th.png',
-    awayFlag: 'https://flagcdn.com/w80/kr.png',
+    homeTeam: 'England',
+    awayTeam: 'Italy',
+    homeFlag: 'https://flagcdn.com/w80/gb-eng.png',
+    awayFlag: 'https://flagcdn.com/w80/it.png',
     round: TournamentRound.GROUP,
     startTime: '2026-06-16T17:00:00Z'
+  },
+  {
+    homeTeam: 'France',
+    awayTeam: 'Senegal',
+    homeFlag: 'https://flagcdn.com/w80/fr.png',
+    awayFlag: 'https://flagcdn.com/w80/sn.png',
+    round: TournamentRound.GROUP,
+    startTime: '2026-06-19T02:00:00Z'
+  },
+  {
+    homeTeam: 'Iraq',
+    awayTeam: 'Norway',
+    homeFlag: 'https://flagcdn.com/w80/iq.png',
+    awayFlag: 'https://flagcdn.com/w80/no.png',
+    round: TournamentRound.GROUP,
+    startTime: '2026-06-19T05:00:00Z'
   }
 ];
