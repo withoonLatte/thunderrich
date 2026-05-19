@@ -3,6 +3,7 @@ import ProfileCard from './ProfileCard';
 import MatchList from './MatchList';
 import Webboard from './Webboard';
 import Leaderboard from './Leaderboard';
+import ScoreGraph from './ScoreGraph';
 
 const Dashboard: React.FC = () => {
   return (
@@ -10,6 +11,11 @@ const Dashboard: React.FC = () => {
       {/* Top Section: Profile */}
       <section>
         <ProfileCard />
+      </section>
+
+      {/* Stats Section */}
+      <section className="px-3">
+        <ScoreGraph />
       </section>
       
       {/* Middle Section: Predictions */}

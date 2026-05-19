@@ -833,7 +833,7 @@ const AdminDashboard: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-medium text-gray-500">{format(new Date(match.startTime.seconds * 1000), 'dd/MM/yyyy HH:mm')}</span>
                   <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                  <span className="bg-world-cup-green/10 text-world-cup-green px-3 py-1 rounded-full text-xs font-black">H: {match.handicap}</span>
+                  <span className="bg-world-cup-green/10 text-world-cup-green px-3 py-1 rounded-full text-xs font-black">{match.handicap}</span>
                 </div>
               </div>
             </div>
