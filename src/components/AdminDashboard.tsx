@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, Timestamp, deleteDoc, writeBatch, getDoc, getDocs } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, Timestamp, deleteDoc, writeBatch, getDoc, getDocs, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { TournamentRound, Match, MatchStatus, User } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -129,40 +129,52 @@ const AdminDashboard: React.FC = () => {
 
     try {
       const reader = new FileReader();
+      reader.onerror = () => {
+        alert('เกิดข้อผิดพลาดในการอ่านไฟล์');
+        setConfigSaving(false);
+      };
       reader.onload = async (e) => {
         const img = new Image();
-        img.onload = async () => {
-          const canvas = document.createElement('canvas');
-          // For background we want better quality/size than profile photos
-          const MAX_SIZE = type === 'background' ? 1200 : 400;
-          let width = img.width;
-          let height = img.height;
-
-          if (width > height) {
-            if (width > MAX_SIZE) {
-              height *= MAX_SIZE / width;
-              width = MAX_SIZE;
-            }
-          } else {
-            if (height > MAX_SIZE) {
-              width *= MAX_SIZE / height;
-              height = MAX_SIZE;
-            }
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
-
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-          
-          await updateDoc(doc(db, 'settings', 'app_config'), {
-            [type === 'logo' ? 'logoUrl' : 'backgroundUrl']: dataUrl,
-            lastUpdated: Timestamp.now()
-          });
-          
+        img.onerror = () => {
+          alert('เกิดข้อผิดพลาดในการโหลดรูปภาพ');
           setConfigSaving(false);
+        };
+        img.onload = async () => {
+          try {
+            const canvas = document.createElement('canvas');
+            const MAX_SIZE = type === 'background' ? 1200 : 400;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > MAX_SIZE) {
+                height *= MAX_SIZE / width;
+                width = MAX_SIZE;
+              }
+            } else {
+              if (height > MAX_SIZE) {
+                width *= MAX_SIZE / height;
+                height = MAX_SIZE;
+              }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(img, 0, 0, width, height);
+
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            
+            await setDoc(doc(db, 'settings', 'app_config'), {
+              [type === 'logo' ? 'logoUrl' : 'backgroundUrl']: dataUrl,
+              lastUpdated: Timestamp.now()
+            }, { merge: true });
+          } catch (err) {
+            console.error('Save error:', err);
+            alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+          } finally {
+            setConfigSaving(false);
+          }
         };
         img.src = e.target?.result as string;
       };
@@ -174,13 +186,13 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const handeResetConfig = async () => {
+  const handleResetConfig = async () => {
     if (window.confirm('คืนค่าเริ่มต้น Logo และ Background?')) {
-      await updateDoc(doc(db, 'settings', 'app_config'), {
+      await setDoc(doc(db, 'settings', 'app_config'), {
         logoUrl: null,
         backgroundUrl: null,
         lastUpdated: Timestamp.now()
-      });
+      }, { merge: true });
     }
   };
 
@@ -466,7 +478,7 @@ const AdminDashboard: React.FC = () => {
 
             <div className="pt-4 flex flex-col gap-3">
               <button 
-                onClick={handeResetConfig}
+                onClick={handleResetConfig}
                 className="w-full py-4 text-xs font-bold text-gray-400 uppercase tracking-widest hover:text-red-500 transition-all border border-gray-100 rounded-2xl"
               >
                 คืนค่าเริ่มต้นทั้งหมด
