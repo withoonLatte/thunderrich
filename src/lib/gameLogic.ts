@@ -66,15 +66,21 @@ export const calculateMatchResults = async (matchId: string) => {
   const predictionsSnap = await getDocs(query(collection(db, 'predictions'), where('matchId', '==', matchId)));
   const batch = writeBatch(db);
 
-  // 2. Determine match outcome with handicap
-  // Formula: Diff = Home Score - Away Score + Handicap
-  const numericHandicap = parseHandicap(match.handicap);
-  const handicapDiff = match.homeScore - match.awayScore + numericHandicap;
-  
+  // 2. Determine match outcome
+  // Priority: manualWinner > Automatic calculation
   let matchWinner: 'home' | 'away' | 'push';
-  if (handicapDiff > 0) matchWinner = 'home';
-  else if (handicapDiff < 0) matchWinner = 'away';
-  else matchWinner = 'push';
+  
+  if (match.manualWinner) {
+    matchWinner = match.manualWinner;
+  } else {
+    // Formula: Diff = Home Score - Away Score + Handicap
+    const numericHandicap = parseHandicap(match.handicap);
+    const handicapDiff = match.homeScore - match.awayScore + numericHandicap;
+    
+    if (handicapDiff > 0) matchWinner = 'home';
+    else if (handicapDiff < 0) matchWinner = 'away';
+    else matchWinner = 'push';
+  }
 
   const roundScores = SCORING_MATRIX[match.round];
 

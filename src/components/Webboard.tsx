@@ -48,45 +48,44 @@ const Webboard: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-[600px] wc-glass rounded-3xl overflow-hidden border border-white/5">
-      <div className="p-4 border-b border-white/5 bg-white/5 flex items-center justify-between">
-        <h3 className="text-xs text-world-cup-gold uppercase tracking-[0.2em] flex items-center gap-2">
-          <MessageSquare className="w-4 h-4" /> ห้องแชทส่วนรวม
+    <div className="flex flex-col h-[700px] wc-glass rounded-[2rem] overflow-hidden border border-gray-100 shadow-2xl">
+      <div className="p-6 border-b border-gray-100 bg-white/50 backdrop-blur-md flex items-center justify-between">
+        <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-3">
+          <MessageSquare className="w-5 h-5 text-world-cup-green" /> เว็บบอร์ดแฟนบอล
         </h3>
-        <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 bg-world-cup-green rounded-full animate-pulse shadow-[0_0_8px_#1DB954]"></div>
-          <span className="text-[10px] text-gray-500">สด</span>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 bg-world-cup-green rounded-full animate-pulse shadow-[0_0_12px_rgba(34,197,94,0.6)]"></div>
+          <span className="text-xs font-black text-world-cup-green uppercase tracking-tighter">ONLINE</span>
         </div>
       </div>
       
       <div 
         ref={scrollRef}
-        className="flex-1 overflow-y-auto p-5 space-y-6 no-scrollbar scrolling-touch"
+        className="flex-1 overflow-y-auto p-6 space-y-8 no-scrollbar bg-gray-50/30"
       >
         {messages.map((msg) => {
           const isMe = msg.userId === user?.uid;
-          const initials = msg.displayName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+          const initials = msg.displayName ? msg.displayName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : '??';
           
           return (
-            <div key={msg.id} className={`flex gap-3 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-              {/* Avatar Placeholder */}
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] shrink-0 shadow-lg ${
-                isMe ? 'bg-world-cup-green text-white' : 'bg-white/10 text-gray-400 border border-white/10'
+            <div key={msg.id} className={`flex gap-4 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+              <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-xs font-black shrink-0 shadow-lg transform rotate-3 ${
+                isMe ? 'bg-slate-900 text-white' : 'bg-white text-world-cup-green border-2 border-gray-100'
               }`}>
                 {initials}
               </div>
 
-              <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[80%]`}>
-                <div className="flex items-center gap-2 mb-1 px-1">
-                   <span className="text-[10px] text-gray-500 uppercase tracking-wider">{msg.displayName}</span>
-                   <span className="text-[9px] text-gray-600">
+              <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[85%] animate-in fade-in slide-in-from-bottom-2`}>
+                <div className="flex items-center gap-3 mb-2 px-1">
+                   <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">{msg.displayName}</span>
+                   <span className="text-[10px] font-bold text-gray-300">
                      {msg.createdAt ? format(new Date(msg.createdAt.seconds * 1000), 'HH:mm') : '...'}
                    </span>
                 </div>
-                <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-xl ${
+                <div className={`px-6 py-4 rounded-3xl text-sm font-medium leading-relaxed shadow-xl border ${
                   isMe 
-                    ? 'bg-world-cup-green text-white rounded-tr-none' 
-                    : 'bg-white/10 text-gray-100 rounded-tl-none border border-white/5'
+                    ? 'bg-world-cup-green text-white rounded-tr-none border-world-cup-green' 
+                    : 'bg-white text-slate-700 rounded-tl-none border-gray-100'
                 }`}>
                   {msg.content}
                 </div>
@@ -96,20 +95,20 @@ const Webboard: React.FC = () => {
         })}
       </div>
 
-      <div className="p-4 bg-blue-950/40 border-t border-white/10 backdrop-blur-xl">
-        <form onSubmit={handleSubmit} className="flex gap-3">
+      <div className="p-5 bg-white border-t border-gray-100">
+        <form onSubmit={handleSubmit} className="flex gap-4">
           <input 
             type="text"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="พิมพ์ข้อความของคุณ..."
-            className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-world-cup-green/50 transition-all placeholder:text-gray-600"
+            placeholder="คุยอะไรหน่อย..."
+            className="flex-1 bg-gray-50 border-2 border-gray-100 rounded-2xl px-6 py-5 text-base font-bold text-slate-800 focus:outline-none focus:border-world-cup-green focus:bg-white transition-all placeholder:text-gray-300"
           />
           <button 
             type="submit"
-            className="bg-world-cup-green text-white p-4 rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-lg shadow-world-cup-green/30 flex items-center justify-center shrink-0"
+            className="bg-world-cup-green text-white px-6 rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-world-cup-green/30 flex items-center justify-center shrink-0"
           >
-            <Send className="w-6 h-6" />
+            <Send className="w-7 h-7" />
           </button>
         </form>
       </div>

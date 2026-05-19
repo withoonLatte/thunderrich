@@ -82,31 +82,31 @@ const ProfileCard: React.FC = () => {
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="wc-glass rounded-3xl p-6 relative overflow-hidden border-t-2 border-world-cup-green/30"
+      className="wc-glass rounded-[2rem] p-8 relative overflow-hidden border-t-8 border-world-cup-green shadow-2xl"
     >
-      <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-world-cup-green/20 rounded-full blur-2xl"></div>
+      <div className="absolute top-0 right-0 -mt-8 -mr-8 w-40 h-40 bg-world-cup-green/10 rounded-full blur-3xl"></div>
       
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between mb-10">
+        <div className="flex items-center gap-6">
           <div className="relative group cursor-pointer" onClick={handlePhotoClick}>
-            <div className="w-14 h-14 rounded-full border-2 border-world-cup-green p-0.5 overflow-hidden bg-white/5">
+            <div className="w-20 h-20 rounded-3xl border-4 border-world-cup-green p-1 overflow-hidden bg-gray-50 transform group-hover:scale-105 transition-transform duration-300">
               {isUploading ? (
-                <div className="w-full h-full flex items-center justify-center bg-black/50">
-                  <Loader2 className="w-6 h-6 text-world-cup-green animate-spin" />
+                <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                  <Loader2 className="w-8 h-8 text-world-cup-green animate-spin" />
                 </div>
               ) : (
                 <img 
-                  src={user.photoURL || 'https://via.placeholder.com/150'} 
+                  src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}&background=22C55E&color=fff&bold=true`} 
                   alt={user.displayName} 
-                  className="w-full h-full rounded-full object-cover"
+                  className="w-full h-full rounded-2xl object-cover"
                 />
               )}
             </div>
-            <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-              <Camera className="w-5 h-5 text-white/80" />
+            <div className="absolute inset-0 bg-black/40 rounded-3xl opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+              <Camera className="w-6 h-6 text-white" />
             </div>
-            <div className="absolute -bottom-1 -right-1 bg-world-cup-gold text-blue-900 text-[10px] px-1.5 py-0.5 rounded-md shadow-lg z-10">
-              #{user.role === 'admin' ? 'ADM' : 'PRO'}
+            <div className="absolute -bottom-2 -right-2 bg-slate-900 text-white text-[10px] font-black tracking-widest px-2.5 py-1.5 rounded-xl shadow-xl z-10 border border-white/20">
+              {user.role === 'admin' ? 'ADMIN' : 'PLAYER'}
             </div>
             <input 
               type="file" 
@@ -116,64 +116,69 @@ const ProfileCard: React.FC = () => {
               className="hidden" 
             />
           </div>
-          <div className="flex-1">
-            <h2 className="text-lg text-white italic tracking-tight">{user.displayName}</h2>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <Trophy className="w-3.5 h-3.5 text-world-cup-gold" />
-              <span className="text-world-cup-gold text-xl italic">{user.points} <small className="text-[10px] uppercase opacity-70">คะแนน</small></span>
+          <div className="flex-1 space-y-1">
+            <h2 className="text-2xl text-slate-800 italic font-black uppercase tracking-tighter leading-none">{user.displayName}</h2>
+            <div className="flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-world-cup-gold" />
+              <span className="text-giant text-world-cup-gold italic font-black leading-none">{user.points} <small className="text-xs uppercase opacity-80 not-italic font-bold tracking-widest ml-1">POINTS</small></span>
             </div>
           </div>
         </div>
 
         <div className="flex flex-col items-end">
-          <div className="flex gap-1.5">
+          <div className="flex gap-2">
             {hasYellow && (
-              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-6 h-8 bg-yellow-400 rounded-sm shadow-lg shadow-yellow-400/20 flex items-center justify-center">
-                <span className="text-[8px] text-yellow-900">🟨</span>
+              <motion.div initial={{ scale: 0, rotate: -15 }} animate={{ scale: 1, rotate: 0 }} className="w-8 h-11 bg-yellow-400 rounded-sm shadow-[0_4px_12px_rgba(250,204,21,0.4)] flex items-center justify-center border-b-2 border-yellow-600">
+                <span className="text-sm font-black text-yellow-900">🟨</span>
               </motion.div>
             )}
             {hasRed && (
-              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-6 h-8 bg-red-600 rounded-sm shadow-lg shadow-red-600/20 flex items-center justify-center">
-                <span className="text-[8px] text-white">🟥</span>
+              <motion.div initial={{ scale: 0, rotate: 15 }} animate={{ scale: 1, rotate: 0 }} className="w-8 h-11 bg-red-600 rounded-sm shadow-[0_4px_12px_rgba(220,38,38,0.4)] flex items-center justify-center border-b-2 border-red-800">
+                <span className="text-sm font-black text-white">🟥</span>
               </motion.div>
             )}
           </div>
         </div>
       </div>
 
-      <div className="space-y-3">
-        <div className="flex justify-between items-end">
-          <span className="text-[10px] text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
-            <AlertTriangle className="w-3 h-3 text-world-cup-green" /> เกจคะแนนผิด
+      <div className="space-y-4">
+        <div className="flex justify-between items-end px-1">
+          <span className="text-xs font-black text-gray-400 uppercase tracking-[0.15em] flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-world-cup-green" /> คะแนนความผิด
           </span>
-          <span className="text-xs text-white tracking-widest">{wrongCount}/24</span>
+          <span className="text-base font-black text-slate-700 tracking-widest">{wrongCount}<span className="text-gray-300 mx-1">/</span>24</span>
         </div>
         
-        <div className="h-4 bg-white/5 rounded-full p-1 overflow-hidden">
+        <div className="h-6 bg-gray-100 rounded-full p-1.5 overflow-hidden shadow-inner border border-gray-200">
           <motion.div 
             initial={{ width: 0 }}
             animate={{ width: `${progressPercent}%` }}
-            className={`h-full rounded-full transition-colors duration-500 ${
-              wrongCount >= 24 ? 'bg-red-600 shadow-[0_0_15px_rgba(220,38,38,0.5)]' : 
-              wrongCount >= 12 ? 'bg-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.5)]' : 
+            className={`h-full rounded-full transition-colors duration-700 ${
+              wrongCount >= 24 ? 'bg-red-600' : 
+              wrongCount >= 12 ? 'bg-yellow-400' : 
               'bg-world-cup-green'
-            }`}
+            } shadow-[0_0_12px_rgba(0,0,0,0.1)]`}
           />
         </div>
 
         {isBanned && (
-          <div className="mt-4 bg-red-600/20 border border-red-600/30 rounded-2xl p-4 flex items-center gap-3">
-            <div className="p-2 bg-red-600 rounded-lg">
-              <Info className="w-5 h-5 text-white" />
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="mt-6 bg-red-50 border-2 border-red-100 rounded-3xl p-5 flex items-center gap-5 shadow-sm"
+          >
+            <div className="p-3 bg-red-600 rounded-2xl shadow-lg shadow-red-600/30">
+              <Info className="w-6 h-6 text-white" />
             </div>
             <div>
-              <p className="text-[10px] leading-tight text-red-200 uppercase tracking-wider mb-0.5">ถูกแบนจากการทำนาย</p>
-              <p className="text-xs text-white">ถูกแบนเป็นจำนวน {user.bannedMatchIds.length} แมตช์</p>
+              <p className="text-xs font-black text-red-600 uppercase tracking-widest leading-none mb-1.5">PENALIZED / ถูกแบน</p>
+              <p className="text-base font-bold text-slate-800">งดทำนายผลจำนวน {user.bannedMatchIds.length} แมตช์</p>
             </div>
-          </div>
+          </motion.div>
         )}
       </div>
     </motion.div>
+
   );
 };
 

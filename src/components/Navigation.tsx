@@ -15,42 +15,45 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 p-4 z-50">
-      <div className="max-w-md mx-auto wc-glass rounded-3xl p-2 flex justify-around items-center shadow-2xl shadow-black/50 border border-white/5 backdrop-blur-2xl">
+    <nav className="fixed bottom-0 left-0 right-0 p-5 z-50">
+      <div className="max-w-md mx-auto bg-white/90 backdrop-blur-2xl rounded-[2.5rem] p-3 flex justify-around items-center shadow-[0_20px_50px_rgba(0,0,0,0.1)] border-t border-gray-50">
         <button 
           onClick={() => { setActiveTab('dashboard'); scrollToTop(); }}
-          className={`flex flex-col items-center gap-1 p-2 transition-all ${activeTab === 'dashboard' ? 'text-world-cup-green scale-110' : 'text-gray-500'}`}
+          className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl transition-all ${activeTab === 'dashboard' ? 'bg-world-cup-green/10 text-world-cup-green scale-105' : 'text-slate-400'}`}
         >
           <Home className="w-6 h-6" />
-          <span className="text-[8px] uppercase tracking-widest">หน้าแรก</span>
+          <span className="text-[10px] font-black uppercase tracking-widest">STADIUM</span>
         </button>
 
         <button 
-          onClick={() => setActiveTab('dashboard')} // In a stack, it's just the dash
-          className="flex flex-col items-center gap-1 p-2 text-gray-500"
+          onClick={() => {
+            const webboardEl = document.getElementById('webboard-section');
+            if (webboardEl) webboardEl.scrollIntoView({ behavior: 'smooth' });
+          }}
+          className="flex flex-col items-center gap-1.5 p-3 text-slate-400 hover:text-world-cup-green transition-colors"
         >
           <MessageSquare className="w-6 h-6" />
-          <span className="text-[8px] uppercase tracking-widest">พูดคุย</span>
+          <span className="text-[10px] font-black uppercase tracking-widest">CHAT</span>
         </button>
 
-        <div className="w-px h-8 bg-white/10"></div>
+        <div className="w-px h-10 bg-gray-100"></div>
 
         {user?.role === 'admin' && (
            <button 
             onClick={() => setActiveTab('admin')}
-            className={`flex flex-col items-center gap-1 p-2 transition-all ${activeTab === 'admin' ? 'text-orange-400 scale-110' : 'text-gray-500'}`}
+            className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl transition-all ${activeTab === 'admin' ? 'bg-orange-50 text-orange-400 scale-105' : 'text-slate-400'}`}
           >
             <Settings className="w-6 h-6" />
-            <span className="text-[8px] uppercase tracking-widest">จัดการ</span>
+            <span className="text-[10px] font-black uppercase tracking-widest">ADMIN</span>
           </button>
         )}
 
         <button 
           onClick={logout}
-          className="flex flex-col items-center gap-1 p-2 text-red-500 hover:text-red-400"
+          className="flex flex-col items-center gap-1.5 p-3 text-red-400 hover:text-red-600 transition-colors"
         >
           <LogOut className="w-6 h-6" />
-          <span className="text-[8px] uppercase tracking-widest">ออก</span>
+          <span className="text-[10px] font-black uppercase tracking-widest">QUIT</span>
         </button>
       </div>
     </nav>

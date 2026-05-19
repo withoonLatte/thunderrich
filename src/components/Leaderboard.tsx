@@ -30,38 +30,38 @@ const Leaderboard: React.FC = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
-            className={`flex items-center gap-4 p-4 rounded-2xl border transition-all ${
+            className={`flex items-center gap-5 p-5 rounded-3xl border transition-all ${
               index === 0 
-                ? 'bg-world-cup-gold/10 border-world-cup-gold/30 shadow-lg shadow-world-cup-gold/5' 
-                : 'wc-glass border-white/5'
+                ? 'bg-world-cup-gold border-world-cup-gold shadow-xl shadow-world-cup-gold/20 scale-[1.02]' 
+                : 'wc-glass border-gray-100 shadow-sm'
             }`}
           >
-            <div className="w-8 text-center italic text-lg text-gray-500">
+            <div className={`w-10 text-center italic text-2xl font-black ${index === 0 ? 'text-white/80' : 'text-gray-200'}`}>
               {index + 1}
             </div>
             
             <div className="relative">
               <img 
-                src={u.photoURL || 'https://via.placeholder.com/150'} 
+                src={u.photoURL || `https://ui-avatars.com/api/?name=${u.displayName}&background=22C55E&color=fff&bold=true`} 
                 alt={u.displayName} 
-                className={`w-10 h-10 rounded-full ${index === 0 ? 'ring-2 ring-world-cup-gold ring-offset-2 ring-offset-world-cup-blue' : ''}`}
+                className={`w-12 h-12 rounded-2xl object-cover ${index === 0 ? 'border-2 border-white' : 'border border-gray-100'}`}
               />
               {Icon && (
-                <div className={`absolute -top-2 -right-2 ${iconColor}`}>
+                <div className={`absolute -top-3 -right-3 p-1.5 rounded-xl shadow-xl ${index === 0 ? 'bg-white text-world-cup-gold' : 'bg-gray-50 ' + iconColor}`}>
                   <Icon className="w-4 h-4 fill-current" />
                 </div>
               )}
             </div>
 
             <div className="flex-1 min-w-0">
-              <p className={`truncate text-sm ${index === 0 ? 'text-white' : 'text-gray-300'}`}>{u.displayName}</p>
-              <p className="text-[10px] text-gray-500 uppercase tracking-wider">
-                ทายผิด {u.round1_wrong_count}/24 ครั้ง
+              <p className={`truncate text-base font-black uppercase tracking-tighter ${index === 0 ? 'text-white' : 'text-slate-800'}`}>{u.displayName}</p>
+              <p className={`text-[10px] font-bold uppercase tracking-widest ${index === 0 ? 'text-white/60' : 'text-gray-400'}`}>
+                ERRORS: {u.round1_wrong_count}/24
               </p>
             </div>
 
-            <div className={`text-right ${index === 0 ? 'text-world-cup-gold' : 'text-world-cup-green'} text-lg italic tracking-tighter`}>
-              {u.points} คะแนน
+            <div className={`text-right ${index === 0 ? 'text-white' : 'text-world-cup-green'} text-huge italic font-black`}>
+              {u.points} <span className="text-[10px] uppercase font-bold not-italic opacity-60">PTS</span>
             </div>
           </motion.div>
         );

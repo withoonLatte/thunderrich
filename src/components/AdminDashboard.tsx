@@ -12,8 +12,12 @@ const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
   const [matches, setMatches] = useState<Match[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [activeAdminTab, setActiveAdminTab] = useState<'matches' | 'players'>('matches');
+  const [activeAdminTab, setActiveAdminTab] = useState<'matches' | 'players' | 'custom'>('matches');
   const [showAdd, setShowAdd] = useState(false);
+  
+  // App Config State
+  const [appConfig, setAppConfig] = useState<{ logoUrl?: string, backgroundUrl?: string } | null>(null);
+  const [configSaving, setConfigSaving] = useState(false);
   
   // Match Form State
   const [homeTeam, setHomeTeam] = useState('');
@@ -21,11 +25,14 @@ const AdminDashboard: React.FC = () => {
   const [handicap, setHandicap] = useState('0');
   const [round, setRound] = useState<TournamentRound>(TournamentRound.GROUP);
   const [startTime, setStartTime] = useState('');
+  const [predictionDeadline, setPredictionDeadline] = useState('');
   
   const [calcLoading, setCalcLoading] = useState<string | null>(null);
   const [resetLoading, setResetLoading] = useState(false);
+  const [hardResetLoading, setHardResetLoading] = useState(false);
   const [showMockList, setShowMockList] = useState(false);
   const [uploadingUid, setUploadingUid] = useState<string | null>(null);
+  const [winnerSelections, setWinnerSelections] = useState<Record<string, 'home' | 'away' | 'push'>>({});
 
   useEffect(() => {
     const unsubMatches = onSnapshot(query(collection(db, 'matches'), orderBy('startTime', 'desc')), (snap) => {
@@ -39,9 +46,16 @@ const AdminDashboard: React.FC = () => {
       setUsers(sortedUsers);
     });
 
+    const unsubConfig = onSnapshot(doc(db, 'settings', 'app_config'), (snap) => {
+      if (snap.exists()) {
+        setAppConfig(snap.data() as any);
+      }
+    });
+
     return () => {
       unsubMatches();
       unsubUsers();
+      unsubConfig();
     };
   }, []);
 
@@ -66,6 +80,110 @@ const AdminDashboard: React.FC = () => {
     alert('รีเซ็ตใบเหลือง/แดงและจำนวนการทายผิดสำหรับรอบน็อกเอาต์เรียบร้อยแล้ว!');
   };
 
+  const handleHardReset = async () => {
+    if (!window.confirm('⚠️ คำเตือน: คุณแน่ใจหรือไม่ว่าต้องการล้างข้อมูลทั้งหมด? (แมตช์, การทายผล, ข้อความ และผู้เล่น) กู้คืนไม่ได้!')) return;
+    if (!window.confirm('ยืนยันอีกครั้ง: ทุกอย่างจะหายไป ยกเว้นบัญชีแอดมินของคุณเอง')) return;
+
+    setHardResetLoading(true);
+    try {
+      const batch = writeBatch(db);
+
+      // 1. Delete Predictions
+      const predSnap = await getDocs(collection(db, 'predictions'));
+      predSnap.forEach(d => batch.delete(d.ref));
+
+      // 2. Delete Webboard messages
+      const boardSnap = await getDocs(collection(db, 'webboard'));
+      boardSnap.forEach(d => batch.delete(d.ref));
+
+      // 3. Delete Matches
+      const matchSnap = await getDocs(collection(db, 'matches'));
+      matchSnap.forEach(d => batch.delete(d.ref));
+
+      // 4. Delete Users (Except current)
+      const userSnap = await getDocs(collection(db, 'users'));
+      userSnap.forEach(d => {
+        if (d.id !== user?.uid) {
+          batch.delete(d.ref);
+        } else {
+          // Reset own profile score if needed, but maybe leave it? 
+          // User asked to clear "user demo", so clearing others is enough.
+          batch.update(d.ref, { points: 0, round1_wrong_count: 0, yellow_cards: 0, red_cards: 0, bannedMatchIds: [] });
+        }
+      });
+
+      await batch.commit();
+      alert('ล้างข้อมูลทั้งหมดเรียบร้อยแล้ว');
+    } catch (err: any) {
+      console.error(err);
+      alert('เกิดข้อผิดพลาดในการล้างข้อมูล: ' + err.message);
+    } finally {
+      setHardResetLoading(false);
+    }
+  };
+
+  const handleConfigUpload = async (type: 'logo' | 'background', file: File) => {
+    if (!file) return;
+    
+    setConfigSaving(true);
+
+    try {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const img = new Image();
+        img.onload = async () => {
+          const canvas = document.createElement('canvas');
+          // For background we want better quality/size than profile photos
+          const MAX_SIZE = type === 'background' ? 1200 : 400;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_SIZE) {
+              height *= MAX_SIZE / width;
+              width = MAX_SIZE;
+            }
+          } else {
+            if (height > MAX_SIZE) {
+              width *= MAX_SIZE / height;
+              height = MAX_SIZE;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          
+          await updateDoc(doc(db, 'settings', 'app_config'), {
+            [type === 'logo' ? 'logoUrl' : 'backgroundUrl']: dataUrl,
+            lastUpdated: Timestamp.now()
+          });
+          
+          setConfigSaving(false);
+        };
+        img.src = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('Config upload error:', err);
+      alert('เกิดข้อผิดพลาดในการอัปโหลด');
+      setConfigSaving(false);
+    }
+  };
+
+  const handeResetConfig = async () => {
+    if (window.confirm('คืนค่าเริ่มต้น Logo และ Background?')) {
+      await updateDoc(doc(db, 'settings', 'app_config'), {
+        logoUrl: null,
+        backgroundUrl: null,
+        lastUpdated: Timestamp.now()
+      });
+    }
+  };
+
   const handleAddMatch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!homeTeam || !awayTeam || !startTime) {
@@ -74,6 +192,7 @@ const AdminDashboard: React.FC = () => {
     }
 
     const date = new Date(startTime);
+    const deadlineDate = predictionDeadline ? new Date(predictionDeadline) : date;
     
     await addDoc(collection(db, 'matches'), {
       homeTeam,
@@ -81,8 +200,9 @@ const AdminDashboard: React.FC = () => {
       homeFlag: `https://flagcdn.com/w80/${getCountryCode(homeTeam)}.png`, 
       awayFlag: `https://flagcdn.com/w80/${getCountryCode(awayTeam)}.png`,
       handicap: handicap,
-      round,
+      round: round,
       startTime: Timestamp.fromDate(date),
+      predictionDeadline: Timestamp.fromDate(deadlineDate),
       status: MatchStatus.SCHEDULED
     } as any);
 
@@ -104,6 +224,7 @@ const AdminDashboard: React.FC = () => {
     setAwayTeam(m.awayTeam);
     setRound(m.round);
     setStartTime(format(new Date(m.startTime), "yyyy-MM-dd'T'HH:mm"));
+    setPredictionDeadline(format(new Date(m.startTime), "yyyy-MM-dd'T'HH:mm"));
     setShowMockList(false);
   };
 
@@ -179,11 +300,12 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const setScores = async (matchId: string, home: number, away: number) => {
+  const setScores = async (matchId: string, home: number, away: number, manualWinner?: 'home' | 'away' | 'push') => {
     await updateDoc(doc(db, 'matches', matchId), {
       homeScore: home,
       awayScore: away,
-      status: MatchStatus.FINISHED
+      status: MatchStatus.FINISHED,
+      manualWinner: manualWinner || null
     });
     
     setCalcLoading(matchId);
@@ -196,20 +318,26 @@ const AdminDashboard: React.FC = () => {
       <div className="flex flex-col gap-4">
         <div className="flex justify-between items-center text-world-cup-green">
           <div className="flex items-center gap-2">
-            <h2 className="text-xl italic font-black uppercase tracking-tighter">ADMIN PANEL</h2>
+            <h2 className="text-2xl italic font-black uppercase tracking-tighter">ADMIN PANEL</h2>
           </div>
-          <div className="bg-white/5 p-1 rounded-lg flex">
+          <div className="bg-gray-100 p-1 rounded-xl flex shadow-sm">
             <button 
               onClick={() => setActiveAdminTab('matches')}
-              className={`px-3 py-1.5 rounded-md text-[10px] uppercase tracking-widest transition-all ${activeAdminTab === 'matches' ? 'bg-world-cup-green text-white shadow-lg' : 'text-gray-500'}`}
+              className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeAdminTab === 'matches' ? 'bg-world-cup-green text-white shadow-md' : 'text-gray-400'}`}
             >
               แมตช์
             </button>
             <button 
               onClick={() => setActiveAdminTab('players')}
-              className={`px-3 py-1.5 rounded-md text-[10px] uppercase tracking-widest transition-all ${activeAdminTab === 'players' ? 'bg-world-cup-green text-white shadow-lg' : 'text-gray-500'}`}
+              className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeAdminTab === 'players' ? 'bg-world-cup-green text-white shadow-md' : 'text-gray-400'}`}
             >
               ผู้เล่น
+            </button>
+            <button 
+              onClick={() => setActiveAdminTab('custom')}
+              className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeAdminTab === 'custom' ? 'bg-world-cup-green text-white shadow-md' : 'text-gray-400'}`}
+            >
+              ปรับแต่ง
             </button>
           </div>
         </div>
@@ -217,22 +345,36 @@ const AdminDashboard: React.FC = () => {
         {activeAdminTab === 'matches' && (
           <div className="flex gap-2">
             <button 
-              disabled={resetLoading}
+              disabled={resetLoading || hardResetLoading}
               onClick={handleResetForKnockout}
-              className="flex-1 flex items-center justify-center gap-2 bg-amber-600 text-white px-4 py-3 rounded-2xl text-xs disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-2 bg-amber-600 text-white px-4 py-3 rounded-2xl text-[10px] uppercase font-bold disabled:opacity-50"
             >
-              <RefreshCw className={`w-4 h-4 ${resetLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3 h-3 ${resetLoading ? 'animate-spin' : ''}`} />
               รีเซ็ตรอบ 16 ทีม
             </button>
             <button 
               onClick={() => setShowAdd(!showAdd)}
-              className="flex-1 flex items-center justify-center gap-2 bg-world-cup-green text-white px-4 py-3 rounded-2xl text-xs"
+              className="flex-1 flex items-center justify-center gap-2 bg-world-cup-green text-white px-4 py-3 rounded-2xl text-[10px] uppercase font-bold"
             >
-              {showAdd ? 'ยกเลิก' : <><PlusCircle className="w-4 h-4" /> เพิ่มแมตช์</>}
+              {showAdd ? 'ยกเลิก' : <><PlusCircle className="w-3 h-3" /> เพิ่มแมตช์</>}
             </button>
           </div>
         )}
       </div>
+
+      {/* System Actions Area */}
+      {activeAdminTab === 'matches' && (
+        <div className="wc-glass p-4 rounded-2xl border border-red-500/10 bg-red-50">
+          <button 
+            disabled={hardResetLoading}
+            onClick={handleHardReset}
+            className="w-full flex items-center justify-center gap-2 text-red-500 text-xs uppercase font-black tracking-tighter hover:text-red-600 transition-all disabled:opacity-50"
+          >
+            {hardResetLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+            ล้างข้อมูลทั้งหมด (Clean Start) • เฉพาะแอดมินใจเด็ด
+          </button>
+        </div>
+      )}
 
       {activeAdminTab === 'players' && (
         <div className="space-y-6">
@@ -242,22 +384,93 @@ const AdminDashboard: React.FC = () => {
             
             <div className="space-y-3">
               {users.map((u, idx) => (
-                <div key={u.uid} className="wc-glass p-4 rounded-2xl flex items-center justify-between border border-white/5">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-world-cup-green/10 flex items-center justify-center text-xs text-world-cup-green font-bold border border-world-cup-green/20">
+                <div key={u.uid} className="wc-glass p-5 rounded-2xl flex items-center justify-between border border-gray-100">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-world-cup-green/10 flex items-center justify-center text-sm text-world-cup-green font-bold border border-world-cup-green/20">
                       {idx + 1}
                     </div>
                     <div>
-                      <p className="text-sm text-white font-medium">{u.displayName}</p>
-                      <p className="text-[9px] text-gray-500">{u.role === 'admin' ? 'แอดมิน' : 'ผู้เล่น'}</p>
+                      <p className="text-huge text-slate-800 font-bold">{u.displayName}</p>
+                      <p className="text-xs text-gray-400 font-medium">{u.role === 'admin' ? 'แอดมิน' : 'ผู้เล่น'}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm text-world-cup-gold font-black">{u.points}</p>
-                    <p className="text-[8px] text-gray-500 uppercase">POINTS</p>
+                    <p className="text-huge text-world-cup-gold font-black">{u.points}</p>
+                    <p className="text-[10px] text-gray-400 uppercase font-bold tracking-widest">POINTS</p>
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeAdminTab === 'custom' && (
+        <div className="space-y-6">
+          <div className="wc-glass p-8 rounded-[2rem] border-t-8 border-world-cup-gold shadow-xl space-y-8">
+            <div className="text-center space-y-2">
+              <h3 className="text-xl italic font-black uppercase tracking-widest text-slate-800">APP CUSTOMIZATION</h3>
+              <p className="text-xs text-gray-400 font-bold uppercase tracking-tighter">ปรับโฉมสนามในพริบตา</p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-8">
+              {/* Logo Customization */}
+              <div className="space-y-4">
+                <label className="text-xs font-black text-gray-400 uppercase tracking-widest block text-center">โลโก้แอป (Logo)</label>
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-24 h-24 bg-gray-50 border-4 border-dashed border-gray-200 rounded-3xl flex items-center justify-center overflow-hidden">
+                    {appConfig?.logoUrl ? (
+                      <img src={appConfig.logoUrl} className="w-full h-full object-contain" />
+                    ) : (
+                      <PlusCircle className="w-10 h-10 text-gray-200" />
+                    )}
+                  </div>
+                  <label className="cursor-pointer bg-slate-900 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-black transition-all">
+                    {configSaving ? 'กำลังอัปโหลด...' : 'เปลี่ยนโลโก้'}
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      accept="image/*"
+                      onChange={(e) => e.target.files?.[0] && handleConfigUpload('logo', e.target.files[0])}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Background Customization */}
+              <div className="space-y-4">
+                <label className="text-xs font-black text-gray-400 uppercase tracking-widest block text-center">พื้นหลังแอป (Background)</label>
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-full aspect-video bg-gray-50 border-4 border-dashed border-gray-200 rounded-3xl flex items-center justify-center overflow-hidden relative">
+                    {appConfig?.backgroundUrl ? (
+                      <img src={appConfig.backgroundUrl} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="text-gray-300 text-center font-bold italic">
+                        <Camera className="w-12 h-12 mx-auto mb-2 opacity-20" />
+                        NO CUSTOM BACKGROUND
+                      </div>
+                    )}
+                  </div>
+                  <label className="cursor-pointer bg-slate-900 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-black transition-all">
+                    {configSaving ? 'กำลังอัปโหลด...' : 'เปลี่ยนพื้นหลัง'}
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      accept="image/*"
+                      onChange={(e) => e.target.files?.[0] && handleConfigUpload('background', e.target.files[0])}
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 flex flex-col gap-3">
+              <button 
+                onClick={handeResetConfig}
+                className="w-full py-4 text-xs font-bold text-gray-400 uppercase tracking-widest hover:text-red-500 transition-all border border-gray-100 rounded-2xl"
+              >
+                คืนค่าเริ่มต้นทั้งหมด
+              </button>
             </div>
           </div>
         </div>
@@ -271,57 +484,57 @@ const AdminDashboard: React.FC = () => {
                 <button 
                   type="button"
                   onClick={() => setShowMockList(!showMockList)}
-                  className="flex items-center justify-between w-full bg-white/5 p-4 rounded-xl border border-white/10 text-sm text-world-cup-gold"
+                  className="flex items-center justify-between w-full bg-gray-50 p-4 rounded-xl border border-gray-100 text-sm text-world-cup-gold shadow-sm hover:bg-gray-100 transition-all font-bold"
                 >
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
+                    <Calendar className="w-5 h-5" />
                     {showMockList ? 'ปิดรายการแมตช์แนะนำ' : 'เลือกจากรายการแมตช์แนะนำ (World Cup 2026)'}
                   </div>
-                  <ChevronDown className={`w-4 h-4 transition-transform ${showMockList ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-5 h-5 transition-transform ${showMockList ? 'rotate-180' : ''}`} />
                 </button>
 
                 {showMockList && (
-                  <div className="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto no-scrollbar pt-2">
+                  <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto no-scrollbar pt-2">
                     {WORLD_CUP_2026_SCHEDULE.map((m, idx) => (
                       <button
                         key={idx}
                         type="button"
                         onClick={() => selectMockMatch(m)}
-                        className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-transparent hover:border-world-cup-green/50 hover:bg-world-cup-green/5 transition-all text-left"
+                        className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-world-cup-green/50 hover:bg-world-cup-green/5 shadow-sm transition-all text-left"
                       >
                         <div className="flex items-center gap-3">
                           <div className="flex -space-x-2">
-                            <img src={m.homeFlag} className="w-6 h-4 rounded-sm border border-white/20" />
-                            <img src={m.awayFlag} className="w-6 h-4 rounded-sm border border-white/20" />
+                            <img src={m.homeFlag} className="w-8 h-5 rounded-sm border border-gray-200" />
+                            <img src={m.awayFlag} className="w-8 h-5 rounded-sm border border-gray-200" />
                           </div>
-                          <span className="text-xs text-white">{m.homeTeam} vs {m.awayTeam}</span>
+                          <span className="text-sm font-bold text-slate-700">{m.homeTeam} vs {m.awayTeam}</span>
                         </div>
-                        <span className="text-[10px] text-gray-500">{format(new Date(m.startTime), 'MMM d, HH:mm')}</span>
+                        <span className="text-xs text-gray-400 font-medium">{format(new Date(m.startTime), 'MMM d, HH:mm')}</span>
                       </button>
                     ))}
                   </div>
                 )}
               </div>
 
-              <form onSubmit={handleAddMatch} className="wc-glass p-6 rounded-2xl space-y-4 border-t-2 border-world-cup-gold/30">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-gray-500 uppercase">เจ้าบ้าน</label>
-                    <input required value={homeTeam} onChange={e => setHomeTeam(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:border-world-cup-green" />
+              <form onSubmit={handleAddMatch} className="wc-glass p-8 rounded-3xl space-y-6 border-t-4 border-world-cup-gold">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-xs text-gray-500 font-bold uppercase tracking-widest">เจ้าบ้าน (Home)</label>
+                    <input required value={homeTeam} onChange={e => setHomeTeam(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-4 text-huge focus:outline-none focus:ring-2 focus:ring-world-cup-green/20 focus:border-world-cup-green transition-all" placeholder="เช่น Argentina" />
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-gray-500 uppercase">ทีมเยือน</label>
-                    <input required value={awayTeam} onChange={e => setAwayTeam(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:border-world-cup-green" />
+                  <div className="space-y-2">
+                    <label className="text-xs text-gray-500 font-bold uppercase tracking-widest">ทีมเยือน (Away)</label>
+                    <input required value={awayTeam} onChange={e => setAwayTeam(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-4 text-huge focus:outline-none focus:ring-2 focus:ring-world-cup-green/20 focus:border-world-cup-green transition-all" placeholder="เช่น France" />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-gray-500 uppercase">แต้มต่อ (เจ้าบ้าน)</label>
-                    <input type="text" required value={handicap} onChange={e => setHandicap(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:border-world-cup-green" placeholder="เช่น 0/0.5 หรือ เสมอ" />
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-xs text-gray-500 font-bold uppercase tracking-widest">ราคาต่อรอง (Handicap)</label>
+                    <input type="text" required value={handicap} onChange={e => setHandicap(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-4 text-huge focus:outline-none focus:ring-2 focus:ring-world-cup-green/20 focus:border-world-cup-green transition-all font-bold text-world-cup-green" placeholder="เช่น 0.5 หรือ 0.5/1" title="เป็นราคาต่อรองของฝั่งเจ้าบ้าน" />
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-gray-500 uppercase">รอบการแข่งขัน</label>
-                    <select value={round} onChange={e => setRound(e.target.value as TournamentRound)} className="w-full bg-world-cup-purple border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:border-world-cup-green">
+                  <div className="space-y-2">
+                    <label className="text-xs text-gray-500 font-bold uppercase tracking-widest">รอบการแข่งขัน</label>
+                    <select value={round} onChange={e => setRound(e.target.value as TournamentRound)} className="w-full bg-white border border-gray-200 rounded-xl p-4 text-huge focus:outline-none focus:ring-2 focus:ring-world-cup-green/20 focus:border-world-cup-green transition-all">
                       <option value={TournamentRound.GROUP}>รอบแบ่งกลุ่ม</option>
                       <option value={TournamentRound.TOP16}>รอบ 16 ทีม</option>
                       <option value={TournamentRound.TOP8}>รอบ 8 ทีม</option>
@@ -331,23 +544,29 @@ const AdminDashboard: React.FC = () => {
                     </select>
                   </div>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] text-gray-500 uppercase">เวลาแข่ง</label>
-                  <input type="datetime-local" required value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:border-world-cup-green text-white" />
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-xs text-gray-500 font-bold uppercase tracking-widest">เวลาแข่งขัน (Start Time)</label>
+                    <input type="datetime-local" required value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-4 text-huge focus:outline-none focus:ring-2 focus:ring-world-cup-green/20 focus:border-world-cup-green transition-all" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs text-gray-500 font-bold uppercase tracking-widest text-world-cup-gold">ปิดทายผล (Deadline)</label>
+                    <input type="datetime-local" required value={predictionDeadline} onChange={e => setPredictionDeadline(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-4 text-huge focus:outline-none focus:ring-2 focus:ring-world-cup-gold/20 focus:border-world-cup-gold transition-all" />
+                  </div>
                 </div>
-                <button type="submit" className="w-full bg-world-cup-green text-white py-4 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all">
-                  บันทึกแมตช์
+                <button type="submit" className="w-full bg-world-cup-green text-white py-5 rounded-2xl font-black uppercase text-huge shadow-lg shadow-world-cup-green/30 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                  บันทึกข้อมูลแมตช์
                 </button>
               </form>
             </div>
           )}
 
-      <div className="space-y-4">
+      <div className="space-y-6">
         {matches.map(match => (
-          <div key={match.id} className="wc-glass rounded-2xl p-4 flex flex-col gap-4 border-l-4 border-world-cup-green">
+          <div key={match.id} className="wc-glass rounded-3xl p-6 flex flex-col gap-6 border-l-8 border-world-cup-green shadow-xl">
             <div className="flex justify-between items-start">
-              <div>
-                <p className="text-[10px] text-world-cup-green uppercase">
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-world-cup-green uppercase tracking-widest">
                   {match.round === TournamentRound.GROUP && 'รอบแบ่งกลุ่ม'}
                   {match.round === TournamentRound.TOP16 && 'รอบ 16 ทีม'}
                   {match.round === TournamentRound.TOP8 && 'รอบ 8 ทีม'}
@@ -355,33 +574,110 @@ const AdminDashboard: React.FC = () => {
                   {match.round === TournamentRound.THIRD_PLACE && 'ชิงอันดับ 3'}
                   {match.round === TournamentRound.FINAL && 'รอบชิงชนะเลิศ'}
                 </p>
-                <h3 className="">{match.homeTeam} vs {match.awayTeam}</h3>
-                <p className="text-[10px] text-gray-500">{format(new Date(match.startTime.seconds * 1000), 'MMM d, HH:mm')} | H: {match.handicap}</p>
+                <h3 className="text-giant font-black text-slate-800">{match.homeTeam} vs {match.awayTeam}</h3>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-gray-500">{format(new Date(match.startTime.seconds * 1000), 'MMM d, HH:mm')}</span>
+                  <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                  <span className="bg-world-cup-green/10 text-world-cup-green px-3 py-1 rounded-full text-xs font-black">H: {match.handicap}</span>
+                </div>
               </div>
-              <button onClick={() => deleteMatch(match.id)} className="text-red-500 p-2"><Trash2 className="w-4 h-4" /></button>
+              <button 
+                onClick={() => deleteMatch(match.id)} 
+                className="text-red-400 hover:text-red-600 p-2 hover:bg-red-50 rounded-xl transition-all"
+              >
+                <Trash2 className="w-6 h-6" />
+              </button>
             </div>
 
             {match.status !== MatchStatus.FINISHED ? (
-              <div className="flex items-center gap-2">
-                <input id={`home-${match.id}`} type="number" placeholder="H" className="w-16 bg-white/5 border border-white/10 rounded-lg p-2 text-center text-sm" />
-                <span className="text-gray-500">-</span>
-                <input id={`away-${match.id}`} type="number" placeholder="A" className="w-16 bg-white/5 border border-white/10 rounded-lg p-2 text-center text-sm" />
+              <div className="space-y-6">
+                <div className="flex items-center justify-center gap-6 py-4 bg-gray-50 rounded-2xl border border-gray-100">
+                  <div className="text-center space-y-2">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Home Score</label>
+                    <input id={`home-${match.id}`} type="number" placeholder="-" className="w-20 h-20 bg-white border-2 border-gray-200 rounded-2xl text-center text-giant font-black focus:border-world-cup-green focus:outline-none transition-all shadow-inner" />
+                  </div>
+                  <div className="text-giant font-black text-gray-300 self-end mb-4">:</div>
+                  <div className="text-center space-y-2">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Away Score</label>
+                    <input id={`away-${match.id}`} type="number" placeholder="-" className="w-20 h-20 bg-white border-2 border-gray-200 rounded-2xl text-center text-giant font-black focus:border-world-cup-green focus:outline-none transition-all shadow-inner" />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest block text-center">ใครชนะในราคาต่อรอง? (Handicap Winner)</label>
+                  <div className="grid grid-cols-3 gap-3">
+                    <button 
+                      onClick={() => setWinnerSelections({...winnerSelections, [match.id]: 'home'})}
+                      className={`py-4 rounded-xl text-sm font-black border-2 transition-all ${winnerSelections[match.id] === 'home' ? 'bg-world-cup-green border-world-cup-green text-white shadow-lg' : 'bg-white border-gray-200 text-gray-400 hover:border-world-cup-green/50'}`}
+                    >
+                      เจ้าบ้านชนะ
+                    </button>
+                    <button 
+                      onClick={() => setWinnerSelections({...winnerSelections, [match.id]: 'push'})}
+                      className={`py-4 rounded-xl text-sm font-black border-2 transition-all ${winnerSelections[match.id] === 'push' ? 'bg-amber-500 border-amber-500 text-white shadow-lg' : 'bg-white border-gray-200 text-gray-400 hover:border-amber-500/50'}`}
+                    >
+                      ยกเลิก/เสมอ
+                    </button>
+                    <button 
+                      onClick={() => setWinnerSelections({...winnerSelections, [match.id]: 'away'})}
+                      className={`py-4 rounded-xl text-sm font-black border-2 transition-all ${winnerSelections[match.id] === 'away' ? 'bg-blue-500 border-blue-500 text-white shadow-lg' : 'bg-white border-gray-200 text-gray-400 hover:border-blue-500/50'}`}
+                    >
+                      ทีมเยือนชนะ
+                    </button>
+                  </div>
+                </div>
+
                 <button 
                   onClick={() => {
                     const h = (document.getElementById(`home-${match.id}`) as HTMLInputElement).value;
                     const a = (document.getElementById(`away-${match.id}`) as HTMLInputElement).value;
-                    if (h && a) setScores(match.id, Number(h), Number(a));
+                    const manualWinner = winnerSelections[match.id];
+                    
+                    if (!h || !a) {
+                      alert('กรุณาใส่ผลสกอร์');
+                      return;
+                    }
+                    if (!manualWinner) {
+                      alert('กรุณาเลือกฝั่งที่ชนะในราคาต่อรอง');
+                      return;
+                    }
+                    
+                    setScores(match.id, Number(h), Number(a), manualWinner);
                   }}
-                  className="flex-1 bg-world-cup-green text-white py-2 rounded-lg text-xs flex items-center justify-center gap-2"
+                  className="w-full bg-slate-900 text-white py-5 rounded-2xl text-huge font-black flex items-center justify-center gap-3 shadow-xl hover:bg-black transition-all active:scale-[0.98]"
                 >
-                  {calcLoading === match.id ? 'กำลังคำนวณ...' : <><CheckCircle className="w-4 h-4" /> ใส่ผลการแข่ง</>}
+                  {calcLoading === match.id ? (
+                    <Loader2 className="w-6 h-6 animate-spin text-world-cup-green" />
+                  ) : (
+                    <>
+                      <CheckCircle className="w-6 h-6 text-world-cup-green" />
+                      คำนวณและสรุปคะแนน
+                    </>
+                  )}
                 </button>
               </div>
             ) : (
-              <div className="flex justify-between items-center bg-white/5 p-3 rounded-xl border border-white/10">
-                <span className="text-xs text-gray-500 uppercase">จบการแข่งขัน</span>
-                <span className="text-world-cup-gold">{match.homeScore} - {match.awayScore}</span>
-                <span className="text-xs text-green-500">เสร็จสมบูรณ์</span>
+              <div className="flex flex-col gap-4">
+                <div className="flex justify-between items-center bg-gray-50 p-6 rounded-2xl border border-gray-200 shadow-inner">
+                  <div className="text-center">
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{match.homeTeam}</p>
+                    <p className="text-giant font-black text-slate-800">{match.homeScore}</p>
+                  </div>
+                  <div className="text-giant font-black text-gray-300">-</div>
+                  <div className="text-center">
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{match.awayTeam}</p>
+                    <p className="text-giant font-black text-slate-800">{match.awayScore}</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-center gap-2 text-sm font-black italic">
+                   <span className="text-gray-400">ฝั่งชนะ:</span>
+                   <span className="text-world-cup-green uppercase tracking-tighter">
+                     {match.manualWinner === 'home' && `เจ้าบ้าน (${match.homeTeam})`}
+                     {match.manualWinner === 'away' && `ทีมเยือน (${match.awayTeam})`}
+                     {match.manualWinner === 'push' && 'ยกเลิก/เสมอ'}
+                   </span>
+                   <Check className="w-4 h-4 text-green-500" />
+                </div>
               </div>
             )}
           </div>

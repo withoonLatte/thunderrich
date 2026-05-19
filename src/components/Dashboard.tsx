@@ -6,31 +6,47 @@ import Leaderboard from './Leaderboard';
 
 const Dashboard: React.FC = () => {
   return (
-    <div className="space-y-8 pb-10">
+    <div className="space-y-12 pb-12">
       {/* Top Section: Profile */}
       <section>
         <ProfileCard />
       </section>
       
       {/* Middle Section: Predictions */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between px-2">
-          <h3 className="text-sm text-world-cup-green uppercase tracking-widest">รายการทายผล</h3>
-          <span className="text-[10px] text-gray-500">เลื่อนเพื่อดูทั้งหมด</span>
+      <section className="space-y-6">
+        <div className="flex items-center justify-between px-3">
+          <h3 className="text-sm font-black text-slate-800 uppercase tracking-[0.2em] flex items-center gap-2">
+            <span className="w-2 h-2 bg-world-cup-green rounded-full"></span>
+            รายการแข่งขัน
+          </h3>
+          <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">SCROLL FOR MORE</span>
         </div>
         <MatchList />
       </section>
 
+      {/* Leaderboard Section */}
+      <section className="space-y-6">
+        <div className="flex items-center gap-3 px-3">
+          <div className="w-2 h-2 bg-world-cup-gold rounded-full"></div>
+          <h3 className="text-sm font-black text-slate-800 uppercase tracking-[0.2em]">อันดับนักทำนาย</h3>
+        </div>
+        <Leaderboard />
+      </section>
+
       {/* Bottom Section: Webboard */}
-      <section className="space-y-4">
-        <h3 className="text-sm text-world-cup-gold uppercase tracking-widest px-2">ห้องแต่งตัวเพื่อนซี้</h3>
+      <section id="webboard-section" className="space-y-6 pt-4">
+        <div className="flex items-center gap-3 px-3">
+          <div className="w-2 h-2 bg-world-cup-purple rounded-full"></div>
+          <h3 className="text-sm font-black text-slate-800 uppercase tracking-[0.2em]">ห้องแต่งตัวเพื่อนซี้</h3>
+        </div>
         <Webboard />
       </section>
 
-      {/* Optional: Leaderboard Link or Mini-view */}
-      <section className="pt-4 border-t border-white/5">
-        <p className="text-center text-[10px] text-gray-600 uppercase tracking-widest">
-          ทายผลฟุตบอลโลก 2026 Prediction Pro
+      {/* Footer */}
+      <section className="pt-8 border-t border-gray-100 opacity-30">
+        <p className="text-center text-[10px] text-slate-400 font-black uppercase tracking-[0.4em] leading-relaxed">
+          ⚽️ PREDICTION PRO #20 <br />
+          WORLD CUP 2026 EDITION
         </p>
       </section>
     </div>

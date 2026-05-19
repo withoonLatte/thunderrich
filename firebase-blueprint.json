@@ -83,6 +83,9 @@
     "messages/{messageId}": {
       "schema": "Message",
       "description": "Collection of chat room messages"
+    },
+    "settings/{settingId}": {
+      "description": "App-wide configuration and settings"
     }
   }
 }

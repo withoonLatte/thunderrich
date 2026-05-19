@@ -1,41 +1,63 @@
-@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@400&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Kanit", ui-sans-serif, system-ui, sans-serif;
-  --color-world-cup-blue: #0A1931;
-  --color-world-cup-purple: #150E56;
-  --color-world-cup-green: #1DB954;
-  --color-world-cup-gold: #FFD700;
-  --color-world-cup-card: rgba(255, 255, 255, 0.05);
+  --color-world-cup-blue: #F8FAFC;
+  --color-world-cup-purple: #EEF2FF;
+  --color-world-cup-green: #22C55E;
+  --color-world-cup-gold: #EAB308;
+  --color-world-cup-card: #FFFFFF;
 }
 
 body {
-  background-color: #0A1931;
+  background-color: #F8FAFC;
   background-image: 
-    linear-gradient(rgba(10, 25, 49, 0.8), rgba(21, 14, 86, 0.85)),
-    radial-gradient(at 0% 0%, rgba(99, 0, 255, 0.3) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(204, 0, 0, 0.3) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(206, 255, 0, 0.2) 0px, transparent 50%),
-    radial-gradient(at 0% 100%, rgba(0, 212, 0, 0.2) 0px, transparent 50%),
-    url('/background.png');
+    radial-gradient(at 0% 0%, rgba(34, 197, 94, 0.1) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(234, 179, 8, 0.1) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(99, 102, 241, 0.1) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(59, 130, 246, 0.1) 0px, transparent 50%);
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
   background-repeat: no-repeat;
-  color: white;
-  font-family: var(--font-sans);
+  color: #1E293B;
+  font-family: var(--font-sans) !important;
+  font-weight: 400 !important;
   min-height: 100vh;
+  font-size: 110%; /* Increase global font size slightly */
+}
+
+* {
+  font-weight: 400 !important;
 }
 
 .wc-glass {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
 }
 
 .wc-gradient {
-  background: linear-gradient(135deg, #150E56 0%, #0A1931 100%);
+  background: linear-gradient(135deg, #F8FAFC 0%, #EEF2FF 100%);
+}
+
+/* Larger Text Helpers */
+.text-huge {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+}
+
+.text-giant {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+
+/* Selection styles */
+::selection {
+  background-color: rgba(34, 197, 94, 0.2);
+  color: #15803d;
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */

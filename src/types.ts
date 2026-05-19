@@ -49,6 +49,8 @@ export interface Match {
   homeScore?: number;
   awayScore?: number;
   status: MatchStatus;
+  manualWinner?: 'home' | 'away' | 'push';
+  predictionDeadline?: any; // Firestore Timestamp
 }
 
 export interface Prediction {
@@ -68,4 +70,10 @@ export interface Message {
   displayName: string;
   content: string;
   createdAt: any; // Firestore Timestamp
+}
+
+export interface AppConfig {
+  logoUrl?: string;
+  backgroundUrl?: string;
+  lastUpdated: any;
 }
