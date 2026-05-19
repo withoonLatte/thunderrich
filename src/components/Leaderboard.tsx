@@ -1,17 +1,61 @@
 import React, { useEffect, useState } from 'react';
-import { collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, limit, where, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { User } from '../types';
+import { User, Prediction } from '../types';
 import { Trophy, Award, Medal } from 'lucide-react';
 import { motion } from 'motion/react';
 
 const Leaderboard: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
+  const [histories, setHistories] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const q = query(collection(db, 'users'), orderBy('points', 'desc'), limit(15));
-    const unsubscribe = onSnapshot(q, (snap) => {
-      setUsers(snap.docs.map(d => d.data() as User));
+    const unsubscribe = onSnapshot(q, async (snap) => {
+      const topUsers = snap.docs.map(d => d.data() as User);
+      setUsers(topUsers);
+
+      // Fetch histories for top users
+      const userIds = topUsers.map(u => u.uid);
+      if (userIds.length > 0) {
+        // Since Firestore has a limit of 10 in 'in' queries, and we have up to 15 users, 
+        // we might want to fetch all predictions and filter or chunk it.
+        // For simplicity and since matches are not huge, we can fetch all predictions for these users.
+        const predQ = query(
+          collection(db, 'predictions'), 
+          where('userId', 'in', userIds.slice(0, 10)),
+          orderBy('createdAt', 'asc')
+        );
+        const predSnap = await getDocs(predQ);
+        
+        // If we have more than 10 users, fetch the rest
+        let allPredDocs = [...predSnap.docs];
+        if (userIds.length > 10) {
+          const predQ2 = query(
+            collection(db, 'predictions'), 
+            where('userId', 'in', userIds.slice(10, 15)),
+            orderBy('createdAt', 'asc')
+          );
+          const predSnap2 = await getDocs(predQ2);
+          allPredDocs = [...allPredDocs, ...predSnap2.docs];
+        }
+
+        const newHistories: Record<string, string> = {};
+        allPredDocs.forEach(d => {
+          const p = d.data() as Prediction;
+          if (p.pointsEarned !== undefined) {
+             let code = '';
+             if (p.isResultCorrect) code = '1';
+             else if (p.pointsEarned === 0) code = '2'; // Push
+             else if (p.pointsEarned < 0) code = '0'; // Wrong
+             
+             if (code) {
+               newHistories[p.userId] = (newHistories[p.userId] || '') + code;
+             }
+          }
+        });
+        setHistories(newHistories);
+      }
     });
 
     return () => unsubscribe();
@@ -23,6 +67,7 @@ const Leaderboard: React.FC = () => {
         const isTop3 = index < 3;
         const Icon = index === 0 ? Trophy : index === 1 ? Award : index === 2 ? Medal : null;
         const iconColor = index === 0 ? 'text-world-cup-gold' : index === 1 ? 'text-gray-300' : 'text-amber-600';
+        const history = histories[u.uid] || '';
 
         return (
           <motion.div 
@@ -55,6 +100,11 @@ const Leaderboard: React.FC = () => {
 
             <div className="flex-1 min-w-0">
               <p className={`truncate text-base font-black uppercase tracking-tighter ${index === 0 ? 'text-white' : 'text-slate-800'}`}>{u.displayName}</p>
+              {history && (
+                <p className={`text-[10px] font-mono font-black tracking-tight break-all mb-1 ${index === 0 ? 'text-white/80' : 'text-world-cup-green'}`}>
+                  {history}
+                </p>
+              )}
               <p className={`text-[10px] font-bold uppercase tracking-widest ${index === 0 ? 'text-white/60' : 'text-gray-400'}`}>
                 ERRORS: {u.round1_wrong_count}/24
               </p>

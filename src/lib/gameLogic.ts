@@ -100,10 +100,10 @@ export const calculateMatchResults = async (matchId: string) => {
       isCorrect = false; // It's a push, not correct nor wrong for penalty
     } else {
       if (prediction.choice === matchWinner) {
-        pointsChange = roundScores.correct;
+        pointsChange = match.customWinScore !== undefined ? match.customWinScore : roundScores.correct;
         isCorrect = true;
       } else {
-        pointsChange = roundScores.wrong;
+        pointsChange = match.customLossScore !== undefined ? match.customLossScore : roundScores.wrong;
         isCorrect = false;
         if (match.round === TournamentRound.GROUP) {
           wrongCountIncrement = 1;

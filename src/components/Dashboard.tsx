@@ -34,7 +34,7 @@ const Dashboard: React.FC = () => {
       <section className="space-y-6">
         <div className="flex items-center gap-3 px-3">
           <div className="w-2 h-2 bg-world-cup-gold rounded-full"></div>
-          <h3 className="text-sm font-black text-slate-800 uppercase tracking-[0.2em]">อันดับนักทำนาย</h3>
+          <h3 className="text-sm font-black text-slate-800 uppercase tracking-[0.2em]">อันดับรวยฟ้าผ่า</h3>
         </div>
         <Leaderboard />
       </section>

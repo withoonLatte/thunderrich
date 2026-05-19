@@ -99,7 +99,22 @@ const MatchList: React.FC = () => {
           >
             {/* Round & Date Header */}
             <div className="bg-gray-50/80 px-5 py-3.5 flex justify-between items-center border-b border-gray-100">
-              <span className="text-[11px] font-black text-world-cup-green uppercase tracking-[0.2em]">{match.round.replace('_', ' ')}</span>
+              <div className="flex flex-col">
+                <span className="text-[11px] font-black text-world-cup-green uppercase tracking-[0.2em]">{match.round.replace('_', ' ')}</span>
+                {match.customWinScore !== undefined && match.customWinScore !== null ? (
+                  <span className="text-[10px] font-black text-red-500 uppercase tracking-tighter animate-pulse">
+                    Special: +{match.customWinScore} / {match.customLossScore} pts
+                  </span>
+                ) : (
+                  <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter">
+                    {match.round === 'group' ? '+2 / -1' : 
+                     match.round === 'top16' ? '+3 / -2' : 
+                     match.round === 'top8' ? '+4 / -2' : 
+                     match.round === 'top4' || match.round === 'third_place' ? '+5 / -3' : 
+                     match.round === 'final' ? '+7 / -3' : ''} pts
+                  </span>
+                )}
+              </div>
               <div className="flex items-center gap-2 text-xs font-bold text-gray-400">
                 <Clock className="w-4 h-4 text-world-cup-gold" />
                 {isStarted ? 'เริ่มการแข่งขันแล้ว' : format(startTime, 'dd/MM/yyyy HH:mm')}

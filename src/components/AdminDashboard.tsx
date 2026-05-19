@@ -27,6 +27,9 @@ const AdminDashboard: React.FC = () => {
   const [round, setRound] = useState<TournamentRound>(TournamentRound.GROUP);
   const [startTime, setStartTime] = useState('');
   const [predictionDeadline, setPredictionDeadline] = useState('');
+  const [customWinScore, setCustomWinScore] = useState('');
+  const [customLossScore, setCustomLossScore] = useState('');
+  const [isSpecialMatch, setIsSpecialMatch] = useState(false);
   
   const [calcLoading, setCalcLoading] = useState<string | null>(null);
   const [resetLoading, setResetLoading] = useState(false);
@@ -220,7 +223,9 @@ const AdminDashboard: React.FC = () => {
       round: round,
       startTime: Timestamp.fromDate(date),
       predictionDeadline: Timestamp.fromDate(deadlineDate),
-      status: MatchStatus.SCHEDULED
+      status: MatchStatus.SCHEDULED,
+      customWinScore: isSpecialMatch ? Number(customWinScore) : null,
+      customLossScore: isSpecialMatch ? Number(customLossScore) : null,
     } as any);
 
     setShowAdd(false);
@@ -412,6 +417,10 @@ const AdminDashboard: React.FC = () => {
     setAwayTeam('');
     setHandicap('0');
     setStartTime('');
+    setPredictionDeadline('');
+    setCustomWinScore('');
+    setCustomLossScore('');
+    setIsSpecialMatch(false);
   };
 
   const deleteMatch = async (id: string) => {
@@ -735,6 +744,48 @@ const AdminDashboard: React.FC = () => {
                     <input type="datetime-local" required value={predictionDeadline} onChange={e => setPredictionDeadline(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-4 text-huge focus:outline-none focus:ring-2 focus:ring-world-cup-gold/20 focus:border-world-cup-gold transition-all" />
                   </div>
                 </div>
+
+                <div className="wc-glass p-6 rounded-2xl border-2 border-dashed border-gray-200 space-y-4">
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <div 
+                      onClick={() => setIsSpecialMatch(!isSpecialMatch)}
+                      className={`w-12 h-6 rounded-full transition-all relative ${isSpecialMatch ? 'bg-red-500' : 'bg-gray-200'}`}
+                    >
+                      <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${isSpecialMatch ? 'translate-x-6' : ''}`} />
+                    </div>
+                    <span className="text-sm font-black text-slate-700 uppercase tracking-widest">เปิดระบบคะแนนพิเศษ (คู่เอก)</span>
+                  </label>
+
+                  {isSpecialMatch && (
+                    <motion.div 
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      className="grid grid-cols-2 gap-4 pt-2"
+                    >
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-red-500 uppercase tracking-widest">คะแนนทายถูก (+)</label>
+                        <input 
+                          type="number" 
+                          value={customWinScore} 
+                          onChange={e => setCustomWinScore(e.target.value)} 
+                          placeholder="เช่น 10" 
+                          className="w-full bg-white border-2 border-red-500/20 rounded-xl p-4 text-huge font-black focus:border-red-500 focus:outline-none transition-all"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">คะแนนทายผิด (-)</label>
+                        <input 
+                          type="number" 
+                          value={customLossScore} 
+                          onChange={e => setCustomLossScore(e.target.value)} 
+                          placeholder="เช่น -5" 
+                          className="w-full bg-white border-2 border-slate-200 rounded-xl p-4 text-huge font-black focus:border-slate-500 focus:outline-none transition-all"
+                        />
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+
                 <button type="submit" className="w-full bg-world-cup-green text-white py-5 rounded-2xl font-black uppercase text-huge shadow-lg shadow-world-cup-green/30 hover:scale-[1.02] active:scale-[0.98] transition-all">
                   บันทึกข้อมูลแมตช์
                 </button>

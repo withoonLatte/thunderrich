@@ -51,6 +51,8 @@ export interface Match {
   status: MatchStatus;
   manualWinner?: 'home' | 'away' | 'push';
   predictionDeadline?: any; // Firestore Timestamp
+  customWinScore?: number;
+  customLossScore?: number;
 }
 
 export interface Prediction {
