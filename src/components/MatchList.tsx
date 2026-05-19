@@ -109,17 +109,31 @@ const MatchList: React.FC = () => {
             <div className="p-6 space-y-8">
               <div className="flex items-center justify-between gap-4">
                 {/* Home Team */}
-                <div className="flex flex-col items-center gap-3 text-center flex-1">
+                <button 
+                  disabled={!canPredict}
+                  onClick={() => handlePredict(match.id, PredictionChoice.HOME)}
+                  className={`flex flex-col items-center gap-3 text-center flex-1 p-3 rounded-3xl transition-all border-2 ${
+                    prediction?.choice === PredictionChoice.HOME 
+                      ? 'bg-world-cup-green/10 border-world-cup-green scale-[1.05] shadow-lg shadow-world-cup-green/10' 
+                      : canPredict 
+                        ? 'border-transparent hover:bg-gray-50' 
+                        : 'border-transparent opacity-50 cursor-not-allowed'
+                  }`}
+                >
                   <div className="relative">
-                    <div className="w-20 h-14 rounded-2xl bg-white overflow-hidden border-2 border-gray-100 shadow-sm p-1">
+                    <div className={`w-20 h-14 rounded-2xl bg-white overflow-hidden border-2 shadow-sm p-1 transition-all ${prediction?.choice === PredictionChoice.HOME ? 'border-world-cup-green' : 'border-gray-100'}`}>
                       {match.homeFlag ? <img src={match.homeFlag} alt={match.homeTeam} className="w-full h-full object-cover rounded-xl" /> : <div className="text-xl text-gray-300 h-full flex items-center justify-center">🏴</div>}
                     </div>
+                    {prediction?.choice === PredictionChoice.HOME && (
+                      <div className="absolute -top-2 -right-2 bg-world-cup-green text-white rounded-full p-1 shadow-lg ring-4 ring-white">
+                        <CheckCircle2 className="w-4 h-4" />
+                      </div>
+                    )}
                   </div>
-                  <span className="text-sm font-black text-slate-800 uppercase tracking-tight truncate w-full">{match.homeTeam}</span>
-                  <div className="bg-world-cup-green text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg shadow-world-cup-green/20">
-                    {match.handicap}
-                  </div>
-                </div>
+                  <span className={`text-sm font-black uppercase tracking-tight truncate w-full transition-colors ${prediction?.choice === PredictionChoice.HOME ? 'text-world-cup-green' : 'text-slate-800'}`}>
+                    {match.homeTeam}
+                  </span>
+                </button>
 
                 {/* Score / VS */}
                 <div className="flex flex-col items-center gap-1 min-w-[70px]">
@@ -131,60 +145,40 @@ const MatchList: React.FC = () => {
                       <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest mt-1">FINAL</span>
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center">
-                      <span className="text-2xl text-gray-200 italic font-black tracking-[0.2em]">VS</span>
-                      {!isStarted && (
-                        <div className="animate-pulse bg-world-cup-gold/20 px-3 py-1 rounded-full mt-2">
-                           <span className="text-[10px] text-world-cup-gold font-black uppercase tracking-widest">LIVE</span>
-                        </div>
-                      )}
+                    <div className="flex flex-col items-center gap-2">
+                      <span className="text-2xl text-gray-100 italic font-black tracking-[0.2em]">VS</span>
+                      <div className="bg-world-cup-green text-white text-sm font-black px-6 py-2 rounded-full shadow-xl shadow-world-cup-green/30 transform -rotate-1">
+                        {match.handicap}
+                      </div>
                     </div>
                   )}
                 </div>
 
                 {/* Away Team */}
-                <div className="flex flex-col items-center gap-3 text-center flex-1">
-                  <div className="relative">
-                    <div className="w-20 h-14 rounded-2xl bg-white overflow-hidden border-2 border-gray-100 shadow-sm p-1">
-                      {match.awayFlag ? <img src={match.awayFlag} alt={match.awayTeam} className="w-full h-full object-cover rounded-xl" /> : <div className="text-xl text-gray-300 h-full flex items-center justify-center">🏴</div>}
-                    </div>
-                  </div>
-                  <span className="text-sm font-black text-slate-800 uppercase tracking-tight truncate w-full">{match.awayTeam}</span>
-                  <div className="bg-gray-100 text-gray-400 text-[10px] font-black px-3 py-1 rounded-full">
-                    0.00
-                  </div>
-                </div>
-              </div>
-
-              {/* Prediction Buttons */}
-              <div className="grid grid-cols-2 gap-4">
-                <button
-                  disabled={!canPredict}
-                  onClick={() => handlePredict(match.id, PredictionChoice.HOME)}
-                  className={`group relative overflow-hidden py-5 rounded-3xl text-sm font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 border-2 ${
-                    prediction?.choice === PredictionChoice.HOME 
-                      ? 'bg-world-cup-green border-world-cup-green text-white shadow-xl shadow-world-cup-green/20 scale-[1.02]' 
-                      : canPredict 
-                        ? 'bg-white border-gray-100 text-gray-400 hover:border-world-cup-green/30 hover:text-world-cup-green hover:bg-world-cup-green/5' 
-                        : 'bg-gray-50 border-transparent text-gray-300 cursor-not-allowed'
-                  }`}
-                >
-                  {prediction?.choice === PredictionChoice.HOME && <CheckCircle2 className="w-5 h-5 shrink-0" />}
-                  <span>เจ้าบ้าน</span>
-                </button>
-                <button
+                <button 
                   disabled={!canPredict}
                   onClick={() => handlePredict(match.id, PredictionChoice.AWAY)}
-                  className={`group relative overflow-hidden py-5 rounded-3xl text-sm font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 border-2 ${
+                  className={`flex flex-col items-center gap-3 text-center flex-1 p-3 rounded-3xl transition-all border-2 ${
                     prediction?.choice === PredictionChoice.AWAY 
-                      ? 'bg-world-cup-green border-world-cup-green text-white shadow-xl shadow-world-cup-green/20 scale-[1.02]' 
+                      ? 'bg-world-cup-green/10 border-world-cup-green scale-[1.05] shadow-lg shadow-world-cup-green/10' 
                       : canPredict 
-                        ? 'bg-white border-gray-100 text-gray-400 hover:border-world-cup-green/30 hover:text-world-cup-green hover:bg-world-cup-green/5' 
-                        : 'bg-gray-50 border-transparent text-gray-300 cursor-not-allowed'
+                        ? 'border-transparent hover:bg-gray-50' 
+                        : 'border-transparent opacity-50 cursor-not-allowed'
                   }`}
                 >
-                  {prediction?.choice === PredictionChoice.AWAY && <CheckCircle2 className="w-5 h-5 shrink-0" />}
-                  <span>ทีมเยือน</span>
+                  <div className="relative">
+                    <div className={`w-20 h-14 rounded-2xl bg-white overflow-hidden border-2 shadow-sm p-1 transition-all ${prediction?.choice === PredictionChoice.AWAY ? 'border-world-cup-green' : 'border-gray-100'}`}>
+                      {match.awayFlag ? <img src={match.awayFlag} alt={match.awayTeam} className="w-full h-full object-cover rounded-xl" /> : <div className="text-xl text-gray-300 h-full flex items-center justify-center">🏴</div>}
+                    </div>
+                    {prediction?.choice === PredictionChoice.AWAY && (
+                      <div className="absolute -top-2 -right-2 bg-world-cup-green text-white rounded-full p-1 shadow-lg ring-4 ring-white">
+                        <CheckCircle2 className="w-4 h-4" />
+                      </div>
+                    )}
+                  </div>
+                  <span className={`text-sm font-black uppercase tracking-tight truncate w-full transition-colors ${prediction?.choice === PredictionChoice.AWAY ? 'text-world-cup-green' : 'text-slate-800'}`}>
+                    {match.awayTeam}
+                  </span>
                 </button>
               </div>
 
