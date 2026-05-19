@@ -17,7 +17,7 @@ import { User, UserRole } from '../types';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (nickname: string, pin: string) => Promise<void>;
+  login: (nickname: string, pin: string, personalPin?: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -57,7 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsubscribeAuth();
   }, []);
 
-  const login = async (nickname: string, pin: string) => {
+  const login = async (nickname: string, pin: string, personalPin?: string) => {
     const NORMAL_PIN = '123456';
     const ADMIN_PIN = '999999';
 
@@ -78,6 +78,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (userSnap.exists()) {
       const userData = userSnap.data() as User;
+      
+      // If user has a personal pin set, verify it
+      if (userData.personalPin && userData.personalPin !== personalPin) {
+        if (!personalPin) {
+          throw new Error('REQUIRED_PERSONAL_PIN');
+        }
+        throw new Error('รหัสผ่านส่วนตัวไม่ถูกต้อง');
+      }
+
       setUser(userData);
       localStorage.setItem('wc_player_id', userId);
     } else {
@@ -93,6 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         yellow_cards: 0,
         red_cards: 0,
         bannedMatchIds: [],
+        mustChangePassword: true,
       };
 
       await setDoc(userDocRef, newUser);

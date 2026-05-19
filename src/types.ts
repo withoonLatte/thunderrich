@@ -35,6 +35,7 @@ export interface User {
   red_cards: number;
   bannedMatchIds: string[];
   mustChangePassword?: boolean;
+  personalPin?: string;
 }
 
 export interface Match {

@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Zap, AlertCircle, User, Hash } from 'lucide-react';
-import { motion } from 'motion/react';
+import { Zap, AlertCircle, User, Hash, Lock, CheckCircle2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 const Login: React.FC = () => {
   const { login } = useAuth();
   const [nickname, setNickname] = useState('');
   const [pin, setPin] = useState('');
+  const [personalPin, setPersonalPin] = useState('');
+  const [showPersonalPin, setShowPersonalPin] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -17,11 +19,16 @@ const Login: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      await login(nickname, pin);
+      await login(nickname, pin, personalPin);
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'รหัสกลุ่มไม่ถูกต้อง');
-      setLoading(false);
+      if (err.message === 'REQUIRED_PERSONAL_PIN') {
+        setShowPersonalPin(true);
+        setLoading(false);
+      } else {
+        setError(err.message || 'ข้อมูลไม่ถูกต้อง');
+        setLoading(false);
+      }
     }
   };
 
@@ -78,10 +85,39 @@ const Login: React.FC = () => {
             placeholder="รหัสกลุ่ม (PIN)"
             value={pin}
             onChange={(e) => setPin(e.target.value)}
+            autoComplete="current-password"
             className="w-full bg-white border-2 border-gray-100 rounded-3xl py-5 pl-14 pr-6 text-slate-800 text-lg font-bold focus:outline-none focus:border-world-cup-green focus:ring-4 focus:ring-world-cup-green/10 transition-all placeholder:text-gray-300 shadow-sm"
             required
           />
         </div>
+
+        <AnimatePresence>
+          {showPersonalPin && (
+            <motion.div 
+              initial={{ height: 0, opacity: 0, y: -20 }}
+              animate={{ height: 'auto', opacity: 1, y: 0 }}
+              exit={{ height: 0, opacity: 0, y: -20 }}
+              className="space-y-4"
+            >
+              <div className="bg-world-cup-gold/10 border border-world-cup-gold/20 p-4 rounded-3xl flex items-center gap-3">
+                <CheckCircle2 className="w-5 h-5 text-world-cup-gold" />
+                <p className="text-[11px] font-bold text-slate-800">รหัสกลุ่มผ่านแล้ว! กรุณาระบุรหัสส่วนตัว</p>
+              </div>
+              <div className="relative group">
+                <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-red-400 group-focus-within:text-red-500 transition-colors" />
+                <input
+                  type="password"
+                  placeholder="รหัสผ่านส่วนตัว (PIN)"
+                  value={personalPin}
+                  onChange={(e) => setPersonalPin(e.target.value)}
+                  autoFocus
+                  className="w-full bg-red-50/50 border-2 border-red-100 rounded-3xl py-5 pl-14 pr-6 text-slate-800 text-lg font-bold focus:outline-none focus:border-red-500 focus:ring-4 focus:ring-red-500/10 transition-all placeholder:text-red-200 shadow-sm"
+                  required
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <button
           type="submit"
