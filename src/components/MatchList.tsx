@@ -102,7 +102,7 @@ const MatchList: React.FC = () => {
               <span className="text-[11px] font-black text-world-cup-green uppercase tracking-[0.2em]">{match.round.replace('_', ' ')}</span>
               <div className="flex items-center gap-2 text-xs font-bold text-gray-400">
                 <Clock className="w-4 h-4 text-world-cup-gold" />
-                {isStarted ? 'เริ่มการแข่งขันแล้ว' : format(startTime, 'MMM d, HH:mm')}
+                {isStarted ? 'เริ่มการแข่งขันแล้ว' : format(startTime, 'dd/MM/yyyy HH:mm')}
               </div>
             </div>
 
