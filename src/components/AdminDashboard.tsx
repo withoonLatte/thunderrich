@@ -20,6 +20,7 @@ const AdminDashboard: React.FC = () => {
   // App Config State
   const [appConfig, setAppConfig] = useState<{ logoUrl?: string, backgroundUrl?: string } | null>(null);
   const [configSaving, setConfigSaving] = useState(false);
+  const [matchSaving, setMatchSaving] = useState(false);
   
   // Match Form State
   const [homeTeam, setHomeTeam] = useState('');
@@ -46,8 +47,10 @@ const AdminDashboard: React.FC = () => {
   const [bulkText, setBulkText] = useState('');
 
   useEffect(() => {
-    const unsubMatches = onSnapshot(query(collection(db, 'matches'), orderBy('startTime', 'desc')), (snap) => {
-      setMatches(snap.docs.map(d => ({ id: d.id, ...d.data() } as Match)));
+    const unsubMatches = onSnapshot(query(collection(db, 'matches'), orderBy('startTime', 'asc')), (snap) => {
+      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() } as Match));
+      const sorted = [...docs].sort((a, b) => (a.startTime?.seconds || 0) - (b.startTime?.seconds || 0));
+      setMatches(sorted);
     });
     
     const unsubUsers = onSnapshot(collection(db, 'users'), (snap) => {
@@ -378,43 +381,52 @@ const AdminDashboard: React.FC = () => {
       return;
     }
 
-    const date = new Date(startTime);
-    const deadlineDate = predictionDeadline ? new Date(predictionDeadline) : date;
-    
-    if (editingMatchId) {
-      await updateDoc(doc(db, 'matches', editingMatchId), {
-        homeTeam,
-        awayTeam,
-        homeFlag: `https://flagcdn.com/w80/${getCountryCode(homeTeam)}.png`, 
-        awayFlag: `https://flagcdn.com/w80/${getCountryCode(awayTeam)}.png`,
-        handicap: handicap,
-        round: round,
-        startTime: Timestamp.fromDate(date),
-        predictionDeadline: Timestamp.fromDate(deadlineDate),
-        customWinScore: isSpecialMatch ? Number(customWinScore) : null,
-        customLossScore: isSpecialMatch ? Number(customLossScore) : null,
-        isPublished: true // Auto publish on save edit
-      });
-      setEditingMatchId(null);
-    } else {
-      await addDoc(collection(db, 'matches'), {
-        homeTeam,
-        awayTeam,
-        homeFlag: `https://flagcdn.com/w80/${getCountryCode(homeTeam)}.png`, 
-        awayFlag: `https://flagcdn.com/w80/${getCountryCode(awayTeam)}.png`,
-        handicap: handicap,
-        round: round,
-        startTime: Timestamp.fromDate(date),
-        predictionDeadline: Timestamp.fromDate(deadlineDate),
-        status: MatchStatus.SCHEDULED,
-        customWinScore: isSpecialMatch ? Number(customWinScore) : null,
-        customLossScore: isSpecialMatch ? Number(customLossScore) : null,
-        isPublished: true // Auto publish on manual add
-      } as any);
-    }
+    setMatchSaving(true);
+    try {
+      const date = new Date(startTime);
+      const deadlineDate = predictionDeadline ? new Date(predictionDeadline) : date;
+      
+      if (editingMatchId) {
+        await updateDoc(doc(db, 'matches', editingMatchId), {
+          homeTeam,
+          awayTeam,
+          homeFlag: `https://flagcdn.com/w80/${getCountryCode(homeTeam)}.png`, 
+          awayFlag: `https://flagcdn.com/w80/${getCountryCode(awayTeam)}.png`,
+          handicap: handicap,
+          round: round,
+          startTime: Timestamp.fromDate(date),
+          predictionDeadline: Timestamp.fromDate(deadlineDate),
+          customWinScore: isSpecialMatch ? Number(customWinScore) : null,
+          customLossScore: isSpecialMatch ? Number(customLossScore) : null,
+          isPublished: true // Auto publish on save edit
+        });
+        setEditingMatchId(null);
+      } else {
+        await addDoc(collection(db, 'matches'), {
+          homeTeam,
+          awayTeam,
+          homeFlag: `https://flagcdn.com/w80/${getCountryCode(homeTeam)}.png`, 
+          awayFlag: `https://flagcdn.com/w80/${getCountryCode(awayTeam)}.png`,
+          handicap: handicap,
+          round: round,
+          startTime: Timestamp.fromDate(date),
+          predictionDeadline: Timestamp.fromDate(deadlineDate),
+          status: MatchStatus.SCHEDULED,
+          customWinScore: isSpecialMatch ? Number(customWinScore) : null,
+          customLossScore: isSpecialMatch ? Number(customLossScore) : null,
+          isPublished: true // Auto publish on manual add
+        } as any);
+      }
 
-    setShowAdd(false);
-    resetForm();
+      setShowAdd(false);
+      resetForm();
+      alert('บันทึกข้อมูลเรียบร้อยแล้ว!');
+    } catch (err) {
+      console.error(err);
+      alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+    } finally {
+      setMatchSaving(false);
+    }
   };
 
   const handleEditMatch = (match: Match) => {
@@ -1104,8 +1116,12 @@ const AdminDashboard: React.FC = () => {
                   )}
                 </div>
 
-                <button type="submit" className="w-full bg-world-cup-green text-white py-5 rounded-2xl font-black uppercase text-huge shadow-lg shadow-world-cup-green/30 hover:scale-[1.02] active:scale-[0.98] transition-all">
-                  {editingMatchId ? 'ตกลงแก้ไขข้อมูล' : 'บันทึกข้อมูลแมตช์'}
+                <button 
+                  type="submit" 
+                  disabled={matchSaving}
+                  className="w-full bg-world-cup-green text-white py-5 rounded-2xl font-black uppercase text-huge shadow-lg shadow-world-cup-green/30 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {matchSaving ? <Loader2 className="w-6 h-6 animate-spin" /> : (editingMatchId ? 'ตกลงแก้ไขข้อมูล' : 'บันทึกข้อมูลแมตช์')}
                 </button>
               </form>
             </div>
@@ -1181,18 +1197,18 @@ const AdminDashboard: React.FC = () => {
             {matches.map(match => (
               <div key={match.id} className={`wc-glass rounded-3xl p-6 flex flex-col gap-6 border-l-8 transition-all ${calcStagedIds.includes(match.id) ? 'border-world-cup-gold bg-world-cup-gold/5 ring-2 ring-world-cup-gold/20' : 'border-world-cup-green shadow-xl'}`}>
                 <div className="flex justify-between items-start">
-                  <div className="flex items-start gap-4">
+                  <div className="flex items-start gap-3 flex-1">
                     {match.status !== MatchStatus.FINISHED && (
                       <button 
                         onClick={() => toggleCalcStage(match.id)}
-                        className={`mt-1 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${calcStagedIds.includes(match.id) ? 'bg-world-cup-gold border-world-cup-gold text-white' : 'border-gray-200'}`}
+                        className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${calcStagedIds.includes(match.id) ? 'bg-world-cup-gold border-world-cup-gold text-white' : 'border-gray-200'}`}
                       >
-                        {calcStagedIds.includes(match.id) && <Check className="w-4 h-4 font-black" />}
+                        {calcStagedIds.includes(match.id) && <Check className="w-3.5 h-3.5 font-black" />}
                       </button>
                     )}
                     <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                        <p className="text-xs font-bold text-world-cup-green uppercase tracking-widest">
+                      <div className="flex items-center gap-2">
+                        <p className="text-[10px] font-bold text-world-cup-green uppercase tracking-widest">
                           {match.round === TournamentRound.GROUP && 'รอบแบ่งกลุ่ม'}
                           {match.round === TournamentRound.TOP16 && 'รอบ 16 ทีม'}
                           {match.round === TournamentRound.TOP8 && 'รอบ 8 ทีม'}
@@ -1201,72 +1217,74 @@ const AdminDashboard: React.FC = () => {
                           {match.round === TournamentRound.FINAL && 'รอบชิงชนะเลิศ'}
                         </p>
                         {!match.isPublished && (
-                          <span className="bg-slate-800 text-white text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest animate-pulse">
-                            ยังไม่แก้ไข / ดรอฟต์
+                          <span className="bg-slate-800 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-widest animate-pulse">
+                            ดรอฟต์
                           </span>
                         )}
-                    </div>
-                    <h3 className="text-giant font-black text-slate-800">{match.homeTeam} vs {match.awayTeam}</h3>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-medium text-gray-500">{format(new Date(match.startTime.seconds * 1000), 'dd/MM/yyyy HH:mm')}</span>
-                      <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                      <div className="flex flex-col">
-                        <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest text-center">ราคา</span>
-                        <span className="bg-world-cup-green/10 text-world-cup-green px-3 py-1 rounded-lg text-sm font-black border border-world-cup-green/20">{match.handicap}</span>
                       </div>
-                      {match.customWinScore !== undefined && match.customWinScore !== null && (
-                        <div className="bg-red-500 text-white px-2 py-1 rounded-lg text-[8px] font-black uppercase flex flex-col items-center justify-center min-w-[50px]">
-                          <span>คู่เอก</span>
-                          <span>(+{match.customWinScore} / -{match.customLossScore})</span>
+                      <h3 className="text-xl font-black text-slate-800">{match.homeTeam} vs {match.awayTeam}</h3>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-gray-500">{format(new Date(match.startTime.seconds * 1000), 'dd/MM/yyyy HH:mm')}</span>
+                        <div className="flex items-center gap-1 bg-world-cup-green/10 px-2 py-0.5 rounded border border-world-cup-green/20">
+                          <span className="text-[8px] font-black text-gray-400 uppercase tracking-tighter">ราคา:</span>
+                          <span className="text-world-cup-green text-[11px] font-black">{match.handicap}</span>
+                        </div>
+                        {match.customWinScore !== undefined && match.customWinScore !== null && (
+                        <div className="bg-red-500 text-white px-2 py-0.5 rounded-lg text-[10px] font-black uppercase flex flex-col items-center justify-center min-w-[55px] shadow-sm border border-red-400">
+                          <span className="leading-tight">คู่เอก</span>
+                          <span className="leading-tight">(+{match.customWinScore}/{match.customLossScore})</span>
                         </div>
                       )}
+                      </div>
                     </div>
                   </div>
-                </div>
-                  <button 
-                    onClick={async () => {
-                      await updateDoc(doc(db, 'matches', match.id), {
-                        isPublished: !match.isPublished
-                      });
-                    }}
-                    className={`p-2 rounded-xl transition-all ${match.isPublished ? 'bg-green-50 text-green-500 hover:bg-green-100' : 'bg-slate-100 text-slate-400 hover:bg-slate-200 shadow-inner'}`}
-                    title={match.isPublished ? "คลิกเพื่อซ่อนแมตช์" : "คลิกเพื่อเปิดให้สมาชิกเห็น"}
-                  >
-                    <CheckCircle className={`w-6 h-6 ${match.isPublished ? 'fill-current' : ''}`} />
-                  </button>
-                  <button 
-                    onClick={() => handleEditMatch(match)}
-                    className="p-2 rounded-xl bg-blue-50 text-blue-500 hover:bg-blue-100 transition-all"
-                    title="แก้ไขข้อมูลแมตช์"
-                  >
-                    <Edit3 className="w-6 h-6" />
-                  </button>
-                  <button 
-                    onClick={async () => {
-                      const isSpecial = match.customWinScore !== undefined && match.customWinScore !== null;
-                      if (isSpecial) {
+
+                  <div className="flex items-center gap-1 ml-2">
+                    <button 
+                      onClick={async () => {
                         await updateDoc(doc(db, 'matches', match.id), {
-                          customWinScore: null,
-                          customLossScore: null
+                          isPublished: !match.isPublished
                         });
-                      } else {
-                        await updateDoc(doc(db, 'matches', match.id), {
-                          customWinScore: 5,
-                          customLossScore: -3
-                        });
-                      }
-                    }}
-                    className={`p-2 rounded-xl transition-all ${match.customWinScore !== undefined && match.customWinScore !== null ? 'bg-world-cup-gold text-white shadow-lg' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}
-                    title={match.customWinScore !== undefined && match.customWinScore !== null ? "ยกเลิกคู่เอก" : "ตั้งเป็นคู่เอก (+5/-3)"}
-                  >
-                    <Star className={`w-6 h-6 ${match.customWinScore !== undefined && match.customWinScore !== null ? 'fill-current' : ''}`} />
-                  </button>
-                  <button 
-                    onClick={() => deleteMatch(match.id)} 
-                    className="text-red-400 hover:text-red-600 p-2 hover:bg-red-50 rounded-xl transition-all"
-                  >
-                    <Trash2 className="w-6 h-6" />
-                  </button>
+                      }}
+                      className={`p-1 rounded-md transition-all ${match.isPublished ? 'bg-green-50 text-green-500 hover:bg-green-100' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
+                      title={match.isPublished ? "ซ่อน" : "แสดง"}
+                    >
+                      <CheckCircle className={`w-3.5 h-3.5 ${match.isPublished ? 'fill-current' : ''}`} />
+                    </button>
+                    <button 
+                      onClick={() => handleEditMatch(match)}
+                      className="p-1 rounded-md bg-blue-50 text-blue-500 hover:bg-blue-100 transition-all shadow-sm"
+                      title="แก้ไข"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                    </button>
+                    <button 
+                      onClick={async () => {
+                        const isSpecial = match.customWinScore !== undefined && match.customWinScore !== null;
+                        if (isSpecial) {
+                          await updateDoc(doc(db, 'matches', match.id), {
+                            customWinScore: null,
+                            customLossScore: null
+                          });
+                        } else {
+                          await updateDoc(doc(db, 'matches', match.id), {
+                            customWinScore: 5,
+                            customLossScore: -3
+                          });
+                        }
+                      }}
+                      className={`p-1 rounded-md transition-all ${match.customWinScore !== undefined && match.customWinScore !== null ? 'bg-world-cup-gold text-white shadow-lg' : 'bg-white border border-gray-100 text-gray-400 hover:bg-gray-50'}`}
+                      title="ไฮไลท์"
+                    >
+                      <Star className={`w-3.5 h-3.5 ${match.customWinScore !== undefined && match.customWinScore !== null ? 'fill-current' : ''}`} />
+                    </button>
+                    <button 
+                      onClick={() => deleteMatch(match.id)} 
+                      className="p-1 rounded-md text-red-100 bg-red-50 hover:bg-red-500 hover:text-white transition-all shadow-sm"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
 
                 {match.status !== MatchStatus.FINISHED ? (
