@@ -72,7 +72,13 @@ function AppContent() {
             />
           </div>
           <div className="flex flex-col justify-center">
-            <h1 className="text-base font-black tracking-tight bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 bg-clip-text text-transparent leading-none">
+            <h1 
+              style={{
+                WebkitTextStroke: '2px #ffffff',
+                filter: 'drop-shadow(0px 2px 4px rgba(99, 102, 241, 0.15)) drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.15))'
+              }}
+              className="text-base font-black tracking-tight bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 bg-clip-text text-transparent leading-none"
+            >
               รวยฟ้าผ่า #11 บอลโลก 2026
             </h1>
             <p className="text-[10px] font-black tracking-wider text-slate-500 uppercase mt-1">
