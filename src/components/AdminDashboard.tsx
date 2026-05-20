@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useTransition } from 'react';
 import { collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, Timestamp, deleteDoc, writeBatch, getDoc, getDocs, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { TournamentRound, Match, MatchStatus, User } from '../types';
@@ -12,6 +12,7 @@ import * as XLSX from 'xlsx';
 
 const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
+  const [isPending, startTransition] = useTransition();
   const [matches, setMatches] = useState<Match[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [activeAdminTab, setActiveAdminTab] = useState<'matches' | 'players' | 'custom'>('matches');
@@ -788,19 +789,19 @@ const AdminDashboard: React.FC = () => {
           </div>
           <div className="bg-gray-100 p-1 rounded-xl flex shadow-sm">
             <button 
-              onClick={() => setActiveAdminTab('matches')}
+              onClick={() => startTransition(() => setActiveAdminTab('matches'))}
               className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeAdminTab === 'matches' ? 'bg-world-cup-green text-white shadow-md' : 'text-gray-400'}`}
             >
               แมตช์
             </button>
             <button 
-              onClick={() => setActiveAdminTab('players')}
+              onClick={() => startTransition(() => setActiveAdminTab('players'))}
               className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeAdminTab === 'players' ? 'bg-world-cup-green text-white shadow-md' : 'text-gray-400'}`}
             >
               ผู้เล่น
             </button>
             <button 
-              onClick={() => setActiveAdminTab('custom')}
+              onClick={() => startTransition(() => setActiveAdminTab('custom'))}
               className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeAdminTab === 'custom' ? 'bg-world-cup-green text-white shadow-md' : 'text-gray-400'}`}
             >
               ปรับแต่ง
