@@ -14,7 +14,7 @@ const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
   const [matches, setMatches] = useState<Match[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [activeAdminTab, setActiveAdminTab] = useState<'matches' | 'players' | 'custom'>('matches');
+  const [activeAdminTab, setActiveAdminTab] = useState<'matches' | 'history' | 'players' | 'custom'>('matches');
   const deferredAdminTab = useDeferredValue(activeAdminTab);
   const [showAdd, setShowAdd] = useState(false);
   
@@ -806,22 +806,28 @@ const AdminDashboard: React.FC = () => {
           <div className="flex items-center gap-2">
             <h2 className="text-2xl italic font-black uppercase tracking-tighter">ADMIN PANEL</h2>
           </div>
-          <div className="bg-gray-100 p-1 rounded-xl flex shadow-sm">
+          <div className="bg-gray-100 p-1 rounded-xl flex shadow-sm flex-wrap gap-0.5 justify-center">
             <button 
               onClick={() => setActiveAdminTab('matches')}
-              className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeAdminTab === 'matches' ? 'bg-world-cup-green text-white shadow-md' : 'text-gray-400'}`}
+              className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all ${activeAdminTab === 'matches' ? 'bg-world-cup-green text-white shadow-md' : 'text-gray-400'}`}
             >
               แมตช์
             </button>
             <button 
+              onClick={() => setActiveAdminTab('history')}
+              className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all ${activeAdminTab === 'history' ? 'bg-world-cup-green text-white shadow-md' : 'text-gray-400'}`}
+            >
+              ประวัติการทาย
+            </button>
+            <button 
               onClick={() => setActiveAdminTab('players')}
-              className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeAdminTab === 'players' ? 'bg-world-cup-green text-white shadow-md' : 'text-gray-400'}`}
+              className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all ${activeAdminTab === 'players' ? 'bg-world-cup-green text-white shadow-md' : 'text-gray-400'}`}
             >
               ผู้เล่น
             </button>
             <button 
               onClick={() => setActiveAdminTab('custom')}
-              className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeAdminTab === 'custom' ? 'bg-world-cup-green text-white shadow-md' : 'text-gray-400'}`}
+              className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all ${activeAdminTab === 'custom' ? 'bg-world-cup-green text-white shadow-md' : 'text-gray-400'}`}
             >
               ปรับแต่ง
             </button>
@@ -1056,7 +1062,7 @@ const AdminDashboard: React.FC = () => {
         </div>
       )}
 
-      {deferredAdminTab === 'matches' && (
+      {(deferredAdminTab === 'matches' || deferredAdminTab === 'history') && (
         <>
           {showAdd && (
             <div className="space-y-4">
@@ -1210,7 +1216,7 @@ const AdminDashboard: React.FC = () => {
 
         {!showAdd && (
           <div className="space-y-6">
-            {calcStagedIds.length > 0 && (
+            {deferredAdminTab === 'matches' && calcStagedIds.length > 0 && (
               <motion.div 
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -1275,7 +1281,22 @@ const AdminDashboard: React.FC = () => {
               </motion.div>
             )}
 
-            {matches.map(match => (
+            {matches.filter(match => {
+              if (deferredAdminTab === 'history') {
+                return match.status === MatchStatus.FINISHED;
+              }
+              return match.status !== MatchStatus.FINISHED;
+            }).length === 0 ? (
+              <div className="wc-glass p-8 rounded-2xl text-center text-gray-400 font-bold italic">
+                ไม่มีแมตช์ในส่วนนี้
+              </div>
+            ) : (
+              matches.filter(match => {
+                if (deferredAdminTab === 'history') {
+                  return match.status === MatchStatus.FINISHED;
+                }
+                return match.status !== MatchStatus.FINISHED;
+              }).map(match => (
               <div key={match.id} className={`wc-glass rounded-3xl p-6 flex flex-col gap-6 border-l-8 transition-all ${calcStagedIds.includes(match.id) ? 'border-world-cup-gold bg-world-cup-gold/5 ring-2 ring-world-cup-gold/20' : 'border-world-cup-green shadow-xl'}`}>
                 <div className="flex justify-between items-start">
                   <div className="flex items-start gap-3 flex-1">
@@ -1462,7 +1483,8 @@ const AdminDashboard: React.FC = () => {
                   </div>
                 )}
               </div>
-            ))}
+              ))
+            )}
           </div>
         )}
     </>
