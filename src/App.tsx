@@ -72,8 +72,8 @@ function AppContent() {
             />
           </div>
           <div className="flex flex-col justify-center">
-            <div className="h-7 flex items-center">
-              <svg className="h-7 w-[240px] overflow-visible" viewBox="0 0 240 28" style={{ filter: 'drop-shadow(0px 1.5px 3px rgba(168, 85, 247, 0.2)) drop-shadow(0px 1px 1.5px rgba(0, 0, 0, 0.15))' }}>
+            <div className="h-10 flex items-center">
+              <svg className="h-10 w-[300px] overflow-visible" viewBox="0 0 300 36" style={{ filter: 'drop-shadow(0px 1.5px 3px rgba(168, 85, 247, 0.2)) drop-shadow(0px 1px 1.5px rgba(0, 0, 0, 0.15))' }}>
                 <defs>
                   <linearGradient id="stroke-grad" x1="0%" y1="0%" x2="100%" y2="0%">
                     <stop offset="0%" stopColor="#8b5cf6" /> {/* Vibrant Purple */}
@@ -83,17 +83,17 @@ function AppContent() {
                 </defs>
                 <text
                   x="0"
-                  y="20"
+                  y="28"
                   fill="#ffffff"
                   stroke="url(#stroke-grad)"
-                  strokeWidth="2.5"
+                  strokeWidth="3"
                   strokeLinejoin="round"
                   paintOrder="stroke fill"
                   style={{
                     fontFamily: '"Kanit", sans-serif',
                     fontWeight: 500,
                     fontStyle: 'italic',
-                    fontSize: '14pt',
+                    fontSize: '22pt',
                     letterSpacing: '-0.02em'
                   }}
                 >
