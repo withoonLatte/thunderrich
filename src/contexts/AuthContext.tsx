@@ -23,7 +23,7 @@ export const PLAYER_PINS = [
   '1122', '3344', '5566', '7788', '9900', '2468', '1357', '9876', '5678', '1212'
 ];
 
-export const ADMIN_PINS = ['999999', 'admin99'];
+export const ADMIN_PINS = ['999999', 'admin99', '888888', '777777', '555555'];
 
 interface AuthContextType {
   user: User | null;
