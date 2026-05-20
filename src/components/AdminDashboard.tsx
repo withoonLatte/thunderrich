@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, Timestamp, deleteDoc, writeBatch, getDoc, getDocs, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { TournamentRound, Match, MatchStatus, User } from '../types';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth, PLAYER_PINS } from '../contexts/AuthContext';
 import { calculateMatchResults } from '../lib/gameLogic';
 import { Trash2, Edit3, CheckCircle, PlusCircle, RefreshCw, Calendar, ChevronDown, Check, Camera, Loader2, Info, Zap, Star, FileUp } from 'lucide-react';
 import { format } from 'date-fns';
@@ -784,7 +784,7 @@ const AdminDashboard: React.FC = () => {
         <div className="space-y-6">
           <div className="wc-glass p-6 rounded-3xl border-t-2 border-world-cup-green/20">
             <h3 className="text-sm text-gray-400 italic uppercase tracking-wider mb-2 text-center underline underline-offset-4">สรุปรายชื่อเพื่อนซี้</h3>
-            <p className="text-[10px] text-center text-gray-500 mb-6">ผู้เล่นสมัครสมาชิกเองผ่านหน้าลงทะเบียน</p>
+            <p className="text-[10px] text-center text-gray-500 mb-6 font-semibold">ผู้เล่นสมัครสมาชิกเองผ่านหน้าลงทะเบียน</p>
             
             <div className="space-y-3">
               {users.map((u, idx) => (
@@ -794,7 +794,14 @@ const AdminDashboard: React.FC = () => {
                       {idx + 1}
                     </div>
                     <div>
-                      <p className="text-huge text-slate-800 font-bold">{u.displayName}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-huge text-slate-800 font-bold">{u.displayName}</p>
+                        {u.personalPin && (
+                          <span className="text-[10px] bg-amber-50 text-world-cup-gold border border-amber-200 px-2 py-0.5 rounded-lg font-black tracking-widest flex items-center gap-1 select-all">
+                            🔑 {u.personalPin}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-gray-400 font-medium">{u.role === 'admin' ? 'แอดมิน' : 'ผู้เล่น'}</p>
                     </div>
                   </div>
@@ -804,6 +811,43 @@ const AdminDashboard: React.FC = () => {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          <div className="wc-glass p-6 rounded-3xl border-t-2 border-world-cup-gold/20">
+            <div className="flex items-center gap-2 justify-center mb-1">
+              <Zap className="w-4 h-4 text-world-cup-gold animate-bounce" />
+              <h3 className="text-sm font-black text-slate-800 italic uppercase tracking-wider">สถานะการใช้งานรหัสผ่าน (PIN Status Explorer)</h3>
+            </div>
+            <p className="text-[10px] text-center text-gray-500 mb-6">เฉพาะแอดมินเท่านั้นที่จะมองเห็นส่วนนี้ เพื่อใช้สุ่มรหัสผ่านแจกจ่ายให้เพื่อนๆ</p>
+
+            <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 gap-3">
+              {PLAYER_PINS.map((playerPin) => {
+                const occupier = users.find(u => u.personalPin === playerPin);
+                const isOccupied = !!occupier;
+
+                return (
+                  <div
+                    key={playerPin}
+                    className={`p-3.5 rounded-2xl border flex flex-col justify-center items-center gap-1.5 transition-all text-center ${
+                      isOccupied 
+                        ? 'bg-slate-50 border-slate-100 text-slate-400' 
+                        : 'bg-white border-slate-200 hover:border-world-cup-green/40 shadow-sm'
+                    }`}
+                  >
+                    <span className={`text-sm font-black tracking-widest ${isOccupied ? 'line-through text-slate-300' : 'text-world-cup-gold text-base'}`}>
+                      {playerPin}
+                    </span>
+                    <span className="text-[10px] font-bold block max-w-full truncate">
+                      {isOccupied ? (
+                        <span className="text-red-500 font-semibold">🔒 {occupier.displayName}</span>
+                      ) : (
+                        <span className="text-world-cup-green font-black">🟢 ว่าง</span>
+                      )}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

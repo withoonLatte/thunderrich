@@ -1,21 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth, PLAYER_PINS } from '../contexts/AuthContext';
+import React, { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import { 
   Zap, 
   AlertCircle, 
   User, 
   Lock, 
   KeyRound, 
-  ChevronDown, 
-  ChevronUp, 
-  CheckCircle,
   Eye,
   EyeOff
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
-import { collection, onSnapshot } from 'firebase/firestore';
-import { db } from '../lib/firebase';
-import { User as UserType } from '../types';
+import { motion } from 'motion/react';
 
 const Login: React.FC = () => {
   const { login } = useAuth();
@@ -24,27 +18,6 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // Real-time track which PINs are already occupied
-  const [occupiedPins, setOccupiedPins] = useState<Record<string, string>>({});
-  const [showPinHelper, setShowPinHelper] = useState(false);
-
-  useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, 'users'), (snapshot) => {
-      const pinToName: Record<string, string> = {};
-      snapshot.docs.forEach(docSnap => {
-        const data = docSnap.data() as UserType;
-        if (data.personalPin) {
-          pinToName[data.personalPin] = data.displayName;
-        }
-      });
-      setOccupiedPins(pinToName);
-    }, (err) => {
-      console.error("Error monitoring occupied pins:", err);
-    });
-
-    return () => unsubscribe();
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,12 +32,6 @@ const Login: React.FC = () => {
       setError(err.message || 'ข้อมูลไม่ถูกต้อง');
       setLoading(false);
     }
-  };
-
-  const handleSelectPin = (selectedPin: string) => {
-    setPin(selectedPin);
-    // Smooth scroll back up to the form if helpful
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -176,77 +143,9 @@ const Login: React.FC = () => {
 
           {/* Subtitle instructions */}
           <p className="text-[11px] text-slate-400 font-semibold text-center leading-relaxed">
-            * สมาชิกใหม่กรุณาใช้ชื่อเล่นที่ไม่ซ้ำ และรหัสผ่านที่ไม่มีคนใช้งานจากลิสต์ด้านล่าง
+            * สมาชิกใหม่กรุณาใช้ชื่อเล่นที่ไม่ซ้ำ และรหัสผ่านที่แอดมินมอบให้ครั้งแรก
           </p>
         </motion.div>
-
-        {/* PIN Helper Accordion */}
-        <div className="z-10 w-full">
-          <button
-            onClick={() => setShowPinHelper(!showPinHelper)}
-            className="w-full flex items-center justify-between bg-white hover:bg-slate-50 border border-slate-200/80 rounded-2xl px-5 py-4 text-slate-700 font-bold text-sm transition-all shadow-sm"
-          >
-            <div className="flex items-center gap-2 text-world-cup-gold">
-              <KeyRound className="w-4 h-4" />
-              <span>ดูสถานะรหัสผ่าน (PIN) ทั้งหมด</span>
-            </div>
-            {showPinHelper ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
-          </button>
-
-          <AnimatePresence>
-            {showPinHelper && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden"
-              >
-                <div className="bg-white border-x border-b border-slate-200/80 rounded-b-2xl p-4 text-left space-y-3 shadow-md">
-                  <div className="flex justify-between items-center text-[10px] font-black tracking-wider text-slate-400 uppercase">
-                    <span>รหัสผ่านสำหรับ 20 สมาชิก</span>
-                    <span className="text-world-cup-green">🟢 คลิกเพื่อนำรหัสไปใช้</span>
-                  </div>
-
-                  <div className="grid grid-cols-2 xs:grid-cols-3 gap-2">
-                    {PLAYER_PINS.map((playerPin) => {
-                      const occupier = occupiedPins[playerPin];
-                      const isOccupied = !!occupier;
-
-                      return (
-                        <button
-                          key={playerPin}
-                          type="button"
-                          disabled={isOccupied}
-                          onClick={() => handleSelectPin(playerPin)}
-                          className={`p-3 rounded-xl border flex flex-col justify-center items-center gap-1 transition-all ${
-                            isOccupied 
-                              ? 'bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed text-center' 
-                              : 'bg-white hover:bg-slate-50 border-slate-200 hover:border-world-cup-green/50 text-slate-700 hover:-translate-y-0.5 shadow-sm'
-                          }`}
-                        >
-                          <span className={`text-sm font-black tracking-widest ${isOccupied ? 'line-through text-slate-450' : 'text-world-cup-gold'}`}>
-                            {playerPin}
-                          </span>
-                          <span className="text-[9px] font-bold block max-w-full truncate">
-                            {isOccupied ? (
-                              <span className="text-slate-400">🔒 {occupier}</span>
-                            ) : (
-                              <span className="text-world-cup-green font-black select-none">🟢 ว่าง</span>
-                            )}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  
-                  <div className="text-[10px] text-slate-400 bg-slate-50 p-3 rounded-xl border border-slate-100 font-medium leading-relaxed mt-2 text-center">
-                    เมื่อเลือก PIN ที่ว่างเพื่อสมัครใหม่สำเร็จ ระบบจะล็อกรหัสผ่านนั้นให้กับชื่อเล่นของคุณทันที!
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
       </div>
 
       <div className="text-xs uppercase tracking-[0.2em] font-black text-slate-400 opacity-20 z-10 select-none pb-8">
