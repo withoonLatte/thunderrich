@@ -71,9 +71,14 @@ function AppContent() {
               }}
             />
           </div>
-          <h1 className="text-2xl font-black text-slate-900 italic tracking-tighter hidden xs:block">
-            รวยฟ้าผ่า <span className="text-world-cup-green">#20</span>
-          </h1>
+          <div className="flex flex-col justify-center">
+            <h1 className="text-base font-black tracking-tight bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 bg-clip-text text-transparent leading-none">
+              รวยฟ้าผ่า #11 บอลโลก 2026
+            </h1>
+            <p className="text-[10px] font-black tracking-wider text-slate-500 uppercase mt-1">
+              รวยไม่ไหวแล้วโว้ย 🔥
+            </p>
+          </div>
         </div>
         {user.role === UserRole.ADMIN && (
           <div className="flex bg-gray-100 rounded-2xl p-1.5 shadow-inner">
