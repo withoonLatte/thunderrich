@@ -72,15 +72,34 @@ function AppContent() {
             />
           </div>
           <div className="flex flex-col justify-center">
-            <h1 
-              style={{
-                WebkitTextStroke: '2px #ffffff',
-                filter: 'drop-shadow(0px 2px 4px rgba(99, 102, 241, 0.15)) drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.15))'
-              }}
-              className="text-base font-black tracking-tight bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 bg-clip-text text-transparent leading-none"
-            >
-              รวยฟ้าผ่า #11 บอลโลก 2026
-            </h1>
+            <div className="h-6 flex items-center">
+              <svg className="h-6 w-[210px] overflow-visible" viewBox="0 0 210 24" style={{ filter: 'drop-shadow(0px 1.5px 3px rgba(168, 85, 247, 0.2)) drop-shadow(0px 1px 1.5px rgba(0, 0, 0, 0.15))' }}>
+                <defs>
+                  <linearGradient id="stroke-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#8b5cf6" /> {/* Vibrant Purple */}
+                    <stop offset="50%" stopColor="#d946ef" /> {/* Fuchsia */}
+                    <stop offset="100%" stopColor="#ec4899" /> {/* Pink */}
+                  </linearGradient>
+                </defs>
+                <text
+                  x="0"
+                  y="18"
+                  fill="#ffffff"
+                  stroke="url(#stroke-grad)"
+                  strokeWidth="2.5"
+                  strokeLinejoin="round"
+                  paintOrder="stroke fill"
+                  style={{
+                    fontFamily: 'system-ui, -apple-system, sans-serif',
+                    fontWeight: 900,
+                    letterSpacing: '-0.025em'
+                  }}
+                  className="text-[15.5px]"
+                >
+                  รวยฟ้าผ่า #11 บอลโลก 2026
+                </text>
+              </svg>
+            </div>
             <p className="text-[10px] font-black tracking-wider text-slate-500 uppercase mt-1">
               รวยไม่ไหวแล้วโว้ย 🔥
             </p>
