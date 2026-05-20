@@ -802,32 +802,29 @@ const AdminDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4">
-        <div className="flex justify-between items-center text-world-cup-green">
-          <div className="flex items-center gap-2">
-            <h2 className="text-2xl italic font-black uppercase tracking-tighter">ADMIN PANEL</h2>
-          </div>
-          <div className="bg-gray-100 p-1 rounded-xl flex shadow-sm flex-wrap gap-0.5 justify-center">
+        <div className="w-full">
+          <div className="bg-slate-100/80 backdrop-blur-sm p-1.5 rounded-2xl flex w-full gap-1.5 shadow-inner border border-slate-200/50">
             <button 
               onClick={() => setActiveAdminTab('matches')}
-              className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all ${activeAdminTab === 'matches' ? 'bg-world-cup-green text-white shadow-md' : 'text-gray-400'}`}
+              className={`flex-1 text-center py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all duration-200 ${activeAdminTab === 'matches' ? 'bg-world-cup-green text-white shadow-md shadow-world-cup-green/20 scale-[1.02]' : 'text-slate-500 hover:text-slate-800'}`}
             >
               แมตช์
             </button>
             <button 
               onClick={() => setActiveAdminTab('history')}
-              className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all ${activeAdminTab === 'history' ? 'bg-world-cup-green text-white shadow-md' : 'text-gray-400'}`}
+              className={`flex-1 text-center py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all duration-200 ${activeAdminTab === 'history' ? 'bg-world-cup-green text-white shadow-md shadow-world-cup-green/20 scale-[1.02]' : 'text-slate-500 hover:text-slate-800'}`}
             >
               ประวัติการทาย
             </button>
             <button 
               onClick={() => setActiveAdminTab('players')}
-              className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all ${activeAdminTab === 'players' ? 'bg-world-cup-green text-white shadow-md' : 'text-gray-400'}`}
+              className={`flex-1 text-center py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all duration-200 ${activeAdminTab === 'players' ? 'bg-world-cup-green text-white shadow-md shadow-world-cup-green/20 scale-[1.02]' : 'text-slate-500 hover:text-slate-800'}`}
             >
               ผู้เล่น
             </button>
             <button 
               onClick={() => setActiveAdminTab('custom')}
-              className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all ${activeAdminTab === 'custom' ? 'bg-world-cup-green text-white shadow-md' : 'text-gray-400'}`}
+              className={`flex-1 text-center py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all duration-200 ${activeAdminTab === 'custom' ? 'bg-world-cup-green text-white shadow-md shadow-world-cup-green/20 scale-[1.02]' : 'text-slate-500 hover:text-slate-800'}`}
             >
               ปรับแต่ง
             </button>
