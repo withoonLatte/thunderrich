@@ -72,8 +72,8 @@ function AppContent() {
             />
           </div>
           <div className="flex flex-col justify-center">
-            <div className="h-6 flex items-center">
-              <svg className="h-6 w-[210px] overflow-visible" viewBox="0 0 210 24" style={{ filter: 'drop-shadow(0px 1.5px 3px rgba(168, 85, 247, 0.2)) drop-shadow(0px 1px 1.5px rgba(0, 0, 0, 0.15))' }}>
+            <div className="h-7 flex items-center">
+              <svg className="h-7 w-[240px] overflow-visible" viewBox="0 0 240 28" style={{ filter: 'drop-shadow(0px 1.5px 3px rgba(168, 85, 247, 0.2)) drop-shadow(0px 1px 1.5px rgba(0, 0, 0, 0.15))' }}>
                 <defs>
                   <linearGradient id="stroke-grad" x1="0%" y1="0%" x2="100%" y2="0%">
                     <stop offset="0%" stopColor="#8b5cf6" /> {/* Vibrant Purple */}
@@ -83,24 +83,33 @@ function AppContent() {
                 </defs>
                 <text
                   x="0"
-                  y="18"
+                  y="20"
                   fill="#ffffff"
                   stroke="url(#stroke-grad)"
                   strokeWidth="2.5"
                   strokeLinejoin="round"
                   paintOrder="stroke fill"
                   style={{
-                    fontFamily: 'system-ui, -apple-system, sans-serif',
-                    fontWeight: 900,
-                    letterSpacing: '-0.025em'
+                    fontFamily: '"Kanit", sans-serif',
+                    fontWeight: 500,
+                    fontStyle: 'italic',
+                    fontSize: '14pt',
+                    letterSpacing: '-0.02em'
                   }}
-                  className="text-[15.5px]"
                 >
                   รวยฟ้าผ่า #11 บอลโลก 2026
                 </text>
               </svg>
             </div>
-            <p className="text-[10px] font-black tracking-wider text-slate-500 uppercase mt-1">
+            <p 
+              style={{
+                fontFamily: '"Kanit", sans-serif',
+                fontWeight: 500,
+                fontStyle: 'italic',
+                fontSize: '10.5pt'
+              }}
+              className="tracking-wider text-slate-550 text-slate-500 mt-1"
+            >
               รวยไม่ไหวแล้วโว้ย 🔥
             </p>
           </div>
