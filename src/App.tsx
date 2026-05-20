@@ -55,9 +55,9 @@ function AppContent() {
         backgroundAttachment: 'fixed'
       } : {}}
     >
-      <header className="p-4 flex justify-between items-center bg-white/80 backdrop-blur-xl sticky top-0 z-50 border-b border-gray-100 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 flex items-center justify-center bg-world-cup-green/10 rounded-2xl overflow-hidden">
+      <header className="p-3 sm:p-4 flex justify-between items-center bg-white/80 backdrop-blur-xl sticky top-0 z-50 border-b border-gray-100 shadow-sm">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 flex items-center justify-center bg-world-cup-green/10 rounded-xl sm:rounded-2xl overflow-hidden">
             <img 
               src={config?.logoUrl || "/logo.png"} 
               alt="Logo" 
@@ -71,9 +71,9 @@ function AppContent() {
               }}
             />
           </div>
-          <div className="flex flex-col justify-center">
-            <div className="h-10 flex items-center">
-              <svg className="h-10 w-[300px] overflow-visible" viewBox="0 0 300 36" style={{ filter: 'drop-shadow(0px 1.5px 3px rgba(168, 85, 247, 0.2)) drop-shadow(0px 1px 1.5px rgba(0, 0, 0, 0.15))' }}>
+          <div className="flex flex-col justify-center min-w-0">
+            <div className="h-8 sm:h-10 flex items-center">
+              <svg className="h-8 sm:h-10 w-[180px] xs:w-[220px] sm:w-[280px] overflow-visible" viewBox="0 0 300 36" style={{ filter: 'drop-shadow(0px 1.5px 3px rgba(168, 85, 247, 0.2)) drop-shadow(0px 1px 1.5px rgba(0, 0, 0, 0.15))' }}>
                 <defs>
                   <linearGradient id="stroke-grad" x1="0%" y1="0%" x2="100%" y2="0%">
                     <stop offset="0%" stopColor="#8b5cf6" /> {/* Vibrant Purple */}
@@ -106,25 +106,25 @@ function AppContent() {
                 fontFamily: '"Kanit", sans-serif',
                 fontWeight: 500,
                 fontStyle: 'italic',
-                fontSize: '10.5pt'
+                fontSize: '9.5pt'
               }}
-              className="tracking-wider text-slate-550 text-slate-500 mt-1"
+              className="tracking-wider text-slate-500 mt-0.5 sm:mt-1 whitespace-nowrap"
             >
               รวยไม่ไหวแล้วโว้ย 🔥
             </p>
           </div>
         </div>
         {user.role === UserRole.ADMIN && (
-          <div className="flex bg-gray-100 rounded-2xl p-1.5 shadow-inner">
+          <div className="flex bg-slate-100 rounded-xl p-1 shadow-inner shrink-0 ml-1">
             <button 
               onClick={() => setActiveTab('dashboard')}
-              className={`px-5 py-2 rounded-xl text-sm font-black transition-all uppercase tracking-widest ${activeTab === 'dashboard' ? 'bg-world-cup-green text-white shadow-md' : 'text-gray-400'}`}
+              className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all tracking-wide ${activeTab === 'dashboard' ? 'bg-world-cup-green text-white shadow-md' : 'text-slate-400'}`}
             >
               ผู้เล่น
             </button>
             <button 
               onClick={() => setActiveTab('admin')}
-              className={`px-5 py-2 rounded-xl text-sm font-black transition-all uppercase tracking-widest ${activeTab === 'admin' ? 'bg-world-cup-green text-white shadow-md' : 'text-gray-400'}`}
+              className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all tracking-wide ${activeTab === 'admin' ? 'bg-world-cup-green text-white shadow-md' : 'text-slate-400'}`}
             >
               แอดมิน
             </button>
