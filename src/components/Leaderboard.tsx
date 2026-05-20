@@ -102,14 +102,38 @@ const Leaderboard: React.FC = () => {
             </div>
 
             <div className="flex-1 min-w-0">
-              <p className={`truncate text-base font-black uppercase tracking-tighter ${index === 0 ? 'text-white' : 'text-slate-800'}`}>{u.displayName}</p>
+              <p className={`truncate text-lg font-black uppercase tracking-tighter ${index === 0 ? 'text-white drop-shadow-sm' : 'text-slate-900'}`}>{u.displayName}</p>
               {history && (
-                <p className={`text-[10px] font-mono font-black tracking-tight break-all mb-1 ${index === 0 ? 'text-white/80' : 'text-world-cup-green'}`}>
-                  {history}
-                </p>
+                <div className="flex items-center gap-1.5 my-1 bg-black/5 px-2 py-0.5 rounded-xl w-fit">
+                  <span className={`text-[10px] font-bold uppercase tracking-widest ${index === 0 ? 'text-white/90' : 'text-slate-550 text-slate-500'}`}>ฟอร์มล่าสุด:</span>
+                  <div className="flex gap-1.5">
+                    {history.split('').map((char, charIdx) => {
+                      let bgClass = '';
+                      let text = '';
+                      if (char === '1') {
+                        bgClass = index === 0 ? 'bg-emerald-400 text-slate-950 shadow-sm' : 'bg-emerald-500 text-white shadow-sm';
+                        text = 'W';
+                      } else if (char === '0') {
+                        bgClass = index === 0 ? 'bg-rose-400 text-slate-950 shadow-sm' : 'bg-rose-500 text-white shadow-sm';
+                        text = 'L';
+                      } else {
+                        bgClass = index === 0 ? 'bg-white/30 text-white' : 'bg-slate-300 text-slate-700';
+                        text = 'P';
+                      }
+                      return (
+                        <span 
+                          key={charIdx} 
+                          className={`w-4-fixed-square w-4 h-4 rounded-md flex items-center justify-center text-[9px] font-extrabold leading-none ${bgClass}`}
+                        >
+                          {text}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
-              <p className={`text-[10px] font-bold uppercase tracking-widest ${index === 0 ? 'text-white/60' : 'text-gray-400'}`}>
-                ERRORS: {u.round1_wrong_count}/24
+              <p className={`text-xs font-bold uppercase tracking-wider mt-1.5 ${index === 0 ? 'text-white' : 'text-slate-600'}`}>
+                ผิดสะสม: <span className={`font-black px-1.5 py-0.5 rounded-lg text-sm ${index === 0 ? 'bg-amber-900/60 text-white' : 'bg-rose-100/90 text-rose-600'}`}>{u.round1_wrong_count}</span> <span className="opacity-60">/ 24</span>
               </p>
             </div>
 

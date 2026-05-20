@@ -24,7 +24,7 @@ const MatchList: React.FC = () => {
     const unsubMatches = onSnapshot(query(collection(db, 'matches'), orderBy('startTime', 'asc')), (snap) => {
       const allMatches = snap.docs.map(d => ({ id: d.id, ...d.data() } as Match));
       const sorted = [...allMatches].sort((a, b) => (a.startTime?.seconds || 0) - (b.startTime?.seconds || 0));
-      setMatches(sorted.filter(m => m.isPublished === true));
+      setMatches(sorted.filter(m => m.isPublished === true && m.status !== MatchStatus.FINISHED));
     });
 
     if (user) {
