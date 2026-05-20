@@ -7,7 +7,7 @@ import { motion } from 'motion/react';
 
 const Leaderboard: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
-  const [histories, setHistories] = useState<Record<string, string>>({});
+  const [userHistories, setUserHistories] = useState<Record<string, { points: number; cardType: 'yellow' | 'red' | null; isResultCorrect?: boolean }[]>>({});
 
   useEffect(() => {
     const q = query(collection(db, 'users'), orderBy('points', 'desc'));
@@ -21,43 +21,78 @@ const Leaderboard: React.FC = () => {
       // Fetch histories for top users
       const userIds = topUsers.map(u => u.uid);
       if (userIds.length > 0) {
+        // Fetch matches map for sorting and round identification
+        const matchesSnap = await getDocs(collection(db, 'matches'));
+        const matchesMap: Record<string, any> = {};
+        matchesSnap.forEach(d => {
+          matchesMap[d.id] = d.data();
+        });
+
         // Since Firestore has a limit of 10 in 'in' queries, and we have up to 15 users, 
         // we might want to fetch all predictions and filter or chunk it.
-        // For simplicity and since matches are not huge, we can fetch all predictions for these users.
-        const predQ = query(
-          collection(db, 'predictions'), 
-          where('userId', 'in', userIds.slice(0, 10)),
-          orderBy('createdAt', 'asc')
-        );
-        const predSnap = await getDocs(predQ);
-        
-        // If we have more than 10 users, fetch the rest
-        let allPredDocs = [...predSnap.docs];
-        if (userIds.length > 10) {
-          const predQ2 = query(
-            collection(db, 'predictions'), 
-            where('userId', 'in', userIds.slice(10, 15)),
-            orderBy('createdAt', 'asc')
-          );
-          const predSnap2 = await getDocs(predQ2);
-          allPredDocs = [...allPredDocs, ...predSnap2.docs];
+        const chunks: string[][] = [];
+        for (let i = 0; i < userIds.length; i += 10) {
+          chunks.push(userIds.slice(i, i + 10));
         }
 
-        const newHistories: Record<string, string> = {};
-        allPredDocs.forEach(d => {
-          const p = d.data() as Prediction;
-          if (p.pointsEarned !== undefined) {
-             let code = '';
-             if (p.isResultCorrect) code = '1';
-             else if (p.pointsEarned === 0) code = '2'; // Push
-             else if (p.pointsEarned < 0) code = '0'; // Wrong
-             
-             if (code) {
-               newHistories[p.userId] = (newHistories[p.userId] || '') + code;
-             }
-          }
+        const promises = chunks.map(chunk => {
+          const predQ = query(
+            collection(db, 'predictions'), 
+            where('userId', 'in', chunk)
+          );
+          return getDocs(predQ);
         });
-        setHistories(newHistories);
+
+        const snaps = await Promise.all(promises);
+        const allPreds: Prediction[] = [];
+        snaps.forEach(snap => {
+          snap.forEach(d => {
+            allPreds.push({ id: d.id, ...d.data() } as Prediction);
+          });
+        });
+
+        const newHistories: Record<string, { points: number; cardType: 'yellow' | 'red' | null; isResultCorrect?: boolean }[]> = {};
+        
+        userIds.forEach(uid => {
+          const userPreds = allPreds.filter(p => p.userId === uid && p.pointsEarned !== undefined);
+          
+          // Sort chronologically by match startTime
+          userPreds.sort((a, b) => {
+            const matchA = matchesMap[a.matchId];
+            const matchB = matchesMap[b.matchId];
+            const timeA = matchA?.startTime?.seconds || 0;
+            const timeB = matchB?.startTime?.seconds || 0;
+            return timeA - timeB;
+          });
+
+          let wrongCount = 0;
+          const processed = userPreds.map(p => {
+            const match = matchesMap[p.matchId];
+            const earns = p.pointsEarned ?? 0;
+            const isGroup = match?.round === 'group';
+            const isWrong = !p.isResultCorrect && earns < 0;
+            
+            let cardType: 'yellow' | 'red' | null = null;
+            if (isGroup && isWrong) {
+              wrongCount++;
+              if (wrongCount === 12) {
+                cardType = 'yellow';
+              } else if (wrongCount === 24) {
+                cardType = 'red';
+              }
+            }
+
+            return {
+              points: earns,
+              cardType,
+              isResultCorrect: p.isResultCorrect
+            };
+          });
+
+          newHistories[uid] = processed;
+        });
+
+        setUserHistories(newHistories);
       }
     });
 
@@ -70,7 +105,7 @@ const Leaderboard: React.FC = () => {
         const isTop3 = index < 3;
         const Icon = index === 0 ? Trophy : index === 1 ? Award : index === 2 ? Medal : null;
         const iconColor = index === 0 ? 'text-world-cup-gold' : index === 1 ? 'text-gray-300' : 'text-amber-600';
-        const history = histories[u.uid] || '';
+        const history = userHistories[u.uid] || [];
 
         return (
           <motion.div 
@@ -103,30 +138,51 @@ const Leaderboard: React.FC = () => {
 
             <div className="flex-1 min-w-0">
               <p className={`truncate text-lg font-black uppercase tracking-tighter ${index === 0 ? 'text-white drop-shadow-sm' : 'text-slate-900'}`}>{u.displayName}</p>
-              {history && (
-                <div className="flex items-center gap-1.5 my-1 bg-black/5 px-2 py-0.5 rounded-xl w-fit">
-                  <span className={`text-[10px] font-bold uppercase tracking-widest ${index === 0 ? 'text-white/90' : 'text-slate-550 text-slate-500'}`}>ฟอร์มล่าสุด:</span>
-                  <div className="flex gap-1.5">
-                    {history.split('').map((char, charIdx) => {
+              {history && history.length > 0 && (
+                <div className="flex flex-col gap-1.5 my-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`text-[10px] font-black uppercase tracking-wider ${index === 0 ? 'text-white/80' : 'text-slate-500'}`}>
+                      ประวัติ 20 นัดล่าสุด:
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1 max-w-[280px]">
+                    {history.slice(-20).map((item, itemIdx) => {
+                      const earns = item.points;
+                      const isPositive = earns > 0;
+                      const isNegative = earns < 0;
+                      
                       let bgClass = '';
-                      let text = '';
-                      if (char === '1') {
-                        bgClass = index === 0 ? 'bg-emerald-400 text-slate-950 shadow-sm' : 'bg-emerald-500 text-white shadow-sm';
-                        text = 'W';
-                      } else if (char === '0') {
-                        bgClass = index === 0 ? 'bg-rose-400 text-slate-950 shadow-sm' : 'bg-rose-500 text-white shadow-sm';
-                        text = 'L';
+                      if (isPositive) {
+                        bgClass = index === 0 ? 'bg-emerald-500/90 text-slate-950 font-black shadow-sm ring-1 ring-white/10' : 'bg-emerald-500 text-white shadow-sm';
+                      } else if (isNegative) {
+                        bgClass = index === 0 ? 'bg-rose-500 text-white shadow-sm ring-1 ring-white/10' : 'bg-rose-500 text-white shadow-sm';
                       } else {
-                        bgClass = index === 0 ? 'bg-white/30 text-white' : 'bg-slate-300 text-slate-700';
-                        text = 'P';
+                        bgClass = index === 0 ? 'bg-white/20 text-white ring-1 ring-white/10' : 'bg-slate-200 text-slate-750';
                       }
+
+                      const valText = earns > 0 ? `+${earns}` : `${earns}`;
+
                       return (
-                        <span 
-                          key={charIdx} 
-                          className={`w-4-fixed-square w-4 h-4 rounded-md flex items-center justify-center text-[9px] font-extrabold leading-none ${bgClass}`}
+                        <div 
+                          key={itemIdx} 
+                          className={`relative w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black leading-none ${bgClass}`}
                         >
-                          {text}
-                        </span>
+                          {valText}
+                          
+                          {/* Cards Indicator overlay */}
+                          {item.cardType === 'yellow' && (
+                            <span 
+                              title="ได้รับใบเหลืองจากการผิด 12 นัด" 
+                              className="absolute -top-1 -right-1 w-2.5 h-3.5 bg-yellow-400 border border-yellow-200 rounded-[2px] shadow-md z-10 animate-pulse"
+                            />
+                          )}
+                          {item.cardType === 'red' && (
+                            <span 
+                              title="ได้รับใบแดงจากการผิด 24 นัด" 
+                              className="absolute -top-1 -right-1 w-2.5 h-3.5 bg-red-500 border border-red-300 rounded-[2px] shadow-md z-10 animate-pulse"
+                            />
+                          )}
+                        </div>
                       );
                     })}
                   </div>
