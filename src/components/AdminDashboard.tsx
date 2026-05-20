@@ -159,72 +159,174 @@ const AdminDashboard: React.FC = () => {
       reader.onload = async (e) => {
         try {
           const data = new Uint8Array(e.target?.result as ArrayBuffer);
-          const workbook = XLSX.read(data, { type: 'array' });
+          const workbook = XLSX.read(data, { type: 'array', cellDates: true });
           const sheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[sheetName];
           const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
           
-          // Filter out header or empty rows
-          const rows = json.filter(row => row.length >= 3 && row[0] && row[1]);
-          
-          if (rows.length === 0) {
-            alert('ไม่พบข้อมูลในไฟล์ Excel (ต้องการอย่างน้อย 3-4 คอลัมน์)');
+          if (!json || json.length === 0) {
+            alert('ไม่พบข้อมูลในไฟล์ Excel');
             setBatchLoading(false);
             return;
           }
 
-          if (window.confirm(`ตรวจพบ ${rows.length} คู่ในไฟล์ Excel ต้องการเพิ่มทั้งหมดหรือไม่?`)) {
+          // Helper to convert Excel date serial to JS Date
+          const parseExcelSerialDate = (serial: number): Date => {
+            const utc_days = Math.floor(serial - 25569);
+            const utc_value = utc_days * 86400;
+            const date_info = new Date(utc_value * 1000);
+            const fractional_day = serial - Math.floor(serial) + 0.0000001;
+            let total_seconds = Math.floor(86400 * fractional_day);
+            const seconds = total_seconds % 60;
+            total_seconds -= seconds;
+            const hours = Math.floor(total_seconds / (60 * 60));
+            const minutes = Math.floor(total_seconds / 60) % 60;
+            return new Date(date_info.getFullYear(), date_info.getMonth(), date_info.getDate(), hours, minutes, seconds);
+          };
+
+          const validRows: { h: string; a: string; hc: string; startDate: Date }[] = [];
+
+          json.forEach((row) => {
+            if (!row || row.length < 2) return;
+
+            // Trim cell values and identify empty/header cells
+            const cells = row.map(cell => {
+              if (cell instanceof Date) return cell;
+              if (typeof cell === 'number') return cell;
+              return String(cell || '').trim();
+            });
+
+            // Skip potential headers or rows that are mostly empty
+            const textCells = cells.filter(c => typeof c === 'string');
+            const isHeader = textCells.some(cellStr => {
+              const lower = cellStr.toLowerCase();
+              return ['date', 'time', 'เหย้า', 'เยือน', 'เวลา', 'ทีม', 'handicap', 'ราคา', 'ต่อรอง', 'คู่แข่ง', 'ลำดับ', 'match', 'vs'].some(kw => lower.includes(kw));
+            });
+            if (isHeader) return;
+
+            let homeTeam = '';
+            let awayTeam = '';
+            let handicap = '0';
+            let startDate: Date | null = null;
+            let dateIndex = -1;
+
+            // 1. Auto-detect date/time cell
+            for (let i = 0; i < cells.length; i++) {
+              const cell = cells[i];
+              if (cell instanceof Date) {
+                startDate = cell;
+                dateIndex = i;
+                break;
+              }
+              if (typeof cell === 'number') {
+                // If it is serial format like 45000+
+                if (cell > 40000 && cell < 60000) {
+                  startDate = parseExcelSerialDate(cell);
+                  dateIndex = i;
+                  break;
+                }
+              }
+              if (typeof cell === 'string' && cell.length > 5) {
+                // Try converting typical formats e.g. "June 11, at 3:00 PM"
+                let cleanStr = cell.replace(/^[A-Za-z]+,\s+/, '').replace(/at\s+/g, '');
+                if (!cleanStr.includes('2026') && cleanStr.length > 5) {
+                  const parts = cleanStr.split(/\s+/);
+                  if (parts.length >= 2) {
+                    cleanStr = `${parts[0]} ${parts[1]}, 2026 ${parts.slice(2).join(' ')}`;
+                  }
+                }
+                const d = new Date(cleanStr);
+                if (!isNaN(d.getTime())) {
+                  startDate = d;
+                  dateIndex = i;
+                  break;
+                }
+              }
+            }
+
+            // 2. Filter remaining cell indexes
+            const remaining = cells
+              .map((cell, idx) => ({ cell, idx }))
+              .filter(item => item.idx !== dateIndex);
+
+            // 3. Find check handicap or number
+            let handicapIndex = -1;
+            for (let i = 0; i < remaining.length; i++) {
+              const { cell, idx } = remaining[i];
+              const cellStr = String(cell || '').trim();
+              const isHc = (typeof cell === 'number') || 
+                           /^[+-]\d/.test(cellStr) || 
+                           cellStr.includes('/') || 
+                           (!isNaN(Number(cellStr)) && Number(cellStr) >= -10 && Number(cellStr) <= 10);
+              
+              if (isHc && cellStr !== '') {
+                handicap = cellStr;
+                handicapIndex = idx;
+                break;
+              }
+            }
+
+            // 4. Remaining must be team names
+            const teamCells = remaining.filter(item => item.idx !== handicapIndex);
+            if (teamCells.length >= 2) {
+              homeTeam = String(teamCells[0].cell || '').trim();
+              awayTeam = String(teamCells[1].cell || '').trim();
+            } else if (teamCells.length === 1) {
+              const cellStr = String(teamCells[0].cell || '').trim();
+              if (cellStr.includes('vs')) {
+                const parts = cellStr.split('vs');
+                homeTeam = parts[0].trim();
+                awayTeam = parts[1].trim();
+              } else if (cellStr.includes('-')) {
+                const parts = cellStr.split('-');
+                homeTeam = parts[0].trim();
+                awayTeam = parts[1].trim();
+              }
+            }
+
+            if (homeTeam && awayTeam && startDate && !isNaN(startDate.getTime())) {
+              validRows.push({
+                h: homeTeam,
+                a: awayTeam,
+                hc: handicap,
+                startDate
+              });
+            }
+          });
+
+          if (validRows.length === 0) {
+            alert('ไม่พบข้อมูลการแข่งขันที่ถูกต้องในไฟล์ Excel (ตรวจพบ 0 คู่, อาจจะเป็นเพราะรูปแบบวันเวลาไม่ถูกต้อง)');
+            setBatchLoading(false);
+            return;
+          }
+
+          if (window.confirm(`ตรวจพบ ${validRows.length} คู่ในไฟล์ Excel ต้องการนำเข้าทั้งหมดและบันทึกสู่ระบบใช่หรือไม่?`)) {
             const batch = writeBatch(db);
             const now = Date.now();
-            rows.forEach((row, idx) => {
-              let h, a, hc, st;
+            validRows.forEach((row, idx) => {
+              const matchId = `${row.h.replace(/\s+/g, '_')}_${row.a.replace(/\s+/g, '_')}_${now}_${idx}`;
+              const matchRef = doc(db, 'matches', matchId);
               
-              if (row.length === 3) {
-                // Time, Team1, Team2
-                const [rawDate, team1, team2] = row.map(s => String(s || '').trim());
-                h = team1;
-                a = team2;
-                hc = "0.0";
-                
-                // Clean date: "Thursday, June 11, at 3:00 PM" -> "June 11, 2026 3:00 PM"
-                let cleanDateStr = rawDate.replace(/^[A-Za-z]+,\s+/, '').replace(/at\s+/g, '');
-                if (!cleanDateStr.includes('2026') && cleanDateStr.length > 5) {
-                   const parts = cleanDateStr.split(' ');
-                   if (parts.length >= 2) {
-                      cleanDateStr = `${parts[0]} ${parts[1]}, 2026 ${parts.slice(2).join(' ')}`;
-                   }
-                }
-                st = cleanDateStr;
-              } else {
-                [h, a, hc, st] = row.map(s => String(s || '').trim());
-              }
-
-              if (h && a && hc && st) {
-                const matchId = `${h.replace(/\s+/g, '_')}_${a.replace(/\s+/g, '_')}_${now}_${idx}`;
-                const matchRef = doc(db, 'matches', matchId);
-                const startDate = new Date(st);
-                
-                batch.set(matchRef, {
-                  id: matchId,
-                  homeTeam: h,
-                  awayTeam: a,
-                  handicap: hc,
-                  startTime: Timestamp.fromDate(startDate),
-                  predictionDeadline: Timestamp.fromDate(new Date(startDate.getTime() - 3600000)),
-                  round: TournamentRound.GROUP,
-                  homeFlag: `https://flagcdn.com/w80/${getCountryCode(h)}.png`,
-                  awayFlag: `https://flagcdn.com/w80/${getCountryCode(a)}.png`,
-                  status: MatchStatus.SCHEDULED,
-                  isPublished: false
-                });
-              }
+              batch.set(matchRef, {
+                id: matchId,
+                homeTeam: row.h,
+                awayTeam: row.a,
+                handicap: row.hc,
+                startTime: Timestamp.fromDate(row.startDate),
+                predictionDeadline: Timestamp.fromDate(new Date(row.startDate.getTime() - 3600000)),
+                round: TournamentRound.GROUP,
+                homeFlag: `https://flagcdn.com/w80/${getCountryCode(row.h)}.png`,
+                awayFlag: `https://flagcdn.com/w80/${getCountryCode(row.a)}.png`,
+                status: MatchStatus.SCHEDULED,
+                isPublished: false
+              });
             });
             await batch.commit();
-            alert('นำเข้าจาก Excel สำเร็จ!');
+            alert(`นำเข้าจาก Excel สำเร็จแล้ว! (เพิ่มเข้าสู่ระบบจำนวน ${validRows.length} คู่สำเร็จ) 🎉`);
           }
         } catch (err) {
           console.error('XLSX parsing error:', err);
-          alert('รูปแบบไฟล์ไม่ถูกต้อง หรือ ไม่สามารถอ่านวันเวลาได้');
+          alert('รูปแบบไฟล์ไม่ถูกต้อง หรือ ไม่สามารถอ่านวันเวลาได้: ' + (err as Error).message);
         } finally {
           setBatchLoading(false);
         }
@@ -453,6 +555,7 @@ const AdminDashboard: React.FC = () => {
   };
 
   const getCountryCode = (team: string) => {
+    if (!team || typeof team !== 'string') return 'un';
     const codes: Record<string, string> = {
       'Mexico': 'mx', 'USA': 'us', 'United States': 'us', 'Canada': 'ca', 'England': 'gb',
       'Argentina': 'ar', 'France': 'fr', 'Brazil': 'br', 'Germany': 'de',

@@ -90,6 +90,7 @@ export const calculateMatchResults = async (matchId: string) => {
     const userSnap = await getDoc(userRef);
     if (!userSnap.exists()) continue;
     const userData = userSnap.data() as User;
+    if (userData.role === 'admin') continue;
 
     let pointsChange = 0;
     let isCorrect = false;

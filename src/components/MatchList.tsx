@@ -113,7 +113,7 @@ const MatchList: React.FC = () => {
         const isStarted = match.startTime.seconds < Timestamp.now().seconds;
         const isPastDeadline = deadline.getTime() < now.getTime();
         const isBanned = user?.bannedMatchIds?.includes(match.id);
-        const canPredict = !isPastDeadline && !isBanned;
+        const canPredict = user?.role !== 'admin' && !isPastDeadline && !isBanned;
 
         // Countdown logic
         const diff = deadline.getTime() - now.getTime();

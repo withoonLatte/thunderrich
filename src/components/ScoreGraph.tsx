@@ -9,9 +9,12 @@ const ScoreGraph: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
-    const q = query(collection(db, 'users'), orderBy('points', 'desc'), limit(15));
+    const q = query(collection(db, 'users'), orderBy('points', 'desc'));
     const unsubscribe = onSnapshot(q, (snap) => {
-      const data = snap.docs.map(d => d.data() as User);
+      const data = snap.docs
+        .map(d => d.data() as User)
+        .filter(u => u.role !== 'admin')
+        .slice(0, 15);
       setUsers(data);
     });
 
