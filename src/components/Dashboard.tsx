@@ -5,6 +5,7 @@ import Webboard from './Webboard';
 import Leaderboard from './Leaderboard';
 import ScoreGraph from './ScoreGraph';
 import { useAuth } from '../contexts/AuthContext';
+import { Dice5, Coins, Spade } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -23,39 +24,42 @@ const Dashboard: React.FC = () => {
       
       {/* Middle Section: Predictions */}
       <section className="space-y-6">
-        <div className="mx-3 bg-gradient-to-r from-slate-900/95 to-slate-850/90 bg-slate-900 border-l-4 border-world-cup-green text-white px-5 py-4 rounded-2xl flex items-center justify-between shadow-xl backdrop-blur-md relative overflow-hidden border border-white/5">
-          <div className="absolute top-0 right-0 -mt-4 -mr-4 w-12 h-12 bg-world-cup-green/10 rounded-full blur-xl"></div>
-          <h3 className="text-sm font-black uppercase tracking-[0.15em] flex items-center gap-2.5">
-            <span className="w-2 h-2 bg-world-cup-green rounded-full animate-pulse"></span>
-            รายการแข่งขัน
-          </h3>
-          <span className="text-[10px] font-black text-world-cup-green uppercase tracking-widest border border-world-cup-green/30 px-2 py-0.5 rounded-md bg-world-cup-green/5">MATCHES</span>
+        <div className="mx-3 bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 p-[1.5px] rounded-2xl shadow-xl">
+          <div className="bg-white/95 px-5 py-4 rounded-[14px] flex items-center justify-between">
+            <h3 className="text-sm font-black text-slate-950 uppercase tracking-[0.15em] flex items-center gap-2.5">
+              <Dice5 className="w-5 h-5 text-purple-600 animate-spin-slow rotate-12" />
+              รายการแข่งขัน
+            </h3>
+            <span className="text-[10px] font-black text-purple-600 uppercase tracking-widest border border-purple-200 px-2 py-0.5 rounded-md bg-purple-50">MATCHES</span>
+          </div>
         </div>
         <MatchList />
       </section>
 
       {/* Leaderboard Section */}
       <section className="space-y-6">
-        <div className="mx-3 bg-gradient-to-r from-slate-900/95 to-slate-850/90 bg-slate-900 border-l-4 border-world-cup-gold text-white px-5 py-4 rounded-2xl flex items-center justify-between shadow-xl backdrop-blur-md relative overflow-hidden border border-white/5">
-          <div className="absolute top-0 right-0 -mt-4 -mr-4 w-12 h-12 bg-world-cup-gold/10 rounded-full blur-xl"></div>
-          <h3 className="text-sm font-black uppercase tracking-[0.15em] flex items-center gap-2.5">
-            <span className="w-2 h-2 bg-world-cup-gold rounded-full"></span>
-            อันดับรวยฟ้าผ่า
-          </h3>
-          <span className="text-[10px] font-black text-world-cup-gold uppercase tracking-widest border border-world-cup-gold/30 px-2 py-0.5 rounded-md bg-world-cup-gold/5">LEADERBOARD</span>
+        <div className="mx-3 bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 p-[1.5px] rounded-2xl shadow-xl">
+          <div className="bg-white/95 px-5 py-4 rounded-[14px] flex items-center justify-between">
+            <h3 className="text-sm font-black text-slate-950 uppercase tracking-[0.15em] flex items-center gap-2.5">
+              <Coins className="w-5 h-5 text-pink-500 animate-pulse" />
+              อันดับรวยฟ้าผ่า
+            </h3>
+            <span className="text-[10px] font-black text-pink-500 uppercase tracking-widest border border-pink-200 px-2 py-0.5 rounded-md bg-pink-50">LEADERBOARD</span>
+          </div>
         </div>
         <Leaderboard />
       </section>
 
       {/* Bottom Section: Webboard */}
       <section id="webboard-section" className="space-y-6 pt-4">
-        <div className="mx-3 bg-gradient-to-r from-slate-900/95 to-slate-850/90 bg-slate-900 border-l-4 border-pink-500 text-white px-5 py-4 rounded-2xl flex items-center justify-between shadow-xl backdrop-blur-md relative overflow-hidden border border-white/5">
-          <div className="absolute top-0 right-0 -mt-4 -mr-4 w-12 h-12 bg-pink-500/10 rounded-full blur-xl"></div>
-          <h3 className="text-sm font-black uppercase tracking-[0.15em] flex items-center gap-2.5">
-            <span className="w-2 h-2 bg-pink-500 rounded-full animate-pulse"></span>
-            ห้องแต่งตัวเพื่อนซี้
-          </h3>
-          <span className="text-[10px] font-black text-pink-400 uppercase tracking-widest border border-pink-500/30 px-2 py-0.5 rounded-md bg-pink-500/5">BANTER BOARD</span>
+        <div className="mx-3 bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 p-[1.5px] rounded-2xl shadow-xl">
+          <div className="bg-white/95 px-5 py-4 rounded-[14px] flex items-center justify-between">
+            <h3 className="text-sm font-black text-slate-950 uppercase tracking-[0.15em] flex items-center gap-2.5">
+              <Spade className="w-5 h-5 text-fuchsia-600 transform hover:scale-110 transition-transform" />
+              ห้องแต่งตัวเพื่อนซี้
+            </h3>
+            <span className="text-[10px] font-black text-fuchsia-600 uppercase tracking-widest border border-fuchsia-200 px-2 py-0.5 rounded-md bg-fuchsia-50">BANTER BOARD</span>
+          </div>
         </div>
         <Webboard />
       </section>
