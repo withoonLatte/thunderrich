@@ -4,7 +4,6 @@ import MatchList from './MatchList';
 import Webboard from './Webboard';
 import Leaderboard from './Leaderboard';
 import ScoreGraph from './ScoreGraph';
-import PasswordChangeModal from './PasswordChangeModal';
 import { useAuth } from '../contexts/AuthContext';
 
 const Dashboard: React.FC = () => {
@@ -12,8 +11,6 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-12 pb-12">
-      {/* Forced Password Change Modal */}
-      {user && <PasswordChangeModal user={user} />}
       {/* Top Section: Profile */}
       <section>
         <ProfileCard />

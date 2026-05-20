@@ -10,14 +10,25 @@ import {
   setDoc, 
   onSnapshot, 
   getDoc,
+  collection,
+  query,
+  where,
+  getDocs,
 } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { User, UserRole } from '../types';
 
+export const PLAYER_PINS = [
+  '1234', '1111', '2222', '3333', '4444', '5555', '7777', '8888', '9999', '2026',
+  '1122', '3344', '5566', '7788', '9900', '2468', '1357', '9876', '5678', '1212'
+];
+
+export const ADMIN_PINS = ['999999', 'admin99'];
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (nickname: string, pin: string, personalPin?: string) => Promise<void>;
+  login: (nickname: string, pin: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -57,12 +68,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsubscribeAuth();
   }, []);
 
-  const login = async (nickname: string, pin: string, personalPin?: string) => {
-    const NORMAL_PIN = '123456';
-    const ADMIN_PIN = '999999';
+  const login = async (nickname: string, pin: string) => {
+    const enteredPin = pin.trim();
 
-    if (pin !== NORMAL_PIN && pin !== ADMIN_PIN) {
-      throw new Error('รหัสกลุ่มไม่ถูกต้อง');
+    if (!nickname.trim()) {
+      throw new Error('กรุณาระบุชื่อเล่น');
+    }
+
+    if (!enteredPin) {
+      throw new Error('กรุณาระบุรหัสผ่าน (PIN)');
     }
 
     // Ensure we are signed in anonymously to satisfy Firestore rules
@@ -80,17 +94,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userData = userSnap.data() as User;
       
       // If user has a personal pin set, verify it
-      if (userData.personalPin && userData.personalPin !== personalPin) {
-        if (!personalPin) {
-          throw new Error('REQUIRED_PERSONAL_PIN');
-        }
-        throw new Error('รหัสผ่านส่วนตัวไม่ถูกต้อง');
+      if (userData.personalPin !== enteredPin) {
+        throw new Error('รหัสผ่านส่วนตัวไม่ถูกต้องสำหรับชื่อเล่นนี้');
       }
 
       setUser(userData);
       localStorage.setItem('wc_player_id', userId);
     } else {
-      const role = pin === ADMIN_PIN ? UserRole.ADMIN : UserRole.USER;
+      // New User Registration
+      const isPlayerPin = PLAYER_PINS.includes(enteredPin);
+      const isAdminPin = ADMIN_PINS.includes(enteredPin);
+
+      if (!isPlayerPin && !isAdminPin) {
+        throw new Error('รหัสผ่านไม่ถูกต้อง (กรุณาใช้รหัสผ่าน 4-6 หลักที่กำหนดสําหรับสมาชิกใหม่ หรือติดต่อแอดมิน)');
+      }
+
+      // Check if this PIN is already occupied by another user
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('personalPin', '==', enteredPin));
+      const querySnap = await getDocs(q);
+
+      if (!querySnap.empty) {
+        const occupiedUser = querySnap.docs[0].data() as User;
+        throw new Error(`รหัสผ่านนี้ถูกเลือกใช้ไปแล้วโดย "${occupiedUser.displayName}" กรุณาติดต่อแอดมินหรือใช้รหัสผ่านที่ยังว่างอยู่`);
+      }
+
+      const role = isAdminPin ? UserRole.ADMIN : UserRole.USER;
       
       const newUser: User = {
         uid: userId,
@@ -102,7 +131,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         yellow_cards: 0,
         red_cards: 0,
         bannedMatchIds: [],
-        mustChangePassword: true,
+        personalPin: enteredPin,
+        mustChangePassword: false, // Predefined PIN removes necessity of changing password
       };
 
       await setDoc(userDocRef, newUser);
