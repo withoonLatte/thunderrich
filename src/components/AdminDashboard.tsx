@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useTransition } from 'react';
+import React, { useState, useEffect, useDeferredValue } from 'react';
 import { collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, Timestamp, deleteDoc, writeBatch, getDoc, getDocs, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { TournamentRound, Match, MatchStatus, User } from '../types';
@@ -12,10 +12,10 @@ import * as XLSX from 'xlsx';
 
 const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
-  const [isPending, startTransition] = useTransition();
   const [matches, setMatches] = useState<Match[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [activeAdminTab, setActiveAdminTab] = useState<'matches' | 'players' | 'custom'>('matches');
+  const deferredAdminTab = useDeferredValue(activeAdminTab);
   const [showAdd, setShowAdd] = useState(false);
   
   // App Config State
@@ -117,13 +117,23 @@ const AdminDashboard: React.FC = () => {
       setBatchLoading(true);
       try {
         const batch = writeBatch(db);
-        const now = Date.now();
-        processedLines.forEach((cols, idx) => {
+        const seenIds = new Set<string>();
+        let addedCount = 0;
+
+        processedLines.forEach((cols) => {
           const [h, a, hc, st] = cols as string[];
           if (h && a && hc && st) {
-            const matchId = `${h.replace(/\s+/g, '_')}_${a.replace(/\s+/g, '_')}_${now}_${idx}`;
-            const matchRef = doc(db, 'matches', matchId);
             const startDate = new Date(st);
+            if (isNaN(startDate.getTime())) return;
+            
+            const startMs = startDate.getTime();
+            const matchId = `${h.replace(/\s+/g, '_')}_${a.replace(/\s+/g, '_')}_${startMs}`;
+            
+            if (seenIds.has(matchId)) return;
+            seenIds.add(matchId);
+            addedCount++;
+
+            const matchRef = doc(db, 'matches', matchId);
             
             batch.set(matchRef, {
               id: matchId,
@@ -140,9 +150,10 @@ const AdminDashboard: React.FC = () => {
             });
           }
         });
+
         await batch.commit();
         setBulkText('');
-        alert('เพิ่มแมตช์สำเร็จ!');
+        alert(`เพิ่ม/อัปเดตแมตช์สำเร็จจำนวน ${addedCount} คู่!`);
       } catch (err) {
         console.error(err);
         alert('เกิดข้อผิดพลาดในการนำเข้าข้อมูล: ' + (err as Error).message);
@@ -303,9 +314,17 @@ const AdminDashboard: React.FC = () => {
 
           if (window.confirm(`ตรวจพบ ${validRows.length} คู่ในไฟล์ Excel ต้องการนำเข้าทั้งหมดและบันทึกสู่ระบบใช่หรือไม่?`)) {
             const batch = writeBatch(db);
-            const now = Date.now();
-            validRows.forEach((row, idx) => {
-              const matchId = `${row.h.replace(/\s+/g, '_')}_${row.a.replace(/\s+/g, '_')}_${now}_${idx}`;
+            const seenIds = new Set<string>();
+            let addedCount = 0;
+
+            validRows.forEach((row) => {
+              const startMs = row.startDate.getTime();
+              const matchId = `${row.h.replace(/\s+/g, '_')}_${row.a.replace(/\s+/g, '_')}_${startMs}`;
+              
+              if (seenIds.has(matchId)) return;
+              seenIds.add(matchId);
+              addedCount++;
+
               const matchRef = doc(db, 'matches', matchId);
               
               batch.set(matchRef, {
@@ -323,7 +342,7 @@ const AdminDashboard: React.FC = () => {
               });
             });
             await batch.commit();
-            alert(`นำเข้าจาก Excel สำเร็จแล้ว! (เพิ่มเข้าสู่ระบบจำนวน ${validRows.length} คู่สำเร็จ) 🎉`);
+            alert(`นำเข้าจาก Excel สำเร็จแล้ว! (เพิ่ม/อัปเดตเข้าสู่ระบบจำนวน ${addedCount} คู่สำเร็จ) 🎉`);
           }
         } catch (err) {
           console.error('XLSX parsing error:', err);
@@ -789,19 +808,19 @@ const AdminDashboard: React.FC = () => {
           </div>
           <div className="bg-gray-100 p-1 rounded-xl flex shadow-sm">
             <button 
-              onClick={() => startTransition(() => setActiveAdminTab('matches'))}
+              onClick={() => setActiveAdminTab('matches')}
               className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeAdminTab === 'matches' ? 'bg-world-cup-green text-white shadow-md' : 'text-gray-400'}`}
             >
               แมตช์
             </button>
             <button 
-              onClick={() => startTransition(() => setActiveAdminTab('players'))}
+              onClick={() => setActiveAdminTab('players')}
               className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeAdminTab === 'players' ? 'bg-world-cup-green text-white shadow-md' : 'text-gray-400'}`}
             >
               ผู้เล่น
             </button>
             <button 
-              onClick={() => startTransition(() => setActiveAdminTab('custom'))}
+              onClick={() => setActiveAdminTab('custom')}
               className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeAdminTab === 'custom' ? 'bg-world-cup-green text-white shadow-md' : 'text-gray-400'}`}
             >
               ปรับแต่ง
@@ -809,7 +828,7 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        {activeAdminTab === 'matches' && (
+        {deferredAdminTab === 'matches' && (
           <div className="flex gap-2">
             <button 
               disabled={resetLoading || hardResetLoading}
@@ -844,8 +863,17 @@ const AdminDashboard: React.FC = () => {
               onClick={async () => {
                 if (window.confirm('ต้องการเพิ่มแมตช์จริงจากตาราง World Cup 2026 หรือไม่?')) {
                   const batch = writeBatch(db);
+                  const seenIds = new Set<string>();
+                  let addedCount = 0;
+
                   for (const m of WORLD_CUP_2026_SCHEDULE) {
-                    const matchId = `${m.homeTeam.replace(/\s+/g, '_')}_${m.awayTeam.replace(/\s+/g, '_')}_${Date.now()}`;
+                    const startMs = new Date(m.startTime).getTime();
+                    const matchId = `${m.homeTeam.replace(/\s+/g, '_')}_${m.awayTeam.replace(/\s+/g, '_')}_${startMs}`;
+
+                    if (seenIds.has(matchId)) continue;
+                    seenIds.add(matchId);
+                    addedCount++;
+
                     const matchRef = doc(db, 'matches', matchId);
                     batch.set(matchRef, {
                       id: matchId,
@@ -858,7 +886,7 @@ const AdminDashboard: React.FC = () => {
                     });
                   }
                   await batch.commit();
-                  alert('เพิ่มข้อมูลแมตช์สำเร็จ!');
+                  alert(`เพิ่ม/อัปเดตข้อมูลแมตช์สำเร็จจำนวน ${addedCount} คู่!`);
                 }
               }}
               className="px-4 bg-blue-100 text-blue-600 rounded-2xl p-2 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
@@ -871,7 +899,7 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       {/* System Actions Area */}
-      {activeAdminTab === 'matches' && (
+      {deferredAdminTab === 'matches' && (
         <div className="wc-glass p-4 rounded-2xl border border-red-500/10 bg-red-50">
           <button 
             disabled={hardResetLoading}
@@ -884,7 +912,7 @@ const AdminDashboard: React.FC = () => {
         </div>
       )}
 
-      {activeAdminTab === 'players' && (
+      {deferredAdminTab === 'players' && (
         <div className="space-y-6">
           <div className="wc-glass p-6 rounded-3xl border-t-2 border-world-cup-green/20">
             <h3 className="text-sm text-gray-400 italic uppercase tracking-wider mb-2 text-center underline underline-offset-4">สรุปรายชื่อเพื่อนซี้</h3>
@@ -957,7 +985,7 @@ const AdminDashboard: React.FC = () => {
         </div>
       )}
 
-      {activeAdminTab === 'custom' && (
+      {deferredAdminTab === 'custom' && (
         <div className="space-y-6">
           <div className="wc-glass p-8 rounded-[2rem] border-t-8 border-world-cup-gold shadow-xl space-y-8">
             <div className="text-center space-y-2">
@@ -1028,7 +1056,7 @@ const AdminDashboard: React.FC = () => {
         </div>
       )}
 
-      {activeAdminTab === 'matches' && (
+      {deferredAdminTab === 'matches' && (
         <>
           {showAdd && (
             <div className="space-y-4">
