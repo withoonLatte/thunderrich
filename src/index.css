@@ -19,6 +19,10 @@
   --color-fifa-gold: #FACC15;
 }
 
+* {
+  font-weight: 400 !important;
+}
+
 body {
   background-color: #050714;
   background-image: 
