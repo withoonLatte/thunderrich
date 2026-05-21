@@ -24,13 +24,13 @@ const Dashboard: React.FC = () => {
       
       {/* Middle Section: Predictions */}
       <section className="space-y-6">
-        <div className="mx-3 bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 p-[1.5px] rounded-2xl shadow-xl">
-          <div className="bg-white/95 px-5 py-4 rounded-[14px] flex items-center justify-between">
-            <h3 className="text-sm font-black text-slate-950 uppercase tracking-[0.15em] flex items-center gap-2.5">
-              <Dice5 className="w-5 h-5 text-purple-600 animate-spin-slow rotate-12" />
+        <div className="mx-3 bg-gradient-to-r from-blue-500 via-fuchsia-500 to-yellow-500 p-[1.5px] rounded-2xl shadow-xl">
+          <div className="bg-[#0f172a]/95 px-5 py-4.5 rounded-[14px] flex items-center justify-between">
+            <h3 className="text-base font-black text-white uppercase tracking-[0.15em] flex items-center gap-2.5">
+              <Dice5 className="w-5 h-5 text-emerald-400 animate-spin-slow rotate-12" />
               รายการแข่งขัน
             </h3>
-            <span className="text-[10px] font-black text-purple-600 uppercase tracking-widest border border-purple-200 px-2 py-0.5 rounded-md bg-purple-50">MATCHES</span>
+            <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest border border-emerald-500/30 px-3 py-1 rounded-lg bg-emerald-500/10">MATCHES</span>
           </div>
         </div>
         <MatchList />
@@ -38,13 +38,13 @@ const Dashboard: React.FC = () => {
 
       {/* Leaderboard Section */}
       <section className="space-y-6">
-        <div className="mx-3 bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 p-[1.5px] rounded-2xl shadow-xl">
-          <div className="bg-white/95 px-5 py-4 rounded-[14px] flex items-center justify-between">
-            <h3 className="text-sm font-black text-slate-950 uppercase tracking-[0.15em] flex items-center gap-2.5">
-              <Coins className="w-5 h-5 text-pink-500 animate-pulse" />
+        <div className="mx-3 bg-gradient-to-r from-blue-500 via-fuchsia-500 to-yellow-500 p-[1.5px] rounded-2xl shadow-xl">
+          <div className="bg-[#0f172a]/95 px-5 py-4.5 rounded-[14px] flex items-center justify-between">
+            <h3 className="text-base font-black text-white uppercase tracking-[0.15em] flex items-center gap-2.5">
+              <Coins className="w-5 h-5 text-yellow-400 animate-pulse" />
               อันดับรวยฟ้าผ่า
             </h3>
-            <span className="text-[10px] font-black text-pink-500 uppercase tracking-widest border border-pink-200 px-2 py-0.5 rounded-md bg-pink-50">LEADERBOARD</span>
+            <span className="text-[10px] font-black text-yellow-400 uppercase tracking-widest border border-yellow-500/30 px-3 py-1 rounded-lg bg-yellow-500/10">LEADERBOARD</span>
           </div>
         </div>
         <Leaderboard />
@@ -52,13 +52,13 @@ const Dashboard: React.FC = () => {
 
       {/* Bottom Section: Webboard */}
       <section id="webboard-section" className="space-y-6 pt-4">
-        <div className="mx-3 bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 p-[1.5px] rounded-2xl shadow-xl">
-          <div className="bg-white/95 px-5 py-4 rounded-[14px] flex items-center justify-between">
-            <h3 className="text-sm font-black text-slate-950 uppercase tracking-[0.15em] flex items-center gap-2.5">
-              <Spade className="w-5 h-5 text-fuchsia-600 transform hover:scale-110 transition-transform" />
+        <div className="mx-3 bg-gradient-to-r from-blue-500 via-fuchsia-500 to-yellow-500 p-[1.5px] rounded-2xl shadow-xl">
+          <div className="bg-[#0f172a]/95 px-5 py-4.5 rounded-[14px] flex items-center justify-between">
+            <h3 className="text-base font-black text-white uppercase tracking-[0.15em] flex items-center gap-2.5">
+              <Spade className="w-5 h-5 text-fuchsia-400 transform hover:scale-110 transition-transform" />
               ห้องแต่งตัวเพื่อนซี้
             </h3>
-            <span className="text-[10px] font-black text-fuchsia-600 uppercase tracking-widest border border-fuchsia-200 px-2 py-0.5 rounded-md bg-fuchsia-50">BANTER BOARD</span>
+            <span className="text-[10px] font-black text-fuchsia-400 uppercase tracking-widest border border-fuchsia-500/30 px-3 py-1 rounded-lg bg-fuchsia-500/10">BANTER BOARD</span>
           </div>
         </div>
         <Webboard />

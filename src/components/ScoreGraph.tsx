@@ -30,15 +30,15 @@ const ScoreGraph: React.FC = () => {
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="wc-glass rounded-[2rem] p-6 shadow-xl border border-gray-100 overflow-hidden"
+      className="bg-[#0f172a]/90 backdrop-blur-2xl rounded-[2rem] p-6 shadow-[0_15px_40px_rgba(0,0,0,0.4)] border border-slate-800/80 overflow-hidden"
     >
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-8 h-8 bg-world-cup-green rounded-full flex items-center justify-center text-white shadow-lg">
-          <span className="text-xs font-black">📈</span>
+      <div className="flex items-center gap-3.5 mb-6">
+        <div className="w-9 h-9 bg-gradient-to-br from-yellow-400 via-fuchsia-500 to-indigo-600 rounded-full flex items-center justify-center text-white shadow-lg">
+          <span className="text-sm font-black">📈</span>
         </div>
         <div>
-          <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">คะแนนภาพรวม</h3>
-          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Real-time Stats</p>
+          <h3 className="text-base font-black text-white uppercase tracking-wider">คะแนนภาพรวม</h3>
+          <p className="text-[11px] text-fuchsia-400 font-black uppercase tracking-widest">Real-time Stats Standings</p>
         </div>
       </div>
 
@@ -47,47 +47,57 @@ const ScoreGraph: React.FC = () => {
           <BarChart
             data={chartData}
             layout="vertical"
-            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
           >
             <XAxis type="number" hide />
             <YAxis 
               dataKey="name" 
               type="category" 
-              width={80} 
+              width={90} 
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 10, fontWeight: 800, fill: '#64748b' }}
+              tick={{ fontSize: 11, fontWeight: 900, fill: '#cbd5e1' }}
             />
             <Tooltip 
-              cursor={{ fill: 'transparent' }}
+              cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
               contentStyle={{ 
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                backgroundColor: '#0f172a',
                 borderRadius: '16px',
-                border: 'none',
-                boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                border: '1.5px solid #334155',
+                boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
                 padding: '12px'
               }}
-              labelStyle={{ fontWeight: 900, marginBottom: '4px', color: '#1e293b', fontSize: '12px' }}
+              labelStyle={{ fontWeight: 900, marginBottom: '4px', color: '#ffffff', fontSize: '13px' }}
               itemStyle={{ fontWeight: 800, fontSize: '14px', color: '#22c55e' }}
             />
             <Bar 
               dataKey="points" 
-              radius={[0, 10, 10, 0]} 
+              radius={[0, 8, 8, 0]} 
               animationDuration={1500}
               label={{ 
                 position: 'right', 
-                fill: '#1e293b', 
+                fill: '#ffffff', 
                 fontSize: 12, 
                 fontWeight: 900,
+                offset: 8,
                 formatter: (val: number) => `${val}`
               }}
             >
-              {chartData.map((entry, index) => (
-                <Cell 
-                  key={`cell-${index}`} 
-                  fill={index === chartData.length - 1 ? '#eab308' : '#22c55e'} 
-                />
-              ))}
+              {chartData.map((entry, index) => {
+                const rankFromTop = chartData.length - 1 - index;
+                let fill = '#22c55e'; // Default Green
+                if (rankFromTop === 0) fill = '#facc15'; // 1st: Gold
+                else if (rankFromTop === 1) fill = '#94a3b8'; // 2nd: Silver
+                else if (rankFromTop === 2) fill = '#b45309'; // 3rd: Bronze
+                else if (rankFromTop < 5) fill = '#ec4899'; // Top 5: Fuchsia Pink
+                
+                return (
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={fill} 
+                  />
+                );
+              })}
             </Bar>
           </BarChart>
         </ResponsiveContainer>

@@ -16,13 +16,17 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 p-5 z-50">
-      <div className="max-w-md mx-auto bg-white/90 backdrop-blur-2xl rounded-[2.5rem] p-3 flex justify-around items-center shadow-[0_20px_50px_rgba(0,0,0,0.1)] border-t border-gray-50">
+      <div className="max-w-md mx-auto bg-[#0f172a]/85 backdrop-blur-2xl rounded-[2.3rem] p-3 flex justify-around items-center shadow-[0_15px_50px_rgba(0,0,0,0.5)] border border-slate-800/80">
         <button 
           onClick={() => { setActiveTab('dashboard'); scrollToTop(); }}
-          className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl transition-all ${activeTab === 'dashboard' ? 'bg-world-cup-green/10 text-world-cup-green scale-105' : 'text-slate-400'}`}
+          className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl transition-all cursor-pointer ${
+            activeTab === 'dashboard' 
+              ? 'bg-emerald-500/10 text-emerald-400 scale-105 font-black drop-shadow-[0_0_8px_rgba(34,197,94,0.3)]' 
+              : 'text-slate-500 hover:text-slate-300'
+          }`}
         >
           <Home className="w-6 h-6" />
-          <span className="text-[10px] font-black uppercase tracking-widest">STADIUM</span>
+          <span className="text-xs font-black uppercase tracking-[0.12em]">Stadium</span>
         </button>
 
         <button 
@@ -30,30 +34,34 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
             const webboardEl = document.getElementById('webboard-section');
             if (webboardEl) webboardEl.scrollIntoView({ behavior: 'smooth' });
           }}
-          className="flex flex-col items-center gap-1.5 p-3 text-slate-400 hover:text-world-cup-green transition-colors"
+          className="flex flex-col items-center gap-1.5 p-3 text-slate-500 hover:text-emerald-400 hover:scale-105 transition-all cursor-pointer font-black"
         >
           <MessageSquare className="w-6 h-6" />
-          <span className="text-[10px] font-black uppercase tracking-widest">CHAT</span>
+          <span className="text-xs font-black uppercase tracking-[0.12em]">Chat</span>
         </button>
 
-        <div className="w-px h-10 bg-gray-100"></div>
+        <div className="w-px h-10 bg-slate-800/80"></div>
 
         {user?.role === 'admin' && (
            <button 
             onClick={() => setActiveTab('admin')}
-            className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl transition-all ${activeTab === 'admin' ? 'bg-orange-50 text-orange-400 scale-105' : 'text-slate-400'}`}
+            className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl transition-all cursor-pointer ${
+              activeTab === 'admin' 
+                ? 'bg-amber-500/10 text-amber-400 scale-105 font-black drop-shadow-[0_0_8px_rgba(245,158,11,0.3)]' 
+                : 'text-slate-500 hover:text-slate-300'
+            }`}
           >
             <Settings className="w-6 h-6" />
-            <span className="text-[10px] font-black uppercase tracking-widest">ADMIN</span>
+            <span className="text-xs font-black uppercase tracking-[0.12em]">Admin</span>
           </button>
         )}
 
         <button 
           onClick={logout}
-          className="flex flex-col items-center gap-1.5 p-3 text-red-400 hover:text-red-600 transition-colors"
+          className="flex flex-col items-center gap-1.5 p-3 text-red-500 hover:text-red-400 hover:scale-105 transition-all cursor-pointer font-black"
         >
           <LogOut className="w-6 h-6" />
-          <span className="text-[10px] font-black uppercase tracking-widest">QUIT</span>
+          <span className="text-xs font-black uppercase tracking-[0.12em]">Quit</span>
         </button>
       </div>
     </nav>

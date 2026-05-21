@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,400;0,500;0,700;1,400;1,500;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,400;0,500;0,700;0,900;1,400;1,500;1,700;1,900&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -8,55 +8,109 @@
   --color-world-cup-green: #22C55E;
   --color-world-cup-gold: #EAB308;
   --color-world-cup-card: #FFFFFF;
+  
+  /* FIFA 2026 Vibrant Neon Palette */
+  --color-fifa-dark: #060919;
+  --color-fifa-indigo: #0F172A;
+  --color-fifa-neon-green: #22C55E;
+  --color-fifa-neon-green-glow: #39FF14;
+  --color-fifa-pink: #EC4899;
+  --color-fifa-fuchsia: #D946EF;
+  --color-fifa-gold: #FACC15;
 }
 
 body {
-  background-color: #F8FAFC;
+  background-color: #050714;
   background-image: 
-    radial-gradient(at 0% 0%, rgba(34, 197, 94, 0.1) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(234, 179, 8, 0.1) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(99, 102, 241, 0.1) 0px, transparent 50%),
-    radial-gradient(at 0% 100%, rgba(59, 130, 246, 0.1) 0px, transparent 50%);
+    radial-gradient(at 0% 0%, rgba(217, 70, 239, 0.15) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(30, 64, 175, 0.2) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(34, 197, 94, 0.12) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(250, 204, 21, 0.12) 0px, transparent 50%);
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
   background-repeat: no-repeat;
-  color: #1E293B;
+  color: #F8FAFC;
   font-family: var(--font-sans) !important;
-  font-weight: 400 !important;
   min-height: 100vh;
-  font-size: 110%; /* Increase global font size slightly */
+  font-size: 112%;
 }
 
-* {
-  font-weight: 400 !important;
-}
-
+/* Glassmorphism V2 Premium Glass */
 .wc-glass {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.90);
+  backdrop-filter: blur(25px) saturate(190%);
+  -webkit-backdrop-filter: blur(25px) saturate(190%);
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 
+    0 4px 30px rgba(0, 0, 0, 0.1),
+    0 1px 3px rgba(255, 255, 255, 0.3) inset,
+    0 8px 32px 0 rgba(15, 23, 42, 0.08);
 }
 
+/* Premium Gradient backgrounds */
 .wc-gradient {
-  background: linear-gradient(135deg, #F8FAFC 0%, #EEF2FF 100%);
+  background: linear-gradient(135deg, #0A0F2D 0%, #171E4A 100%);
+}
+
+.wc-gold-card {
+  background: linear-gradient(135deg, rgba(250, 204, 21, 0.15) 0%, rgba(234, 179, 8, 0.05) 100%);
+  border: 2px solid rgba(250, 204, 21, 0.4);
+  box-shadow: 0 10px 25px -5px rgba(250, 204, 21, 0.15);
+}
+
+.wc-silver-card {
+  background: linear-gradient(135deg, rgba(226, 232, 240, 0.2) 0%, rgba(148, 163, 184, 0.05) 100%);
+  border: 2px solid rgba(148, 163, 184, 0.4);
+  box-shadow: 0 10px 25px -5px rgba(148, 163, 184, 0.1);
+}
+
+.wc-bronze-card {
+  background: linear-gradient(135deg, rgba(180, 83, 9, 0.15) 0%, rgba(146, 64, 14, 0.05) 100%);
+  border: 2px solid rgba(180, 83, 9, 0.4);
+  box-shadow: 0 10px 25px -5px rgba(180, 83, 9, 0.1);
+}
+
+/* Active and Hover States with Shimmering Glows */
+.wc-btn-neon {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.wc-btn-neon::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -60%;
+  width: 30%;
+  height: 200%;
+  background: rgba(255, 255, 255, 0.25);
+  transform: rotate(30deg);
+  transition: all 0.6s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.wc-btn-neon:hover::after {
+  left: 120%;
+  opacity: 1;
 }
 
 /* Larger Text Helpers */
 .text-huge {
-  font-size: 1.25rem;
-  line-height: 1.75rem;
+  font-size: 1.35rem;
+  line-height: 1.85rem;
 }
 
 .text-giant {
-  font-size: 1.5rem;
-  line-height: 2rem;
+  font-size: 1.65rem;
+  line-height: 2.15rem;
 }
 
 /* Selection styles */
 ::selection {
-  background-color: rgba(34, 197, 94, 0.2);
+  background-color: rgba(34, 197, 94, 0.3);
   color: #15803d;
 }
 
@@ -69,4 +123,18 @@ body {
 .no-scrollbar {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
+}
+
+/* Slowly spinning elements */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 15s linear infinite;
 }

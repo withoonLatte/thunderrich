@@ -47,7 +47,7 @@ function AppContent() {
 
   return (
     <div 
-      className="min-h-screen pb-24 font-sans antialiased text-slate-800"
+      className="min-h-screen pb-28 font-sans antialiased text-slate-100"
       style={config?.backgroundUrl ? { 
         backgroundImage: `url(${config.backgroundUrl})`,
         backgroundSize: 'cover',
@@ -55,9 +55,9 @@ function AppContent() {
         backgroundAttachment: 'fixed'
       } : {}}
     >
-      <header className="p-3 sm:p-4 flex justify-between items-center bg-white/80 backdrop-blur-xl sticky top-0 z-50 border-b border-gray-100 shadow-sm">
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 flex items-center justify-center bg-world-cup-green/10 rounded-xl sm:rounded-2xl overflow-hidden">
+      <header className="p-4 sm:p-5 flex justify-between items-center bg-[#0f172a]/75 backdrop-blur-2xl sticky top-0 z-50 border-b border-slate-800/70 shadow-[0_4px_30px_rgba(0,0,0,0.2)]">
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0 flex items-center justify-center bg-emerald-500/10 rounded-2xl overflow-hidden border border-emerald-500/20 shadow-lg shadow-emerald-500/5">
             <img 
               src={config?.logoUrl || "/logo.png"} 
               alt="Logo" 
@@ -66,19 +66,19 @@ function AppContent() {
                 const target = e.currentTarget;
                 target.style.display = 'none';
                 if (target.parentElement) {
-                  target.parentElement.innerHTML = '<div class="text-world-cup-green"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trophy"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg></div>';
+                  target.parentElement.innerHTML = '<div class="text-emerald-400"><svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trophy"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg></div>';
                 }
               }}
             />
           </div>
           <div className="flex flex-col justify-center min-w-0">
-            <div className="h-8 sm:h-10 flex items-center">
-              <svg className="h-8 sm:h-10 w-[180px] xs:w-[220px] sm:w-[280px] overflow-visible" viewBox="0 0 300 36" style={{ filter: 'drop-shadow(0px 1.5px 3px rgba(168, 85, 247, 0.2)) drop-shadow(0px 1px 1.5px rgba(0, 0, 0, 0.15))' }}>
+            <div className="h-9 sm:h-11 flex items-center">
+              <svg className="h-9 sm:h-11 w-[190px] xs:w-[230px] sm:w-[300px] overflow-visible" viewBox="0 0 300 36" style={{ filter: 'drop-shadow(0px 2px 8px rgba(217, 70, 239, 0.4))' }}>
                 <defs>
                   <linearGradient id="stroke-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#8b5cf6" /> {/* Vibrant Purple */}
+                    <stop offset="0%" stopColor="#3b82f6" /> {/* Vibrant Blue */}
                     <stop offset="50%" stopColor="#d946ef" /> {/* Fuchsia */}
-                    <stop offset="100%" stopColor="#ec4899" /> {/* Pink */}
+                    <stop offset="100%" stopColor="#facc15" /> {/* Gold */}
                   </linearGradient>
                 </defs>
                 <text
@@ -86,15 +86,15 @@ function AppContent() {
                   y="28"
                   fill="#ffffff"
                   stroke="url(#stroke-grad)"
-                  strokeWidth="3"
+                  strokeWidth="3.5"
                   strokeLinejoin="round"
                   paintOrder="stroke fill"
                   style={{
                     fontFamily: '"Kanit", sans-serif',
-                    fontWeight: 500,
+                    fontWeight: 900,
                     fontStyle: 'italic',
-                    fontSize: '22pt',
-                    letterSpacing: '-0.02em'
+                    fontSize: '23pt',
+                    letterSpacing: '-0.01em'
                   }}
                 >
                   รวยฟ้าผ่า #11 บอลโลก 2026
@@ -104,27 +104,27 @@ function AppContent() {
             <p 
               style={{
                 fontFamily: '"Kanit", sans-serif',
-                fontWeight: 500,
+                fontWeight: 900,
                 fontStyle: 'italic',
-                fontSize: '9.5pt'
+                fontSize: '11pt'
               }}
-              className="tracking-wider text-slate-500 mt-0.5 sm:mt-1 whitespace-nowrap"
+              className="tracking-widest text-fuchsia-400 mt-1 whitespace-nowrap uppercase drop-shadow-[0_0_8px_rgba(217,70,239,0.3)]"
             >
-              รวยไม่ไหวแล้วโว้ย 🔥
+              รวยไม่ไหวแล้วโว้ย 🔥⚽
             </p>
           </div>
         </div>
         {user.role === UserRole.ADMIN && (
-          <div className="flex bg-slate-100 rounded-xl p-1 shadow-inner shrink-0 ml-1">
+          <div className="flex bg-[#1e293b] rounded-2xl p-1 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] shrink-0 ml-1.5 border border-slate-700/50">
             <button 
               onClick={() => setActiveTab('dashboard')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all tracking-wide ${activeTab === 'dashboard' ? 'bg-world-cup-green text-white shadow-md' : 'text-slate-400'}`}
+              className={`px-4.5 py-2.5 rounded-xl text-sm font-black transition-all tracking-wide ${activeTab === 'dashboard' ? 'bg-gradient-to-r from-emerald-500 to-green-400 text-white shadow-md scale-102' : 'text-slate-400 hover:text-slate-200'}`}
             >
               ผู้เล่น
             </button>
             <button 
               onClick={() => setActiveTab('admin')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all tracking-wide ${activeTab === 'admin' ? 'bg-world-cup-green text-white shadow-md' : 'text-slate-400'}`}
+              className={`px-4.5 py-2.5 rounded-xl text-sm font-black transition-all tracking-wide ${activeTab === 'admin' ? 'bg-gradient-to-r from-emerald-500 to-green-400 text-white shadow-md scale-102' : 'text-slate-400 hover:text-slate-200'}`}
             >
               แอดมิน
             </button>

@@ -100,49 +100,80 @@ const Leaderboard: React.FC = () => {
   }, []);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {users.map((u, index) => {
-        const isTop3 = index < 3;
-        const Icon = index === 0 ? Trophy : index === 1 ? Award : index === 2 ? Medal : null;
-        const iconColor = index === 0 ? 'text-world-cup-gold' : index === 1 ? 'text-gray-300' : 'text-amber-600';
+        const isGold = index === 0;
+        const isSilver = index === 1;
+        const isBronze = index === 2;
+        const Icon = isGold ? Trophy : isSilver ? Award : isBronze ? Medal : null;
+        const iconColor = isGold ? 'text-yellow-400' : isSilver ? 'text-slate-300' : 'text-amber-600';
         const history = userHistories[u.uid] || [];
+
+        // Dynamic styling depending on podium position
+        let cardStyle = '';
+        if (isGold) {
+          cardStyle = 'wc-gold-card scale-[1.03] shadow-lg shadow-yellow-500/10';
+        } else if (isSilver) {
+          cardStyle = 'wc-silver-card scale-[1.01] shadow-md shadow-slate-400/5';
+        } else if (isBronze) {
+          cardStyle = 'wc-bronze-card shadow-sm shadow-amber-600/5';
+        } else {
+          cardStyle = 'bg-[#0f172a]/90 border border-slate-800/80 shadow-[0_8px_20px_rgba(0,0,0,0.25)]';
+        }
+
+        const rankColor = isGold 
+          ? 'text-yellow-450 drop-shadow-[0_0_10px_rgba(250,204,21,0.6)] font-black text-3xl' 
+          : isSilver 
+            ? 'text-slate-300 font-black text-2xl' 
+            : isBronze 
+              ? 'text-amber-500 font-black text-2xl' 
+              : 'text-slate-500 font-black text-xl';
 
         return (
           <motion.div 
             key={u.uid}
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
-            className={`flex items-center gap-5 p-5 rounded-3xl border transition-all ${
-              index === 0 
-                ? 'bg-world-cup-gold border-world-cup-gold shadow-xl shadow-world-cup-gold/20 scale-[1.02]' 
-                : 'wc-glass border-gray-100 shadow-sm'
-            }`}
+            className={`flex items-center gap-4 p-5 rounded-[1.8rem] transition-all relative overflow-hidden ${cardStyle}`}
           >
-            <div className={`w-10 text-center italic text-2xl font-black ${index === 0 ? 'text-white/80' : 'text-gray-200'}`}>
+            <div className={`w-8 text-center italic ${rankColor}`}>
               {index + 1}
             </div>
             
-            <div className="relative">
-              <img 
-                src={u.photoURL || `https://ui-avatars.com/api/?name=${u.displayName}&background=22C55E&color=fff&bold=true`} 
-                alt={u.displayName} 
-                className={`w-12 h-12 rounded-2xl object-cover ${index === 0 ? 'border-2 border-white' : 'border border-gray-100'}`}
-              />
+            <div className="relative flex-shrink-0">
+              <div className={`w-14 h-14 rounded-2xl overflow-hidden p-0.5 ${
+                isGold ? 'border-2 border-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.4)]' : 
+                isSilver ? 'border-2 border-slate-400' :
+                isBronze ? 'border-2 border-amber-600' :
+                'border border-slate-800'
+              }`}>
+                <img 
+                  src={u.photoURL || `https://ui-avatars.com/api/?name=${u.displayName}&background=0F172A&color=E2E8F0&bold=true`} 
+                  alt={u.displayName} 
+                  className="w-full h-full rounded-[14px] object-cover"
+                />
+              </div>
               {Icon && (
-                <div className={`absolute -top-3 -right-3 p-1.5 rounded-xl shadow-xl ${index === 0 ? 'bg-white text-world-cup-gold' : 'bg-gray-50 ' + iconColor}`}>
+                <div className={`absolute -top-2.5 -right-2.5 p-1 rounded-xl shadow-lg border border-white/10 ${
+                  isGold ? 'bg-slate-900 text-yellow-400' : 
+                  isSilver ? 'bg-slate-900 text-slate-300' : 
+                  'bg-slate-900 text-amber-600'
+                }`}>
                   <Icon className="w-4 h-4 fill-current" />
                 </div>
               )}
             </div>
 
             <div className="flex-1 min-w-0">
-              <p className={`truncate text-lg font-black uppercase tracking-tighter ${index === 0 ? 'text-white drop-shadow-sm' : 'text-slate-900'}`}>{u.displayName}</p>
+              <p className="truncate text-lg font-black uppercase tracking-tight text-white drop-shadow-sm">
+                {u.displayName}
+              </p>
               {history && history.length > 0 && (
                 <div className="flex flex-col gap-1.5 my-2">
                   <div className="flex items-center gap-1.5">
-                    <span className={`text-[10px] font-black uppercase tracking-wider ${index === 0 ? 'text-white/80' : 'text-slate-500'}`}>
-                      ประวัติ 20 นัดล่าสุด:
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                      ฟอร์ม 20 นัดล่าสุด:
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-1 max-w-[280px]">
@@ -153,11 +184,11 @@ const Leaderboard: React.FC = () => {
                       
                       let bgClass = '';
                       if (isPositive) {
-                        bgClass = index === 0 ? 'bg-emerald-500/90 text-slate-950 font-black shadow-sm ring-1 ring-white/10' : 'bg-emerald-500 text-white shadow-sm';
+                        bgClass = 'bg-emerald-500 text-slate-950 font-black shadow-[0_0_6px_rgba(16,185,129,0.3)] border border-emerald-400/20';
                       } else if (isNegative) {
-                        bgClass = index === 0 ? 'bg-rose-500 text-white shadow-sm ring-1 ring-white/10' : 'bg-rose-500 text-white shadow-sm';
+                        bgClass = 'bg-rose-500 text-white font-black shadow-[0_0_6px_rgba(244,63,94,0.3)] border border-rose-500/20';
                       } else {
-                        bgClass = index === 0 ? 'bg-white/20 text-white ring-1 ring-white/10' : 'bg-slate-200 text-slate-750';
+                        bgClass = 'bg-slate-800 text-slate-450 border border-slate-700/50';
                       }
 
                       const valText = earns > 0 ? `+${earns}` : `${earns}`;
@@ -173,7 +204,7 @@ const Leaderboard: React.FC = () => {
                           {item.cardType === 'yellow' && (
                             <span 
                               title="ได้รับใบเหลืองจากการผิด 12 นัด" 
-                              className="absolute -top-1 -right-1 w-2.5 h-3.5 bg-yellow-400 border border-yellow-200 rounded-[2px] shadow-md z-10 animate-pulse"
+                              className="absolute -top-1 -right-1 w-2.5 h-3.5 bg-yellow-400 border border-yellow-250 rounded-[2px] shadow-md z-10 animate-pulse"
                             />
                           )}
                           {item.cardType === 'red' && (
@@ -188,13 +219,18 @@ const Leaderboard: React.FC = () => {
                   </div>
                 </div>
               )}
-              <p className={`text-xs font-bold uppercase tracking-wider mt-1.5 ${index === 0 ? 'text-white' : 'text-slate-600'}`}>
-                ผิดสะสม: <span className={`font-black px-1.5 py-0.5 rounded-lg text-sm ${index === 0 ? 'bg-amber-900/60 text-white' : 'bg-rose-100/90 text-rose-600'}`}>{u.round1_wrong_count}</span> <span className="opacity-60">/ 24</span>
+              <p className="text-xs font-black uppercase tracking-wider mt-1.5 text-slate-350">
+                ผิดสะสม: <span className="font-black px-2 py-0.5 rounded-lg text-sm bg-red-500/10 border border-red-500/20 text-red-400">{u.round1_wrong_count}</span> <span className="opacity-60">/ 24</span>
               </p>
             </div>
 
-            <div className={`text-right ${index === 0 ? 'text-white' : 'text-world-cup-green'} text-huge italic font-black`}>
-              {u.points} <span className="text-[10px] uppercase font-bold not-italic opacity-60">PTS</span>
+            <div className={`text-right ${
+              isGold ? 'text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]' : 
+              isSilver ? 'text-slate-300' : 
+              isBronze ? 'text-amber-500' : 
+              'text-emerald-400'
+            } text-huge italic font-black flex-shrink-0`}>
+              {u.points} <span className="text-[10px] uppercase font-bold not-italic opacity-60 ml-0.5">PTS</span>
             </div>
           </motion.div>
         );
