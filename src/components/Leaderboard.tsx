@@ -105,6 +105,7 @@ const Leaderboard: React.FC = () => {
         const isGold = index === 0;
         const isSilver = index === 1;
         const isBronze = index === 2;
+        const isLastThree = index >= users.length - 3 && index > 2;
         const Icon = isGold ? Trophy : isSilver ? Award : isBronze ? Medal : null;
         const iconColor = isGold ? 'text-yellow-400' : isSilver ? 'text-slate-300' : 'text-amber-600';
         const history = userHistories[u.uid] || [];
@@ -117,17 +118,21 @@ const Leaderboard: React.FC = () => {
           cardStyle = 'wc-silver-card scale-[1.01] shadow-md shadow-slate-400/5';
         } else if (isBronze) {
           cardStyle = 'wc-bronze-card shadow-sm shadow-amber-600/5';
+        } else if (isLastThree) {
+          cardStyle = 'wc-red-card scale-[0.99] border-red-500/40 shadow-lg shadow-red-500/10';
         } else {
-          cardStyle = 'bg-[#0f172a]/90 border border-slate-800/80 shadow-[0_8px_20px_rgba(0,0,0,0.25)]';
+          cardStyle = 'bg-[#0f172a]/35 border border-slate-800/80 shadow-[0_8px_20px_rgba(0,0,0,0.25)]';
         }
 
         const rankColor = isGold 
-          ? 'text-yellow-450 drop-shadow-[0_0_10px_rgba(250,204,21,0.6)] font-black text-3xl' 
+          ? 'text-yellow-400 drop-shadow-[0_0_12px_rgba(250,204,21,0.75)] font-black text-4xl md:text-5xl' 
           : isSilver 
-            ? 'text-slate-300 font-black text-2xl' 
+            ? 'text-slate-200 font-black text-3xl md:text-4xl' 
             : isBronze 
-              ? 'text-amber-500 font-black text-2xl' 
-              : 'text-slate-500 font-black text-xl';
+              ? 'text-amber-500 font-black text-3xl md:text-4xl' 
+              : isLastThree
+                ? 'text-red-400 font-black text-2xl md:text-3xl drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]'
+                : 'text-slate-300 font-black text-2xl md:text-3xl';
 
         return (
           <motion.div 
@@ -135,17 +140,18 @@ const Leaderboard: React.FC = () => {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
-            className={`flex items-center gap-4 p-5 rounded-[1.8rem] transition-all relative overflow-hidden ${cardStyle}`}
+            className={`flex items-center gap-4 p-5 md:p-6 rounded-[1.8rem] transition-all relative overflow-hidden ${cardStyle}`}
           >
-            <div className={`w-8 text-center italic ${rankColor}`}>
+            <div className={`w-10 md:w-12 text-center italic ${rankColor}`}>
               {index + 1}
             </div>
             
             <div className="relative flex-shrink-0">
-              <div className={`w-14 h-14 rounded-2xl overflow-hidden p-0.5 ${
+              <div className={`w-16 h-16 rounded-2xl overflow-hidden p-0.5 ${
                 isGold ? 'border-2 border-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.4)]' : 
                 isSilver ? 'border-2 border-slate-400' :
                 isBronze ? 'border-2 border-amber-600' :
+                isLastThree ? 'border-2 border-red-500/50 shadow-[0_0_10px_rgba(239,68,68,0.3)]' :
                 'border border-slate-800'
               }`}>
                 <img 
@@ -166,7 +172,7 @@ const Leaderboard: React.FC = () => {
             </div>
 
             <div className="flex-1 min-w-0">
-              <p className="truncate text-lg font-black uppercase tracking-tight text-white drop-shadow-sm">
+              <p className="truncate text-xl md:text-2xl font-black uppercase tracking-tight text-white drop-shadow-sm">
                 {u.displayName}
               </p>
               {history && history.length > 0 && (
@@ -219,18 +225,19 @@ const Leaderboard: React.FC = () => {
                   </div>
                 </div>
               )}
-              <p className="text-xs font-black uppercase tracking-wider mt-1.5 text-slate-350">
-                ผิดสะสม: <span className="font-black px-2 py-0.5 rounded-lg text-sm bg-red-500/10 border border-red-500/20 text-red-400">{u.round1_wrong_count}</span> <span className="opacity-60">/ 24</span>
+              <p className="text-sm font-black uppercase tracking-wider mt-2 text-slate-300">
+                ผิดสะสม: <span className="font-black px-2.5 py-1 rounded-xl text-base bg-red-500/20 border border-red-500/30 text-red-400 shadow-sm shadow-red-500/10">{u.round1_wrong_count}</span> <span className="opacity-70 text-xs">/ 24 นัด</span>
               </p>
             </div>
 
             <div className={`text-right ${
               isGold ? 'text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]' : 
-              isSilver ? 'text-slate-300' : 
+              isSilver ? 'text-slate-200' : 
               isBronze ? 'text-amber-500' : 
+              isLastThree ? 'text-red-400 drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]' :
               'text-emerald-400'
-            } text-huge italic font-black flex-shrink-0`}>
-              {u.points} <span className="text-[10px] uppercase font-bold not-italic opacity-60 ml-0.5">PTS</span>
+            } text-3xl md:text-4xl italic font-black flex-shrink-0`}>
+              {u.points} <span className="text-xs md:text-sm uppercase font-black not-italic opacity-70 ml-1">PTS</span>
             </div>
           </motion.div>
         );
