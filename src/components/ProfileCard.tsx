@@ -163,7 +163,7 @@ const ProfileCard: React.FC = () => {
           <div className="space-y-4 pt-2">
             <div className="flex justify-between items-end px-1.5">
               <span className="text-xs font-black text-slate-350 uppercase tracking-[0.18em] flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-yellow-400" /> คะแนนความผิด
+                <AlertTriangle className="w-5 h-5 text-yellow-400" /> เฟอะฟะ
               </span>
               <span className="text-xl font-black text-white tracking-widest">{wrongCount}<span className="text-slate-500 mx-1.5">/</span>24</span>
             </div>
