@@ -143,8 +143,8 @@ const AdminDashboard: React.FC = () => {
               startTime: Timestamp.fromDate(startDate),
               predictionDeadline: Timestamp.fromDate(new Date(startDate.getTime() - 3600000)),
               round: TournamentRound.GROUP,
-              homeFlag: `https://flagcdn.com/w80/${getCountryCode(h)}.png`,
-              awayFlag: `https://flagcdn.com/w80/${getCountryCode(a)}.png`,
+              homeFlag: getTeamFlag(h),
+              awayFlag: getTeamFlag(a),
               status: MatchStatus.SCHEDULED,
               isPublished: false
             });
@@ -335,8 +335,8 @@ const AdminDashboard: React.FC = () => {
                 startTime: Timestamp.fromDate(row.startDate),
                 predictionDeadline: Timestamp.fromDate(new Date(row.startDate.getTime() - 3600000)),
                 round: TournamentRound.GROUP,
-                homeFlag: `https://flagcdn.com/w80/${getCountryCode(row.h)}.png`,
-                awayFlag: `https://flagcdn.com/w80/${getCountryCode(row.a)}.png`,
+                homeFlag: getTeamFlag(row.h),
+                awayFlag: getTeamFlag(row.a),
                 status: MatchStatus.SCHEDULED,
                 isPublished: false
               });
@@ -512,8 +512,8 @@ const AdminDashboard: React.FC = () => {
         await updateDoc(doc(db, 'matches', editingMatchId), {
           homeTeam,
           awayTeam,
-          homeFlag: `https://flagcdn.com/w80/${getCountryCode(homeTeam)}.png`, 
-          awayFlag: `https://flagcdn.com/w80/${getCountryCode(awayTeam)}.png`,
+          homeFlag: getTeamFlag(homeTeam), 
+          awayFlag: getTeamFlag(awayTeam),
           handicap: handicap,
           round: round,
           startTime: Timestamp.fromDate(date),
@@ -527,8 +527,8 @@ const AdminDashboard: React.FC = () => {
         await addDoc(collection(db, 'matches'), {
           homeTeam,
           awayTeam,
-          homeFlag: `https://flagcdn.com/w80/${getCountryCode(homeTeam)}.png`, 
-          awayFlag: `https://flagcdn.com/w80/${getCountryCode(awayTeam)}.png`,
+          homeFlag: getTeamFlag(homeTeam), 
+          awayFlag: getTeamFlag(awayTeam),
           handicap: handicap,
           round: round,
           startTime: Timestamp.fromDate(date),
@@ -594,6 +594,54 @@ const AdminDashboard: React.FC = () => {
     if (teamLower.includes('UEFA') || teamLower.includes('FIFA')) return 'un';
     
     return codes[team] || team.substring(0, 2).toLowerCase();
+  };
+
+  const getTeamFlag = (team: string) => {
+    if (!team || typeof team !== 'string') return 'https://flagcdn.com/w80/un.png';
+    
+    const clubBadges: Record<string, string> = {
+      'Brighton and Hove Albion': 'https://crests.football-data.org/397.png',
+      'Brighton': 'https://crests.football-data.org/397.png',
+      'Manchester United': 'https://crests.football-data.org/66.png',
+      'Man United': 'https://crests.football-data.org/66.png',
+      'Burnley': 'https://crests.football-data.org/328.png',
+      'Wolverhampton Wanderers': 'https://crests.football-data.org/76.png',
+      'Wolves': 'https://crests.football-data.org/76.png',
+      'Crystal Palace': 'https://crests.football-data.org/354.png',
+      'Arsenal': 'https://crests.football-data.org/57.png',
+      'Fulham': 'https://crests.football-data.org/63.png',
+      'Newcastle United': 'https://crests.football-data.org/67.png',
+      'Newcastle': 'https://crests.football-data.org/67.png',
+      'Liverpool': 'https://crests.football-data.org/64.png',
+      'Brentford': 'https://crests.football-data.org/402.png',
+      'Manchester City': 'https://crests.football-data.org/65.png',
+      'Man City': 'https://crests.football-data.org/65.png',
+      'Aston Villa': 'https://crests.football-data.org/58.png',
+      'Nottingham Forest': 'https://crests.football-data.org/351.png',
+      'Nottingham': 'https://crests.football-data.org/351.png',
+      'Bournemouth': 'https://crests.football-data.org/1044.png',
+      'Sunderland': 'https://crests.football-data.org/71.png',
+      'Chelsea': 'https://crests.football-data.org/61.png',
+      'Tottenham Hotspur': 'https://crests.football-data.org/73.png',
+      'Tottenham': 'https://crests.football-data.org/73.png',
+      'Spurs': 'https://crests.football-data.org/73.png',
+      'Everton': 'https://crests.football-data.org/62.png',
+      'West Ham United': 'https://crests.football-data.org/563.png',
+      'West Ham': 'https://crests.football-data.org/563.png',
+      'Leeds United': 'https://crests.football-data.org/341.png',
+      'Leeds': 'https://crests.football-data.org/341.png'
+    };
+
+    if (clubBadges[team]) return clubBadges[team];
+
+    const teamLower = team.toLowerCase();
+    for (const name in clubBadges) {
+      if (teamLower.includes(name.toLowerCase()) || name.toLowerCase().includes(teamLower)) {
+        return clubBadges[name];
+      }
+    }
+
+    return `https://flagcdn.com/w80/${getCountryCode(team)}.png`;
   };
 
   const toggleMockMatch = (m: MockMatch) => {

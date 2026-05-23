@@ -7,6 +7,38 @@ import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'motion/react';
 import { Clock, Info, CheckCircle2 } from 'lucide-react';
 
+interface TeamLogoProps {
+  src?: string;
+  teamName: string;
+  isActive?: boolean;
+}
+
+const TeamLogo: React.FC<TeamLogoProps> = ({ src, teamName, isActive }) => {
+  const [error, setError] = React.useState(false);
+
+  // If no logo or image failed to load, show beautiful initial badge
+  const showFallback = !src || error;
+
+  return (
+    <div className={`w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-slate-950/60 p-2 border-2 shadow-inner flex items-center justify-center transition-all ${
+      isActive ? 'border-emerald-500 bg-emerald-950/10 shadow-[0_0_15px_rgba(16,185,129,0.15)]' : 'border-slate-800'
+    }`}>
+      {showFallback ? (
+        <div className="w-full h-full rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700/50 flex items-center justify-center text-sm font-black text-slate-400 select-none">
+          {teamName.substring(0, 2).toUpperCase()}
+        </div>
+      ) : (
+        <img 
+          src={src} 
+          alt={teamName} 
+          onError={() => setError(true)}
+          className="w-full h-full object-contain filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)] transition-transform duration-300 hover:scale-105" 
+        />
+      )}
+    </div>
+  );
+};
+
 const MatchList: React.FC = () => {
   const [matches, setMatches] = useState<Match[]>([]);
   const [predictions, setPredictions] = useState<Record<string, Prediction>>({});
@@ -160,44 +192,40 @@ const MatchList: React.FC = () => {
             </div>
 
             <div className="p-6 space-y-6">
-              <div className="flex items-center justify-between gap-3 sm:gap-4">
+              <div className="flex items-center justify-between gap-2.5 sm:gap-4">
                 {/* Home Team */}
                 <button 
                   disabled={!canPredict || isSaving}
                   onClick={() => setStaged(match.id, PredictionChoice.HOME)}
-                  className={`flex flex-col items-center gap-3 text-center flex-1 p-3.5 rounded-3xl transition-all border-2 ${
+                  className={`flex flex-col items-center gap-3.5 text-center flex-1 p-3 rounded-3xl transition-all border-2 ${
                     activeChoice === PredictionChoice.HOME 
-                      ? 'bg-emerald-500/15 border-emerald-500 scale-[1.04] shadow-[0_0_20px_rgba(34,197,94,0.2)]' 
+                      ? 'bg-emerald-500/15 border-emerald-500 scale-[1.04] shadow-[0_0_20px_rgba(34,197,94,0.25)]' 
                       : canPredict 
                         ? 'border-slate-800/80 bg-slate-900/40 hover:bg-slate-850 hover:border-slate-700' 
                         : 'border-transparent opacity-50 cursor-not-allowed'
                   }`}
                 >
                   <div className="relative">
-                    <div className={`w-20 h-14 rounded-2xl bg-slate-950 overflow-hidden border-2 shadow-inner p-1 transition-all ${
-                      activeChoice === PredictionChoice.HOME ? 'border-emerald-500' : 'border-slate-800'
-                    }`}>
-                      {match.homeFlag ? (
-                        <img src={match.homeFlag} alt={match.homeTeam} className="w-full h-full object-cover rounded-xl" />
-                      ) : (
-                        <div className="text-xl text-slate-500 h-full flex items-center justify-center">🏴</div>
-                      )}
-                    </div>
+                    <TeamLogo 
+                      src={match.homeFlag} 
+                      teamName={match.homeTeam} 
+                      isActive={activeChoice === PredictionChoice.HOME} 
+                    />
                     {activeChoice === PredictionChoice.HOME && (
-                      <div className="absolute -top-2 -right-2 bg-emerald-500 text-slate-950 rounded-full p-0.5 shadow-lg ring-3 ring-[#0f172a] animate-pulse">
+                      <div className="absolute -top-1.5 -right-1.5 bg-emerald-500 text-slate-950 rounded-full p-0.5 shadow-lg ring-3 ring-[#0f172a] animate-pulse">
                         <CheckCircle2 className="w-4 h-4 fill-current text-white" />
                       </div>
                     )}
                   </div>
-                  <span className={`text-base sm:text-lg font-black uppercase tracking-tight truncate w-full transition-colors ${
-                    activeChoice === PredictionChoice.HOME ? 'text-emerald-400' : 'text-slate-100'
+                  <span className={`text-xs sm:text-sm md:text-base font-black uppercase tracking-tight line-clamp-2 w-full transition-colors leading-snug min-h-[2.5rem] flex items-center justify-center ${
+                    activeChoice === PredictionChoice.HOME ? 'text-emerald-400' : 'text-slate-200 hover:text-slate-100'
                   }`}>
                     {match.homeTeam}
                   </span>
                 </button>
 
                 {/* Score / VS */}
-                <div className="flex flex-col items-center gap-1.5 min-w-[80px]">
+                <div className="flex flex-col items-center gap-1.5 min-w-[90px] sm:min-w-[120px] shrink-0">
                   {match.status === MatchStatus.FINISHED ? (
                     <div className="flex flex-col items-center">
                       <span className="text-4xl sm:text-5xl italic font-black tracking-tighter text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]">
@@ -208,11 +236,11 @@ const MatchList: React.FC = () => {
                   ) : (
                     <div className="flex flex-col items-center gap-1">
                       <span className="text-xl text-slate-500 italic font-black tracking-[0.25em]">VS</span>
-                      <div className="flex flex-col items-center relative -mt-0.5">
-                        <div className="bg-emerald-500 text-slate-950 text-[10px] font-black px-4 py-1.5 rounded-t-xl uppercase tracking-widest shadow-lg z-10">
+                      <div className="flex flex-col items-center relative -mt-0.5 w-full">
+                        <div className="bg-emerald-500 text-slate-950 text-[10px] font-black px-3.5 py-1.5 rounded-t-xl uppercase tracking-widest shadow-lg z-10 text-center w-full max-w-[80px]">
                           ราคาบอล
                         </div>
-                        <div className="bg-slate-900 border-2 border-emerald-400 text-emerald-400 text-2xl font-black px-6 py-2 rounded-b-2xl rounded-tr-2xl shadow-[0_8px_25px_rgba(0,0,0,0.3)] min-w-[100px] text-center -mt-0.5">
+                        <div className="bg-slate-900 border-2 border-emerald-400 text-emerald-400 text-base sm:text-lg md:text-xl font-black px-4 py-2.5 rounded-b-2xl rounded-tr-2xl shadow-[0_8px_25px_rgba(0,0,0,0.3)] min-w-[80px] sm:min-w-[100px] text-center -mt-0.5 leading-none break-all flex items-center justify-center">
                           {match.handicap || '0.0'}
                         </div>
                       </div>
@@ -224,32 +252,28 @@ const MatchList: React.FC = () => {
                 <button 
                   disabled={!canPredict || isSaving}
                   onClick={() => setStaged(match.id, PredictionChoice.AWAY)}
-                  className={`flex flex-col items-center gap-3 text-center flex-1 p-3.5 rounded-3xl transition-all border-2 ${
+                  className={`flex flex-col items-center gap-3.5 text-center flex-1 p-3 rounded-3xl transition-all border-2 ${
                     activeChoice === PredictionChoice.AWAY 
-                      ? 'bg-emerald-500/15 border-emerald-500 scale-[1.04] shadow-[0_0_20px_rgba(34,197,94,0.2)]' 
+                      ? 'bg-emerald-500/15 border-emerald-500 scale-[1.04] shadow-[0_0_20px_rgba(34,197,94,0.25)]' 
                       : canPredict 
                         ? 'border-slate-800/80 bg-slate-900/40 hover:bg-slate-850 hover:border-slate-700' 
                         : 'border-transparent opacity-50 cursor-not-allowed'
                   }`}
                 >
                   <div className="relative">
-                    <div className={`w-20 h-14 rounded-2xl bg-slate-950 overflow-hidden border-2 shadow-inner p-1 transition-all ${
-                      activeChoice === PredictionChoice.AWAY ? 'border-emerald-500' : 'border-slate-800'
-                    }`}>
-                      {match.awayFlag ? (
-                        <img src={match.awayFlag} alt={match.awayTeam} className="w-full h-full object-cover rounded-xl" />
-                      ) : (
-                        <div className="text-xl text-slate-500 h-full flex items-center justify-center">🏴</div>
-                      )}
-                    </div>
+                    <TeamLogo 
+                      src={match.awayFlag} 
+                      teamName={match.awayTeam} 
+                      isActive={activeChoice === PredictionChoice.AWAY} 
+                    />
                     {activeChoice === PredictionChoice.AWAY && (
-                      <div className="absolute -top-2 -right-2 bg-emerald-500 text-slate-950 rounded-full p-0.5 shadow-lg ring-3 ring-[#0f172a] animate-pulse">
+                      <div className="absolute -top-1.5 -right-1.5 bg-emerald-500 text-slate-950 rounded-full p-0.5 shadow-lg ring-3 ring-[#0f172a] animate-pulse">
                         <CheckCircle2 className="w-4 h-4 fill-current text-white" />
                       </div>
                     )}
                   </div>
-                  <span className={`text-base sm:text-lg font-black uppercase tracking-tight truncate w-full transition-colors ${
-                    activeChoice === PredictionChoice.AWAY ? 'text-emerald-400' : 'text-slate-100'
+                  <span className={`text-xs sm:text-sm md:text-base font-black uppercase tracking-tight line-clamp-2 w-full transition-colors leading-snug min-h-[2.5rem] flex items-center justify-center ${
+                    activeChoice === PredictionChoice.AWAY ? 'text-emerald-400' : 'text-slate-200 hover:text-slate-100'
                   }`}>
                     {match.awayTeam}
                   </span>
