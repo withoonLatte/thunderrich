@@ -24,7 +24,7 @@ const ScoreGraph: React.FC = () => {
   const chartData = users.map(u => ({
     name: u.displayName,
     points: u.points
-  })).reverse(); // Reverse for horizontal bar chart top-to-bottom feel
+  }));
 
   return (
     <motion.div 
@@ -84,7 +84,7 @@ const ScoreGraph: React.FC = () => {
               }}
             >
               {chartData.map((entry, index) => {
-                const rankFromTop = chartData.length - 1 - index;
+                const rankFromTop = index; // index 0 is the highest (top bar)
                 let fill = '#22c55e'; // Default Green
                 if (rankFromTop === 0) fill = '#facc15'; // 1st: Gold
                 else if (rankFromTop === 1) fill = '#94a3b8'; // 2nd: Silver
