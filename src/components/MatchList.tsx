@@ -177,8 +177,8 @@ const MatchList: React.FC = () => {
                   </div>
                 ) : (
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
-                    {match.round === 'group' ? '+2 / -1' : 
-                     match.round === 'top16' ? '+3 / -2' : 
+                    {match.round === 'group' ? '+1 / 0' : 
+                     match.round === 'top16' ? '+3 / -2' :  
                      match.round === 'top8' ? '+4 / -2' : 
                      match.round === 'top4' || match.round === 'third_place' ? '+5 / -3' : 
                      match.round === 'final' ? '+7 / -3' : ''} PTS

@@ -18,7 +18,7 @@ import {
 } from '../types';
 
 const SCORING_MATRIX = {
-  [TournamentRound.GROUP]: { correct: 2, wrong: -1 },
+  [TournamentRound.GROUP]: { correct: 1, wrong: 0 },
   [TournamentRound.TOP16]: { correct: 3, wrong: -2 },
   [TournamentRound.TOP8]: { correct: 4, wrong: -2 },
   [TournamentRound.TOP4]: { correct: 5, wrong: -3 },
