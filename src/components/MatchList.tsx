@@ -197,7 +197,7 @@ const MatchList: React.FC = () => {
                 <button 
                   disabled={!canPredict || isSaving}
                   onClick={() => setStaged(match.id, PredictionChoice.HOME)}
-                  className={`flex flex-col items-center gap-3.5 text-center flex-1 p-3 rounded-3xl transition-all border-2 ${
+                  className={`flex flex-col items-center gap-3.5 text-center flex-1 p-3 rounded-3xl transition-all border-2 whitespace-normal ${
                     activeChoice === PredictionChoice.HOME 
                       ? 'bg-emerald-500/15 border-emerald-500 scale-[1.04] shadow-[0_0_20px_rgba(34,197,94,0.25)]' 
                       : canPredict 
@@ -217,7 +217,7 @@ const MatchList: React.FC = () => {
                       </div>
                     )}
                   </div>
-                  <span className={`text-xs sm:text-sm md:text-base font-black uppercase tracking-tight line-clamp-2 w-full transition-colors leading-snug min-h-[2.5rem] flex items-center justify-center ${
+                  <span className={`text-xs sm:text-sm md:text-base font-black uppercase tracking-tight whitespace-normal line-clamp-2 w-full transition-colors leading-tight min-h-[2.5rem] flex items-center justify-center ${
                     activeChoice === PredictionChoice.HOME ? 'text-emerald-400' : 'text-slate-200 hover:text-slate-100'
                   }`}>
                     {match.homeTeam}
@@ -240,7 +240,7 @@ const MatchList: React.FC = () => {
                         <div className="bg-emerald-500 text-slate-950 text-[10px] font-black px-3.5 py-1.5 rounded-t-xl uppercase tracking-widest shadow-lg z-10 text-center w-full max-w-[80px]">
                           ราคาบอล
                         </div>
-                        <div className="bg-slate-900 border-2 border-emerald-400 text-emerald-400 text-base sm:text-lg md:text-xl font-black px-4 py-2.5 rounded-b-2xl rounded-tr-2xl shadow-[0_8px_25px_rgba(0,0,0,0.3)] min-w-[80px] sm:min-w-[100px] text-center -mt-0.5 leading-none break-all flex items-center justify-center">
+                        <div className="bg-slate-900 border-2 border-emerald-400 text-emerald-400 text-xs sm:text-sm md:text-base font-black px-4 py-2.5 rounded-b-2xl rounded-tr-2xl shadow-[0_8px_25px_rgba(0,0,0,0.3)] min-w-[80px] sm:min-w-[100px] text-center -mt-0.5 leading-none whitespace-nowrap flex items-center justify-center">
                           {match.handicap || '0.0'}
                         </div>
                       </div>
@@ -252,7 +252,7 @@ const MatchList: React.FC = () => {
                 <button 
                   disabled={!canPredict || isSaving}
                   onClick={() => setStaged(match.id, PredictionChoice.AWAY)}
-                  className={`flex flex-col items-center gap-3.5 text-center flex-1 p-3 rounded-3xl transition-all border-2 ${
+                  className={`flex flex-col items-center gap-3.5 text-center flex-1 p-3 rounded-3xl transition-all border-2 whitespace-normal ${
                     activeChoice === PredictionChoice.AWAY 
                       ? 'bg-emerald-500/15 border-emerald-500 scale-[1.04] shadow-[0_0_20px_rgba(34,197,94,0.25)]' 
                       : canPredict 
@@ -272,7 +272,7 @@ const MatchList: React.FC = () => {
                       </div>
                     )}
                   </div>
-                  <span className={`text-xs sm:text-sm md:text-base font-black uppercase tracking-tight line-clamp-2 w-full transition-colors leading-snug min-h-[2.5rem] flex items-center justify-center ${
+                  <span className={`text-xs sm:text-sm md:text-base font-black uppercase tracking-tight whitespace-normal line-clamp-2 w-full transition-colors leading-tight min-h-[2.5rem] flex items-center justify-center ${
                     activeChoice === PredictionChoice.AWAY ? 'text-emerald-400' : 'text-slate-200 hover:text-slate-100'
                   }`}>
                     {match.awayTeam}
