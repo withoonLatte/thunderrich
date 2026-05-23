@@ -237,10 +237,10 @@ const MatchList: React.FC = () => {
                     <div className="flex flex-col items-center gap-1">
                       <span className="text-xl text-slate-500 italic font-black tracking-[0.25em]">VS</span>
                       <div className="flex flex-col items-center relative -mt-0.5 w-full">
-                        <div className="bg-emerald-500 text-slate-950 text-[10px] font-black px-3.5 py-1.5 rounded-t-xl uppercase tracking-widest shadow-lg z-10 text-center w-full max-w-[80px]">
+                        <div className="bg-emerald-500 text-slate-950 text-[9px] sm:text-[10px] font-black px-3 py-1 rounded-t-xl uppercase tracking-widest shadow-lg z-10 text-center w-full max-w-[70px]">
                           ราคาบอล
                         </div>
-                        <div className="bg-slate-900 border-2 border-emerald-400 text-emerald-400 text-xs sm:text-sm md:text-base font-black px-4 py-2.5 rounded-b-2xl rounded-tr-2xl shadow-[0_8px_25px_rgba(0,0,0,0.3)] min-w-[80px] sm:min-w-[100px] text-center -mt-0.5 leading-none whitespace-nowrap flex items-center justify-center">
+                        <div className="bg-slate-900 border-2 border-emerald-400 text-emerald-400 text-[10px] sm:text-xs md:text-sm font-black px-2 py-1.5 rounded-b-xl rounded-tr-xl shadow-[0_8px_25px_rgba(0,0,0,0.3)] min-w-[80px] sm:min-w-[100px] max-w-[100px] sm:max-w-[120px] text-center -mt-0.5 leading-snug whitespace-normal break-words flex items-center justify-center">
                           {match.handicap || '0.0'}
                         </div>
                       </div>
