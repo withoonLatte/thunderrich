@@ -1188,6 +1188,7 @@ const AdminDashboard: React.FC = () => {
                     <label className="text-xs text-black font-black uppercase tracking-widest">รอบการแข่งขัน</label>
                     <select value={round} onChange={e => setRound(e.target.value as TournamentRound)} className="w-full bg-white border border-gray-200 rounded-xl p-4 text-huge text-black font-black focus:outline-none focus:ring-2 focus:ring-world-cup-green/20 focus:border-world-cup-green transition-all">
                       <option value={TournamentRound.GROUP}>รอบแบ่งกลุ่ม</option>
+                      <option value={TournamentRound.TOP32}>รอบ 32 ทีม</option>
                       <option value={TournamentRound.TOP16}>รอบ 16 ทีม</option>
                       <option value={TournamentRound.TOP8}>รอบ 8 ทีม</option>
                       <option value={TournamentRound.TOP4}>รอบรองชนะเลิศ</option>
@@ -1357,6 +1358,7 @@ const AdminDashboard: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <p className="text-[10px] font-bold text-world-cup-green uppercase tracking-widest">
                           {match.round === TournamentRound.GROUP && 'รอบแบ่งกลุ่ม'}
+                          {match.round === TournamentRound.TOP32 && 'รอบ 32 ทีม'}
                           {match.round === TournamentRound.TOP16 && 'รอบ 16 ทีม'}
                           {match.round === TournamentRound.TOP8 && 'รอบ 8 ทีม'}
                           {match.round === TournamentRound.TOP4 && 'รอบรองชนะเลิศ'}

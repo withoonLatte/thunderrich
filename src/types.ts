@@ -5,6 +5,7 @@ export enum UserRole {
 
 export enum TournamentRound {
   GROUP = 'group',
+  TOP32 = 'top32',
   TOP16 = 'top16',
   TOP8 = 'top8',
   TOP4 = 'top4',
