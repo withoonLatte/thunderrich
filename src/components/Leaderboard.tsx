@@ -105,34 +105,45 @@ const Leaderboard: React.FC = () => {
         const isGold = index === 0;
         const isSilver = index === 1;
         const isBronze = index === 2;
-        const isLastThree = index >= users.length - 3 && index > 2;
         const Icon = isGold ? Trophy : isSilver ? Award : isBronze ? Medal : null;
-        const iconColor = isGold ? 'text-yellow-400' : isSilver ? 'text-slate-300' : 'text-amber-600';
         const history = userHistories[u.uid] || [];
 
-        // Dynamic styling depending on podium position
-        let cardStyle = '';
-        if (isGold) {
-          cardStyle = 'wc-gold-card scale-[1.03] shadow-lg shadow-yellow-500/10';
-        } else if (isSilver) {
-          cardStyle = 'wc-silver-card scale-[1.01] shadow-md shadow-slate-400/5';
-        } else if (isBronze) {
-          cardStyle = 'wc-bronze-card shadow-sm shadow-amber-600/5';
-        } else if (isLastThree) {
-          cardStyle = 'wc-red-card scale-[0.99] border-red-500/40 shadow-lg shadow-red-500/10';
-        } else {
-          cardStyle = 'bg-[#0f172a]/50 border border-slate-800/80 shadow-[0_8px_20px_rgba(0,0,0,0.25)]';
-        }
+        // Build inline items list with predictions and cards
+        const historyItems: ({ type: 'prediction'; points: number } | { type: 'yellow' } | { type: 'red' })[] = [];
+        history.forEach(item => {
+          historyItems.push({ type: 'prediction', points: item.points });
+          if (item.cardType === 'yellow') {
+            historyItems.push({ type: 'yellow' });
+          } else if (item.cardType === 'red') {
+            historyItems.push({ type: 'red' });
+          }
+        });
 
-        const rankColor = isGold 
-          ? 'text-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.15)] font-black text-6xl md:text-7xl' 
-          : isSilver 
-            ? 'text-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.1)] font-black text-5xl md:text-6xl' 
-            : isBronze 
-              ? 'text-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.1)] font-black text-5xl md:text-6xl' 
-              : isLastThree
-                ? 'text-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.15)] font-black text-4xl md:text-5xl'
-                : 'text-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.1)] font-black text-4xl md:text-5xl';
+        let borderGradient = '';
+        let bgGradient = '';
+        let topBarColor = '';
+        let rankLabel = '';
+        let avatarBorder = '';
+
+        if (index >= 0 && index <= 2) {
+          borderGradient = 'linear-gradient(135deg, #facc15, #d97706)'; // Gold
+          bgGradient = 'linear-gradient(135deg, rgba(250, 204, 21, 0.50) 0%, rgba(234, 179, 8, 0.50) 100%)';
+          topBarColor = 'from-yellow-400 via-amber-400 to-yellow-600';
+          rankLabel = 'หัวแถว';
+          avatarBorder = 'border-yellow-400 shadow-[0_0_12px_rgba(250,204,21,0.45)]';
+        } else if (index >= 3 && index <= 11) {
+          borderGradient = 'linear-gradient(135deg, #94a3b8, #475569)'; // Grey
+          bgGradient = 'linear-gradient(135deg, rgba(15, 23, 42, 0.50) 0%, rgba(15, 23, 42, 0.50) 100%)';
+          topBarColor = 'from-slate-400 via-slate-500 to-slate-600';
+          rankLabel = 'player';
+          avatarBorder = 'border-slate-400 shadow-[0_0_10px_rgba(148,163,184,0.3)]';
+        } else {
+          borderGradient = 'linear-gradient(135deg, #ef4444, #b91c1c)'; // Red
+          bgGradient = 'linear-gradient(135deg, rgba(239, 68, 68, 0.50) 0%, rgba(153, 27, 27, 0.50) 100%)';
+          topBarColor = 'from-red-500 via-rose-600 to-red-700';
+          rankLabel = 'อ่อน';
+          avatarBorder = 'border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.3)]';
+        }
 
         return (
           <motion.div 
@@ -140,99 +151,125 @@ const Leaderboard: React.FC = () => {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
-            className={`flex items-center gap-4 p-5 md:p-6 rounded-[1.8rem] transition-all relative overflow-hidden ${cardStyle}`}
+            style={{
+              background: `${bgGradient} padding-box, ${borderGradient} border-box`,
+              border: '3px solid transparent'
+            }}
+            className="flex flex-col gap-6 p-6 pt-10 rounded-[2.5rem] transition-all relative overflow-hidden backdrop-blur-md shadow-2xl"
           >
-            <div className={`w-16 md:w-20 text-center italic ${rankColor}`}>
-              {index + 1}
-            </div>
-            
-            <div className="relative flex-shrink-0">
-              <div className={`w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden p-0.5 ${
-                isGold ? 'border-2 border-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.4)]' : 
-                isSilver ? 'border-2 border-slate-400' :
-                isBronze ? 'border-2 border-amber-600' :
-                isLastThree ? 'border-2 border-red-500/50 shadow-[0_0_10px_rgba(239,68,68,0.3)]' :
-                'border border-slate-800'
-              }`}>
-                <img 
-                  src={u.photoURL || `https://ui-avatars.com/api/?name=${u.displayName}&background=0F172A&color=E2E8F0&bold=true`} 
-                  alt={u.displayName} 
-                  className="w-full h-full rounded-[14px] object-cover"
-                />
-              </div>
-              {Icon && (
-                <div className={`absolute -top-3.5 -right-3.5 p-2 rounded-2xl shadow-lg border border-white/10 ${
-                  isGold ? 'bg-slate-900 text-yellow-400' : 
-                  isSilver ? 'bg-slate-900 text-slate-300' : 
-                  'bg-slate-900 text-amber-600'
-                }`}>
-                  <Icon className="w-6 h-6 fill-current" />
-                </div>
-              )}
-            </div>
+            {/* Top Color Bar */}
+            <div className={`absolute top-0 left-0 right-0 h-3.5 bg-gradient-to-r ${topBarColor}`} />
 
-            <div className="flex-1 min-w-0">
-              <p className="truncate text-3xl md:text-4xl font-black uppercase tracking-tight text-black drop-shadow-sm">
-                {u.displayName}
-              </p>
-              {history && history.length > 0 && (
-                <div className="flex flex-col gap-1.5 my-2">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[12px] md:text-[14px] font-black uppercase tracking-wider text-black/90">
-                      ฟอร์ม 20 นัดล่าสุด:
+            {/* Info Section */}
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-6">
+              {/* Circular Rank Badge */}
+              <div className="flex-shrink-0 w-24 h-24 rounded-full border-4 border-white flex flex-col items-center justify-center bg-black/35 shadow-inner">
+                <span className="text-[10px] font-black uppercase tracking-widest text-white/80 leading-none mb-1">
+                  {rankLabel}
+                </span>
+                <span className="text-4xl font-black italic text-white leading-none">
+                  {index + 1}
+                </span>
+              </div>
+
+              {/* Avatar Box */}
+              <div className="relative flex-shrink-0">
+                <div className={`w-20 h-20 rounded-[1.8rem] overflow-hidden p-0.5 border-4 ${avatarBorder} bg-slate-900`}>
+                  <img 
+                    src={u.photoURL || `https://ui-avatars.com/api/?name=${u.displayName}&background=0F172A&color=E2E8F0&bold=true`} 
+                    alt={u.displayName} 
+                    className="w-full h-full rounded-[1.5rem] object-cover"
+                  />
+                </div>
+                {Icon && (
+                  <div className="absolute -top-3 -right-3 w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center shadow-lg border border-white/10">
+                    <Icon className="w-5 h-5 text-yellow-450 fill-current" />
+                  </div>
+                )}
+              </div>
+
+              {/* Name and point details */}
+              <div className="flex-1 min-w-0 space-y-3">
+                <h3 className="text-2xl md:text-3xl font-black text-white tracking-tight truncate leading-none drop-shadow-sm">
+                  {u.displayName}
+                </h3>
+                
+                <div className="flex items-center flex-wrap gap-4">
+                  {/* Point Red Circle */}
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center text-white text-3xl font-black shadow-lg shadow-red-600/35 border-[5px] border-red-500/45">
+                      {u.points}
+                    </div>
+                    <span className="text-sm font-black uppercase tracking-wider text-slate-350">
+                      point
                     </span>
                   </div>
-                  <div className="flex flex-wrap gap-1 max-w-[280px]">
-                    {history.slice(-20).map((item, itemIdx) => {
-                      const earns = item.points;
-                      const isPositive = earns > 0;
-                      const isNegative = earns < 0;
-                      
-                      let bgClass = '';
-                      if (isPositive) {
-                        bgClass = 'bg-emerald-500 text-slate-950 font-black shadow-[0_0_6px_rgba(16,185,129,0.3)] border border-emerald-400/20';
-                      } else if (isNegative) {
-                        bgClass = 'bg-rose-500 text-white font-black shadow-[0_0_6px_rgba(244,63,94,0.3)] border border-rose-500/20';
-                      } else {
-                        bgClass = 'bg-slate-800 text-slate-450 border border-slate-700/50';
-                      }
 
-                      const valText = earns > 0 ? `+${earns}` : `${earns}`;
-
-                      return (
-                        <div 
-                          key={itemIdx} 
-                          className={`relative w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black leading-none ${bgClass}`}
-                        >
-                          {valText}
-                          
-                          {/* Cards Indicator overlay */}
-                          {item.cardType === 'yellow' && (
-                            <span 
-                              title="ได้รับใบเหลืองจากการผิด 12 นัด" 
-                              className="absolute -top-1 -right-1 w-2.5 h-3.5 bg-yellow-400 border border-yellow-250 rounded-[2px] shadow-md z-10 animate-pulse"
-                            />
-                          )}
-                          {item.cardType === 'red' && (
-                            <span 
-                              title="ได้รับใบแดงจากการผิด 24 นัด" 
-                              className="absolute -top-1 -right-1 w-2.5 h-3.5 bg-red-500 border border-red-300 rounded-[2px] shadow-md z-10 animate-pulse"
-                            />
-                          )}
-                        </div>
-                      );
-                    })}
+                  {/* Yellow pill badge: เฟอะฟะ */}
+                  <div className="rounded-full bg-yellow-400 text-black px-5 py-2 text-base font-black shadow-md border border-yellow-350 tracking-wider">
+                    เฟอะฟะ {u.round1_wrong_count}
                   </div>
                 </div>
-              )}
-              <p className="text-lg md:text-xl font-black uppercase tracking-wider mt-2 text-black/95">
-                เฟอะฟะ: <span className="font-black px-3.5 py-1.5 rounded-xl text-xl md:text-2xl bg-black/10 border border-black/35 text-black shadow-sm">{u.round1_wrong_count}</span> <span className="text-black/80 font-black text-sm md:text-base">/ 24 นัด</span>
-              </p>
+              </div>
             </div>
 
-            <div className="text-right text-black text-5xl md:text-6xl italic font-black flex-shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.15)]">
-              {u.points} <span className="text-base md:text-lg uppercase font-black not-italic opacity-80 ml-1.5">PTS</span>
-            </div>
+            {/* 20-Match inline history */}
+            {history && history.length > 0 && (
+              <div className="space-y-2.5 pt-3 border-t border-white/5">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-400">
+                    20 นัดล่าสุด :
+                  </span>
+                </div>
+                
+                <div className="flex flex-wrap gap-2 items-center">
+                  {historyItems.slice(-20).map((item, itemIdx) => {
+                    if (item.type === 'yellow') {
+                      return (
+                        <div 
+                          key={itemIdx}
+                          title="ได้รับใบเหลืองจากการผิด 12 นัด" 
+                          className="w-5 h-7 bg-yellow-400 border border-yellow-250 rounded-[4px] shadow-md transform rotate-[6deg] flex-shrink-0 animate-pulse"
+                        />
+                      );
+                    }
+                    if (item.type === 'red') {
+                      return (
+                        <div 
+                          key={itemIdx}
+                          title="ได้รับใบแดงจากการผิด 24 นัด" 
+                          className="w-5 h-7 bg-red-500 border border-red-300 rounded-[4px] shadow-md transform -rotate-[6deg] flex-shrink-0 animate-pulse"
+                        />
+                      );
+                    }
+
+                    const earns = item.points;
+                    const isPositive = earns > 0;
+                    const isNegative = earns < 0;
+                    
+                    let bgClass = '';
+                    if (isPositive) {
+                      bgClass = 'bg-emerald-500 text-slate-950 font-black shadow-[0_0_6px_rgba(16,185,129,0.3)] border border-emerald-400/20';
+                    } else if (isNegative) {
+                      bgClass = 'bg-blue-600 text-white font-black shadow-[0_0_6px_rgba(37,99,235,0.3)] border border-blue-500/20';
+                    } else {
+                      bgClass = 'bg-slate-800 text-slate-450 border border-slate-700/50';
+                    }
+
+                    const valText = earns > 0 ? `+${earns}` : `${earns}`;
+
+                    return (
+                      <div 
+                        key={itemIdx} 
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black leading-none flex-shrink-0 ${bgClass}`}
+                      >
+                        {valText}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </motion.div>
         );
       })}

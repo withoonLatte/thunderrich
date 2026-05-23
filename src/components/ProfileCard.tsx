@@ -121,9 +121,14 @@ const ProfileCard: React.FC = () => {
                   <span className="text-xs font-black uppercase tracking-wider bg-slate-850 text-yellow-400 px-3.5 py-1.5 rounded-xl border border-slate-700 shadow-md">System Admin 👑</span>
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
-                  <Trophy className="w-6 h-6 text-yellow-400 filter drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]" />
-                  <span className="text-4xl text-yellow-400 italic font-black leading-none tracking-tight">{user.points} <small className="text-xs uppercase opacity-85 not-italic font-black tracking-widest ml-1 text-fuchsia-400">POINTS</small></span>
+                <div className="flex items-center gap-3">
+                  <Trophy className="w-6 h-6 text-yellow-400 filter drop-shadow-[0_0_8px_rgba(250,204,21,0.5)] flex-shrink-0" />
+                  <div className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-red-650/35 border-[5px] border-red-500/45 flex-shrink-0">
+                    {user.points}
+                  </div>
+                  <span className="text-xs font-black uppercase tracking-widest text-slate-350">
+                    POINTS
+                  </span>
                 </div>
               )}
             </div>
