@@ -330,24 +330,54 @@ const MatchList: React.FC = () => {
                   </motion.div>
                 )}
 
-                {prediction && match.status === MatchStatus.FINISHED && (
-                  <motion.div 
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className={`text-sm text-center py-3.5 rounded-2xl border font-black tracking-wide ${
-                      prediction.isResultCorrect 
-                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
-                        : 'bg-red-500/10 border-red-500/20 text-red-400'
-                    }`}
-                  >
-                    {prediction.isResultCorrect ? (
-                      <span className="flex items-center justify-center gap-2.5">
-                        <CheckCircle2 className="w-5 h-5 text-emerald-400" /> ประตู! +{prediction.pointsEarned} คะแนน
-                      </span>
+                {match.status === MatchStatus.FINISHED && (
+                  <div className="space-y-3.5 mt-2 bg-slate-950/40 p-4.5 rounded-[1.8rem] border border-slate-800/80">
+                    <div className="flex justify-between items-center text-xs font-black uppercase tracking-wider text-slate-400 border-b border-slate-800/40 pb-2.5">
+                      <span>สรุปข้อมูลการทายผล</span>
+                      <span className="text-slate-500">MATCH REPORT</span>
+                    </div>
+
+                    {prediction ? (
+                      <div className="space-y-3">
+                        {/* Choice Summary */}
+                        <div className="flex items-center justify-between text-sm font-bold px-1">
+                          <span className="text-slate-350 font-black">คุณเลือกทีมชนะ:</span>
+                          <span className={`font-black uppercase tracking-tight ${
+                            prediction.choice === PredictionChoice.HOME ? 'text-emerald-400' : 'text-fuchsia-400'
+                          }`}>
+                            {prediction.choice === PredictionChoice.HOME ? match.homeTeam : match.awayTeam}
+                          </span>
+                        </div>
+
+                        {/* Result Badge */}
+                        <motion.div 
+                          initial={{ scale: 0.95, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          className={`text-xs sm:text-sm text-center py-3 rounded-2xl border font-black tracking-wide flex items-center justify-center gap-2.5 ${
+                            prediction.isResultCorrect 
+                              ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.05)]' 
+                              : 'bg-red-500/10 border-red-500/25 text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.05)]'
+                          }`}
+                        >
+                          {prediction.isResultCorrect ? (
+                            <>
+                              <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                              <span>ประตู! ได้รับ +{prediction.pointsEarned} คะแนน</span>
+                            </>
+                          ) : (
+                            <>
+                              <div className="w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center text-red-400 font-black text-xs flex-shrink-0">✕</div>
+                              <span>ล้ำหน้า! {prediction.pointsEarned} คะแนน</span>
+                            </>
+                          )}
+                        </motion.div>
+                      </div>
                     ) : (
-                      <span>ล้ำหน้า! {prediction.pointsEarned} คะแนน</span>
+                      <div className="text-xs font-bold text-center text-slate-450 py-3 bg-slate-900/30 rounded-2xl border border-dashed border-slate-800">
+                        ไม่ได้ส่งคำทำนายผลสำหรับแมตช์นี้ (0 คะแนน)
+                      </div>
                     )}
-                  </motion.div>
+                  </div>
                 )}
               </AnimatePresence>
             </div>
