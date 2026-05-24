@@ -446,72 +446,74 @@ const MatchList: React.FC = () => {
                         ไม่ได้ส่งคำทำนายผลสำหรับแมตช์นี้ (0 คะแนน)
                       </div>
                     )}
+                  </div>
+                )}
 
-                    {/* Community Vote Breakdown */}
-                    <div className="space-y-4 pt-3.5 border-t border-slate-800/40">
-                      <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-wider text-slate-400">
-                        <span className="flex items-center gap-1.5 text-emerald-400">📊 มติเพื่อนซี้ (COMMUNITY VOTE)</span>
-                        <span>โหวตทั้งหมด {totalVotes} คน</span>
-                      </div>
-
-                      {totalVotes > 0 ? (
-                        <div className="space-y-3">
-                          {/* Vote Percentages Progress Bar */}
-                          <div className="space-y-1.5">
-                            <div className="flex justify-between text-xs font-black px-1">
-                              <span className="text-emerald-400">{match.homeTeam} ({homeCount} คน)</span>
-                              <span className="text-fuchsia-400">{match.awayTeam} ({awayCount} คน)</span>
-                            </div>
-                            <div className="w-full h-3 bg-slate-900 rounded-full overflow-hidden flex border border-slate-800">
-                              <div 
-                                style={{ width: `${homePercent}%` }} 
-                                className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-500"
-                              />
-                              <div 
-                                style={{ width: `${awayPercent}%` }} 
-                                className="h-full bg-gradient-to-l from-fuchsia-600 to-fuchsia-400 transition-all duration-500"
-                              />
-                            </div>
-                            <div className="flex justify-between text-[9px] font-black text-slate-500 uppercase tracking-widest px-1">
-                              <span>{homePercent}% VOTE</span>
-                              <span>{awayPercent}% VOTE</span>
-                            </div>
-                          </div>
-
-                          {/* Majority Favorite Box */}
-                          <div className="bg-slate-900/60 py-2.5 px-3.5 rounded-xl border border-slate-800 flex items-center justify-between text-xs font-bold shadow-inner">
-                            <span className="text-slate-400 font-black">ทีมยอดนิยม:</span>
-                            <span className="text-yellow-400 font-black tracking-tight">{majorityLabel}</span>
-                          </div>
-
-                          {/* Voter Names Breakdown */}
-                          <div className="space-y-2 pt-1.5 text-[10px] sm:text-xs">
-                            <div className="bg-emerald-950/10 p-2 rounded-xl border border-emerald-950/20 text-left">
-                              <span className="font-black text-emerald-400">🟢 ทาย {match.homeTeam} ({homeCount} คน): </span>
-                              <span className="text-slate-300 font-bold leading-relaxed">
-                                {homeCount > 0 
-                                  ? homeVotes.map(v => users.find(u => u.uid === v.userId)?.displayName || 'ผู้เล่น').join(', ')
-                                  : 'ไม่มี'
-                                }
-                              </span>
-                            </div>
-                            <div className="bg-fuchsia-950/10 p-2 rounded-xl border border-fuchsia-950/20 text-left">
-                              <span className="font-black text-fuchsia-400">🔴 ทาย {match.awayTeam} ({awayCount} คน): </span>
-                              <span className="text-slate-300 font-bold leading-relaxed">
-                                {awayCount > 0 
-                                  ? awayVotes.map(v => users.find(u => u.uid === v.userId)?.displayName || 'ผู้เล่น').join(', ')
-                                  : 'ไม่มี'
-                                }
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-xs font-bold text-center text-slate-450 py-3 bg-slate-900/20 rounded-xl border border-dashed border-slate-800/60">
-                          ไม่มีผู้เล่นส่งคำทำนายในคู่นี้
-                        </div>
-                      )}
+                {/* Admin-only Community Vote Breakdown */}
+                {user?.role === 'admin' && showVotes && (
+                  <div className="space-y-4 mt-3.5 bg-slate-950/60 p-4.5 rounded-[1.8rem] border border-slate-800/80 shadow-inner">
+                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-800/40 pb-2.5">
+                      <span className="flex items-center gap-1.5 text-emerald-400">📊 มติเพื่อนซี้ (COMMUNITY VOTE - ADMIN ONLY)</span>
+                      <span>โหวตทั้งหมด {totalVotes} คน</span>
                     </div>
+
+                    {totalVotes > 0 ? (
+                      <div className="space-y-3">
+                        {/* Vote Percentages Progress Bar */}
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between text-xs font-black px-1">
+                            <span className="text-emerald-400">{match.homeTeam} ({homeCount} คน)</span>
+                            <span className="text-fuchsia-400">{match.awayTeam} ({awayCount} คน)</span>
+                          </div>
+                          <div className="w-full h-3 bg-slate-900 rounded-full overflow-hidden flex border border-slate-800">
+                            <div 
+                              style={{ width: `${homePercent}%` }} 
+                              className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-500"
+                            />
+                            <div 
+                              style={{ width: `${awayPercent}%` }} 
+                              className="h-full bg-gradient-to-l from-fuchsia-600 to-fuchsia-400 transition-all duration-500"
+                            />
+                          </div>
+                          <div className="flex justify-between text-[9px] font-black text-slate-500 uppercase tracking-widest px-1">
+                            <span>{homePercent}% VOTE</span>
+                            <span>{awayPercent}% VOTE</span>
+                          </div>
+                        </div>
+
+                        {/* Majority Favorite Box */}
+                        <div className="bg-slate-900/60 py-2.5 px-3.5 rounded-xl border border-slate-800 flex items-center justify-between text-xs font-bold shadow-inner">
+                          <span className="text-slate-400 font-black">ทีมยอดนิยม:</span>
+                          <span className="text-yellow-400 font-black tracking-tight">{majorityLabel}</span>
+                        </div>
+
+                        {/* Voter Names Breakdown */}
+                        <div className="space-y-2 pt-1.5 text-[10px] sm:text-xs">
+                          <div className="bg-emerald-950/10 p-2 rounded-xl border border-emerald-950/20 text-left">
+                            <span className="font-black text-emerald-400">🟢 ทาย {match.homeTeam} ({homeCount} คน): </span>
+                            <span className="text-slate-300 font-bold leading-relaxed">
+                              {homeCount > 0 
+                                ? homeVotes.map(v => users.find(u => u.uid === v.userId)?.displayName || 'ผู้เล่น').join(', ')
+                                : 'ไม่มี'
+                              }
+                            </span>
+                          </div>
+                          <div className="bg-fuchsia-950/10 p-2 rounded-xl border border-fuchsia-950/20 text-left">
+                            <span className="font-black text-fuchsia-400">🔴 ทาย {match.awayTeam} ({awayCount} คน): </span>
+                            <span className="text-slate-300 font-bold leading-relaxed">
+                              {awayCount > 0 
+                                ? awayVotes.map(v => users.find(u => u.uid === v.userId)?.displayName || 'ผู้เล่น').join(', ')
+                                : 'ไม่มี'
+                              }
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-xs font-bold text-center text-slate-450 py-3 bg-slate-900/20 rounded-xl border border-dashed border-slate-800/60">
+                        ไม่มีผู้เล่นส่งคำทำนายในคู่นี้
+                      </div>
+                    )}
                   </div>
                 )}
               </AnimatePresence>
