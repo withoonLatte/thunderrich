@@ -42,6 +42,9 @@ const TeamLogo: React.FC<TeamLogoProps> = ({ src, teamName, isActive }) => {
 const MatchList: React.FC = () => {
   const [matches, setMatches] = useState<Match[]>([]);
   const [predictions, setPredictions] = useState<Record<string, Prediction>>({});
+  const [allPredictions, setAllPredictions] = useState<Prediction[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [activeTab, setActiveTab] = useState<'active' | 'finished'>('active');
   const [stagedChoices, setStagedChoices] = useState<Record<string, PredictionChoice | null>>({});
   const [savingMap, setSavingMap] = useState<Record<string, boolean>>({});
   const { user } = useAuth();
@@ -56,7 +59,17 @@ const MatchList: React.FC = () => {
     const unsubMatches = onSnapshot(query(collection(db, 'matches'), orderBy('startTime', 'asc')), (snap) => {
       const allMatches = snap.docs.map(d => ({ id: d.id, ...d.data() } as Match));
       const sorted = [...allMatches].sort((a, b) => (a.startTime?.seconds || 0) - (b.startTime?.seconds || 0));
-      setMatches(sorted.filter(m => m.isPublished === true && m.status !== MatchStatus.FINISHED));
+      setMatches(sorted.filter(m => m.isPublished === true));
+    });
+
+    const unsubAllPreds = onSnapshot(collection(db, 'predictions'), (snap) => {
+      const preds = snap.docs.map(d => ({ id: d.id, ...d.data() } as Prediction));
+      setAllPredictions(preds);
+    });
+
+    const unsubUsers = onSnapshot(collection(db, 'users'), (snap) => {
+      const allUsers = snap.docs.map(d => d.data() as User);
+      setUsers(allUsers);
     });
 
     if (user) {
@@ -70,11 +83,17 @@ const MatchList: React.FC = () => {
       });
       return () => {
         unsubMatches();
+        unsubAllPreds();
+        unsubUsers();
         unsubPreds();
       };
     }
 
-    return () => unsubMatches();
+    return () => {
+      unsubMatches();
+      unsubAllPreds();
+      unsubUsers();
+    };
   }, [user]);
 
   const handlePredict = async (matchId: string) => {
@@ -132,8 +151,36 @@ const MatchList: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {matches.map((match, index) => {
-        const prediction = predictions[match.id];
+      {/* Glossy Tab Switcher */}
+      <div className="bg-slate-900/60 p-1.5 rounded-[1.5rem] flex gap-1 border border-slate-800/80 mx-1 shadow-inner">
+        <button 
+          type="button"
+          onClick={() => setActiveTab('active')}
+          className={`flex-1 text-center py-3 rounded-[1.1rem] text-xs sm:text-sm font-black transition-all duration-200 cursor-pointer ${
+            activeTab === 'active' 
+              ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20 scale-[1.02]' 
+              : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          แมตช์เปิดทายผล ({matches.filter(m => m.status !== MatchStatus.FINISHED).length})
+        </button>
+        <button 
+          type="button"
+          onClick={() => setActiveTab('finished')}
+          className={`flex-1 text-center py-3 rounded-[1.1rem] text-xs sm:text-sm font-black transition-all duration-200 cursor-pointer ${
+            activeTab === 'finished' 
+              ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20 scale-[1.02]' 
+              : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          ผลการแข่งขันย้อนหลัง ({matches.filter(m => m.status === MatchStatus.FINISHED).length})
+        </button>
+      </div>
+
+      {matches
+        .filter(m => activeTab === 'active' ? m.status !== MatchStatus.FINISHED : m.status === MatchStatus.FINISHED)
+        .map((match, index) => {
+          const prediction = predictions[match.id];
         const stagedChoice = stagedChoices[match.id];
         const activeChoice = stagedChoice || prediction?.choice;
         const isSaving = savingMap[match.id];
@@ -146,6 +193,28 @@ const MatchList: React.FC = () => {
         const isPastDeadline = deadline.getTime() < now.getTime();
         const isBanned = user?.bannedMatchIds?.includes(match.id);
         const canPredict = user?.role !== 'admin' && !isPastDeadline && !isBanned;
+
+        // Calculate community votes
+        const matchPreds = allPredictions.filter(p => p.matchId === match.id);
+        const homeVotes = matchPreds.filter(p => p.choice === PredictionChoice.HOME);
+        const awayVotes = matchPreds.filter(p => p.choice === PredictionChoice.AWAY);
+        
+        const homeCount = homeVotes.length;
+        const awayCount = awayVotes.length;
+        const totalVotes = homeCount + awayCount;
+        
+        const homePercent = totalVotes > 0 ? Math.round((homeCount / totalVotes) * 100) : 0;
+        const awayPercent = totalVotes > 0 ? Math.round((awayCount / totalVotes) * 100) : 0;
+
+        // Find majority favorite
+        let majorityLabel = '';
+        if (totalVotes > 0) {
+          if (homeCount > awayCount) majorityLabel = `ฝั่งยอดนิยม: ${match.homeTeam} 🔥 (${homeCount} คน • ${homePercent}%)`;
+          else if (awayCount > homeCount) majorityLabel = `ฝั่งยอดนิยม: ${match.awayTeam} 🔥 (${awayCount} คน • ${awayPercent}%)`;
+          else majorityLabel = `เลือกสูสีเท่ากัน ⚖️ (ฝั่งละ ${homeCount} คน)`;
+        }
+        
+        const showVotes = isPastDeadline || match.status === MatchStatus.FINISHED;
 
         // Countdown logic
         const diff = deadline.getTime() - now.getTime();
@@ -377,6 +446,72 @@ const MatchList: React.FC = () => {
                         ไม่ได้ส่งคำทำนายผลสำหรับแมตช์นี้ (0 คะแนน)
                       </div>
                     )}
+
+                    {/* Community Vote Breakdown */}
+                    <div className="space-y-4 pt-3.5 border-t border-slate-800/40">
+                      <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-wider text-slate-400">
+                        <span className="flex items-center gap-1.5 text-emerald-400">📊 มติเพื่อนซี้ (COMMUNITY VOTE)</span>
+                        <span>โหวตทั้งหมด {totalVotes} คน</span>
+                      </div>
+
+                      {totalVotes > 0 ? (
+                        <div className="space-y-3">
+                          {/* Vote Percentages Progress Bar */}
+                          <div className="space-y-1.5">
+                            <div className="flex justify-between text-xs font-black px-1">
+                              <span className="text-emerald-400">{match.homeTeam} ({homeCount} คน)</span>
+                              <span className="text-fuchsia-400">{match.awayTeam} ({awayCount} คน)</span>
+                            </div>
+                            <div className="w-full h-3 bg-slate-900 rounded-full overflow-hidden flex border border-slate-800">
+                              <div 
+                                style={{ width: `${homePercent}%` }} 
+                                className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-500"
+                              />
+                              <div 
+                                style={{ width: `${awayPercent}%` }} 
+                                className="h-full bg-gradient-to-l from-fuchsia-600 to-fuchsia-400 transition-all duration-500"
+                              />
+                            </div>
+                            <div className="flex justify-between text-[9px] font-black text-slate-500 uppercase tracking-widest px-1">
+                              <span>{homePercent}% VOTE</span>
+                              <span>{awayPercent}% VOTE</span>
+                            </div>
+                          </div>
+
+                          {/* Majority Favorite Box */}
+                          <div className="bg-slate-900/60 py-2.5 px-3.5 rounded-xl border border-slate-800 flex items-center justify-between text-xs font-bold shadow-inner">
+                            <span className="text-slate-400 font-black">ทีมยอดนิยม:</span>
+                            <span className="text-yellow-400 font-black tracking-tight">{majorityLabel}</span>
+                          </div>
+
+                          {/* Voter Names Breakdown */}
+                          <div className="space-y-2 pt-1.5 text-[10px] sm:text-xs">
+                            <div className="bg-emerald-950/10 p-2 rounded-xl border border-emerald-950/20 text-left">
+                              <span className="font-black text-emerald-400">🟢 ทาย {match.homeTeam} ({homeCount} คน): </span>
+                              <span className="text-slate-300 font-bold leading-relaxed">
+                                {homeCount > 0 
+                                  ? homeVotes.map(v => users.find(u => u.uid === v.userId)?.displayName || 'ผู้เล่น').join(', ')
+                                  : 'ไม่มี'
+                                }
+                              </span>
+                            </div>
+                            <div className="bg-fuchsia-950/10 p-2 rounded-xl border border-fuchsia-950/20 text-left">
+                              <span className="font-black text-fuchsia-400">🔴 ทาย {match.awayTeam} ({awayCount} คน): </span>
+                              <span className="text-slate-300 font-bold leading-relaxed">
+                                {awayCount > 0 
+                                  ? awayVotes.map(v => users.find(u => u.uid === v.userId)?.displayName || 'ผู้เล่น').join(', ')
+                                  : 'ไม่มี'
+                                }
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-xs font-bold text-center text-slate-450 py-3 bg-slate-900/20 rounded-xl border border-dashed border-slate-800/60">
+                          ไม่มีผู้เล่นส่งคำทำนายในคู่นี้
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </AnimatePresence>
