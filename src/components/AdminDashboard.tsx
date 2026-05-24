@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useDeferredValue } from 'react';
 import { collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, Timestamp, deleteDoc, writeBatch, getDoc, getDocs, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { TournamentRound, Match, MatchStatus, User } from '../types';
+import { TournamentRound, Match, MatchStatus, User, Prediction, PredictionChoice } from '../types';
 import { useAuth, PLAYER_PINS } from '../contexts/AuthContext';
 import { calculateMatchResults } from '../lib/gameLogic';
 import { Trash2, Edit3, CheckCircle, PlusCircle, RefreshCw, Calendar, ChevronDown, Check, Camera, Loader2, Info, Zap, Star, FileUp } from 'lucide-react';
@@ -46,6 +46,7 @@ const AdminDashboard: React.FC = () => {
   const [calcStagedIds, setCalcStagedIds] = useState<string[]>([]);
   const [batchLoading, setBatchLoading] = useState(false);
   const [bulkText, setBulkText] = useState('');
+  const [allPredictions, setAllPredictions] = useState<Prediction[]>([]);
 
   useEffect(() => {
     const unsubMatches = onSnapshot(query(collection(db, 'matches'), orderBy('startTime', 'asc')), (snap) => {
@@ -67,10 +68,16 @@ const AdminDashboard: React.FC = () => {
       }
     });
 
+    const unsubAllPreds = onSnapshot(collection(db, 'predictions'), (snap) => {
+      const preds = snap.docs.map(d => ({ id: d.id, ...d.data() } as Prediction));
+      setAllPredictions(preds);
+    });
+
     return () => {
       unsubMatches();
       unsubUsers();
       unsubConfig();
+      unsubAllPreds();
     };
   }, []);
 
@@ -951,16 +958,142 @@ const AdminDashboard: React.FC = () => {
 
       {/* System Actions Area */}
       {deferredAdminTab === 'matches' && (
-        <div className="wc-glass p-4 rounded-2xl border border-red-500/10 bg-red-50">
-          <button 
-            disabled={hardResetLoading}
-            onClick={handleHardReset}
-            className="w-full flex items-center justify-center gap-2 text-red-500 text-xs uppercase font-black tracking-tighter hover:text-red-600 transition-all disabled:opacity-50"
-          >
-            {hardResetLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-            ล้างข้อมูลทั้งหมด (Clean Start) • เฉพาะแอดมินใจเด็ด
-          </button>
-        </div>
+        <>
+          <div className="wc-glass p-4 rounded-2xl border border-red-500/10 bg-red-50">
+            <button 
+              disabled={hardResetLoading}
+              onClick={handleHardReset}
+              className="w-full flex items-center justify-center gap-2 text-red-500 text-xs uppercase font-black tracking-tighter hover:text-red-600 transition-all disabled:opacity-50"
+            >
+              {hardResetLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+              ล้างข้อมูลทั้งหมด (Clean Start) • เฉพาะแอดมินใจเด็ด
+            </button>
+          </div>
+
+          {/* Consolidated Closed Match Vote Graphs Card */}
+          {(() => {
+            const nowTime = new Date();
+            const closedMatches = matches.filter(m => {
+              const deadline = m.predictionDeadline ? new Date(m.predictionDeadline.seconds * 1000) : new Date(m.startTime.seconds * 1000);
+              return deadline.getTime() < nowTime.getTime() || m.status === MatchStatus.FINISHED;
+            });
+
+            return (
+              <div className="wc-glass p-6 rounded-[2rem] border border-slate-200/50 shadow-xl space-y-6 bg-slate-900 text-white mt-4">
+                <div className="border-b border-slate-800/80 pb-3.5 flex justify-between items-center">
+                  <h3 className="text-sm font-black text-emerald-400 uppercase tracking-widest flex items-center gap-2">
+                    📊 สรุปกราฟผลโหวตล่าสุด (Consensus Summary)
+                  </h3>
+                  <span className="text-[10px] font-black bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-lg border border-emerald-500/20">
+                    ปิดทายแล้ว {closedMatches.length} คู่
+                  </span>
+                </div>
+
+                {closedMatches.length > 0 ? (
+                  <div className="space-y-4 max-h-[450px] overflow-y-auto pr-1 no-scrollbar">
+                    {closedMatches.map(m => {
+                      const matchPreds = allPredictions.filter(p => p.matchId === m.id);
+                      const homeCount = matchPreds.filter(p => p.choice === PredictionChoice.HOME).length;
+                      const awayCount = matchPreds.filter(p => p.choice === PredictionChoice.AWAY).length;
+                      const total = homeCount + awayCount;
+                      const homePercent = total > 0 ? Math.round((homeCount / total) * 100) : 0;
+                      const awayPercent = total > 0 ? Math.round((awayCount / total) * 100) : 0;
+
+                      // Round Name in Thai
+                      const roundNames: Record<string, string> = {
+                        'group': 'รอบแบ่งกลุ่ม',
+                        'top32': 'รอบ 32 ทีม',
+                        'top16': 'รอบ 16 ทีม',
+                        'top8': 'รอบ 8 ทีม',
+                        'top4': 'รอบรองชนะเลิศ',
+                        'third_place': 'ชิงอันดับ 3',
+                        'final': 'รอบชิงชนะเลิศ'
+                      };
+                      const roundThai = roundNames[m.round] || m.round;
+
+                      return (
+                        <div key={m.id} className="bg-slate-950/60 p-4.5 rounded-2xl border border-slate-800/65 space-y-3">
+                          {/* Match Title & Status */}
+                          <div className="flex justify-between items-center text-xs font-black border-b border-slate-800/40 pb-2">
+                            <span className="text-slate-400 tracking-wider text-[10px] uppercase">
+                              {roundThai}
+                            </span>
+                            <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${
+                              m.status === MatchStatus.FINISHED 
+                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                                : 'bg-slate-800 text-slate-400'
+                            }`}>
+                              {m.status === MatchStatus.FINISHED ? `จบแล้ว (${m.homeScore}-${m.awayScore})` : 'ปิดทายแล้ว'}
+                            </span>
+                          </div>
+
+                          {/* Graph Breakdown */}
+                          <div className="space-y-2">
+                            <div className="grid grid-cols-2 gap-4 text-[11px] font-black">
+                              {/* Home Team Details */}
+                              <div className={`flex items-start gap-1.5 justify-start ${homeCount > awayCount ? 'text-emerald-400 font-black' : 'text-slate-400'}`}>
+                                <img 
+                                  src={m.homeFlag} 
+                                  className="w-4 h-4 object-contain rounded-sm mt-0.5 shrink-0" 
+                                  onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w80/un.png'; }} 
+                                />
+                                <div className="flex flex-col items-start min-w-0">
+                                  <span className="break-words whitespace-normal leading-tight">{m.homeTeam}</span>
+                                  <span className="font-mono text-[9px] text-slate-500 mt-0.5">({homeCount} คน)</span>
+                                </div>
+                                {homeCount > awayCount && (
+                                  <Star className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400 shrink-0 mt-0.5 animate-pulse" />
+                                )}
+                              </div>
+
+                              {/* Away Team Details */}
+                              <div className={`flex items-start gap-1.5 justify-end text-right ${awayCount > homeCount ? 'text-fuchsia-400 font-black' : 'text-slate-400'}`}>
+                                {awayCount > homeCount && (
+                                  <Star className="w-3.5 h-3.5 text-fuchsia-400 fill-fuchsia-400 shrink-0 mt-0.5 animate-pulse" />
+                                )}
+                                <div className="flex flex-col items-end min-w-0">
+                                  <span className="break-words whitespace-normal leading-tight">{m.awayTeam}</span>
+                                  <span className="font-mono text-[9px] text-slate-500 mt-0.5">({awayCount} คน)</span>
+                                </div>
+                                <img 
+                                  src={m.awayFlag} 
+                                  className="w-4 h-4 object-contain rounded-sm mt-0.5 shrink-0" 
+                                  onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w80/un.png'; }} 
+                                />
+                              </div>
+                            </div>
+
+                            {/* Visual Vote Progress Bar */}
+                            <div className="w-full h-3 bg-slate-950 rounded-full overflow-hidden flex border border-slate-800">
+                              <div 
+                                style={{ width: `${homePercent}%` }} 
+                                className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-500"
+                              />
+                              <div 
+                                style={{ width: `${awayPercent}%` }} 
+                                className="h-full bg-gradient-to-l from-fuchsia-600 to-fuchsia-400 transition-all duration-500"
+                              />
+                            </div>
+
+                            {/* Percentage Labels */}
+                            <div className="flex justify-between text-[9px] font-black text-slate-500 tracking-widest px-0.5">
+                              <span>{homePercent}% VOTE</span>
+                              <span>{awayPercent}% VOTE</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-xs font-bold text-center text-slate-500 py-6 italic bg-slate-950/40 rounded-2xl border border-dashed border-slate-800">
+                    ยังไม่มีแมตช์ที่ปิดการทายผลในขณะนี้
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </>
       )}
 
       {deferredAdminTab === 'players' && (
