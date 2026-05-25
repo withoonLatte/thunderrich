@@ -1651,14 +1651,41 @@ const AdminDashboard: React.FC = () => {
                         <p className="text-giant font-black text-black">{match.awayScore}</p>
                       </div>
                     </div>
-                    <div className="flex items-center justify-center gap-2 text-sm font-black italic">
-                       <span className="text-black font-black">ฝั่งชนะ:</span>
-                       <span className="text-world-cup-green uppercase tracking-tighter">
-                         {match.manualWinner === 'home' && `ทีม 1 (${match.homeTeam})`}
-                         {match.manualWinner === 'away' && `ทีม 2 (${match.awayTeam})`}
-                         {match.manualWinner === 'push' && 'ยกเลิก/เสมอ'}
-                       </span>
-                       <Check className="w-4 h-4 text-green-500" />
+                    <div className="flex justify-between items-center border-t border-gray-100 pt-3">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 italic">
+                         <span className="text-black font-black">ฝั่งชนะ:</span>
+                         <span className="text-world-cup-green uppercase tracking-tighter font-black">
+                           {match.manualWinner === 'home' && `ทีม 1 (${match.homeTeam})`}
+                           {match.manualWinner === 'away' && `ทีม 2 (${match.awayTeam})`}
+                           {match.manualWinner === 'push' && 'ยกเลิก/เสมอ'}
+                         </span>
+                         <Check className="w-3.5 h-3.5 text-green-500" />
+                      </div>
+                      <button
+                        onClick={async () => {
+                          if (window.confirm(`ต้องการคำนวณคะแนนใหม่สำหรับคู่ ${match.homeTeam} vs ${match.awayTeam} หรือไม่? (จะปรับแต้มของผู้เล่นทุกคนรวมถึงผู้ที่ไม่ได้ทายผลตามกติกาใหม่ทันที)`)) {
+                            setCalcLoading(match.id);
+                            try {
+                              await calculateMatchResults(match.id);
+                              alert('คำนวณและอัปเดตคะแนนใหม่เรียบร้อยแล้ว!');
+                            } catch (err: any) {
+                              console.error(err);
+                              alert('เกิดข้อผิดพลาดในการคำนวณใหม่: ' + err.message);
+                            } finally {
+                              setCalcLoading(null);
+                            }
+                          }
+                        }}
+                        disabled={calcLoading === match.id}
+                        className="flex items-center gap-1.5 bg-slate-900 hover:bg-black text-white text-[10px] font-black uppercase px-3 py-2 rounded-xl transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        {calcLoading === match.id ? (
+                          <Loader2 className="w-3 h-3 animate-spin text-world-cup-gold" />
+                        ) : (
+                          <RefreshCw className="w-3 h-3 text-world-cup-gold" />
+                        )}
+                        คำนวณคะแนนใหม่
+                      </button>
                     </div>
                   </div>
                 )}
