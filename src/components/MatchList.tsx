@@ -245,14 +245,21 @@ const MatchList: React.FC = () => {
                     </span>
                   </div>
                 ) : (
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
-                    {match.round === 'group' ? '+1 / 0' : 
-                     match.round === 'top32' ? '+2 / -1' : 
-                     match.round === 'top16' ? '+3 / -2' :  
-                     match.round === 'top8' ? '+4 / -2' : 
-                     match.round === 'top4' || match.round === 'third_place' ? '+5 / -3' : 
-                     match.round === 'final' ? '+7 / -3' : ''} PTS
-                  </span>
+                  <div className="flex flex-col gap-0.5 mt-1">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                      {match.round === 'group' ? 'ทายถูก +1 / ทายผิด 0' : 
+                       match.round === 'top32' ? 'ทายถูก +2 / ทายผิด -1' : 
+                       match.round === 'top16' ? 'ทายถูก +3 / ทายผิด -2' :  
+                       match.round === 'top8' ? 'ทายถูก +4 / ทายผิด -2' : 
+                       match.round === 'top4' || match.round === 'third_place' ? 'ทายถูก +5 / ทายผิด -3' : 
+                       match.round === 'final' ? 'ทายถูก +7 / ทายผิด -3' : ''} PTS
+                    </span>
+                    <span className="text-[9px] font-black text-red-400/80 uppercase tracking-wider leading-none">
+                      {match.round === 'group' || match.round === 'top32' ? '✕ ไม่ทายหัก -1' : 
+                       match.round === 'top16' || match.round === 'top8' ? '✕ ไม่ทายหัก -2' : 
+                       '✕ ไม่ทายหัก -3'} PTS
+                    </span>
+                  </div>
                 )}
               </div>
               <div className="flex items-center gap-2 text-xs font-black text-slate-350 bg-slate-950/40 px-3.5 py-2 rounded-xl border border-slate-800">
@@ -406,7 +413,7 @@ const MatchList: React.FC = () => {
                       <span className="text-slate-500">MATCH REPORT</span>
                     </div>
 
-                    {prediction ? (
+                    {prediction && prediction.choice ? (
                       <div className="space-y-3">
                         {/* Choice Summary */}
                         <div className="flex items-center justify-between text-sm font-bold px-1">
@@ -441,11 +448,27 @@ const MatchList: React.FC = () => {
                           )}
                         </motion.div>
                       </div>
-                    ) : (
-                      <div className="text-xs font-bold text-center text-slate-450 py-3 bg-slate-900/30 rounded-2xl border border-dashed border-slate-800">
-                        ไม่ได้ส่งคำทำนายผลสำหรับแมตช์นี้ (0 คะแนน)
-                      </div>
-                    )}
+                    ) : (() => {
+                      const penaltyByRound: Record<string, number> = {
+                        'group': -1,
+                        'top32': -1,
+                        'top16': -2,
+                        'top8': -2,
+                        'top4': -3,
+                        'third_place': -3,
+                        'final': -3
+                      };
+                      const penaltyVal = prediction?.pointsEarned !== undefined ? prediction.pointsEarned : (penaltyByRound[match.round] || 0);
+
+                      return (
+                        <div className="text-xs font-black text-center text-red-400 py-3.5 bg-red-950/15 rounded-2xl border border-dashed border-red-500/25 flex flex-col items-center gap-1">
+                          <span className="text-red-500">✕ ไม่ได้ส่งคำทำนายผลสำหรับแมตช์นี้</span>
+                          <span className="text-[10px] text-red-400 font-bold bg-red-500/10 px-2 py-0.5 rounded border border-red-500/20 mt-1">
+                            (ถูกหัก {penaltyVal} คะแนน)
+                          </span>
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
 

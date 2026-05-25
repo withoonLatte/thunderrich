@@ -27,6 +27,16 @@ const SCORING_MATRIX = {
   [TournamentRound.FINAL]: { correct: 7, wrong: -3 },
 };
 
+const NO_PRED_PENALTY = {
+  [TournamentRound.GROUP]: -1,
+  [TournamentRound.TOP32]: -1,
+  [TournamentRound.TOP16]: -2,
+  [TournamentRound.TOP8]: -2,
+  [TournamentRound.TOP4]: -3,
+  [TournamentRound.THIRD_PLACE]: -3,
+  [TournamentRound.FINAL]: -3,
+};
+
 const parseHandicap = (h: string | number): number => {
   if (typeof h === 'number') return h;
   if (!h) return 0;
@@ -55,7 +65,7 @@ const parseHandicap = (h: string | number): number => {
 };
 
 export const calculateMatchResults = async (matchId: string) => {
-  // 1. Fetch match and all predictions
+  // 1. Fetch match, all predictions and all users
   const matchDocRef = doc(db, 'matches', matchId);
   const matchSnap = await getDoc(matchDocRef);
   
@@ -65,6 +75,9 @@ export const calculateMatchResults = async (matchId: string) => {
   if (match.homeScore === undefined || match.awayScore === undefined) return;
 
   const predictionsSnap = await getDocs(query(collection(db, 'predictions'), where('matchId', '==', matchId)));
+  const usersSnap = await getDocs(collection(db, 'users'));
+  
+  const allUsers = usersSnap.docs.map(d => ({ uid: d.id, ...d.data() } as User));
   const batch = writeBatch(db);
 
   // 2. Determine match outcome
@@ -85,46 +98,95 @@ export const calculateMatchResults = async (matchId: string) => {
 
   const roundScores = SCORING_MATRIX[match.round];
 
-  for (const predDoc of predictionsSnap.docs) {
-    const prediction = predDoc.data() as Prediction;
-    const userRef = doc(db, 'users', prediction.userId);
-    const userSnap = await getDoc(userRef);
-    if (!userSnap.exists()) continue;
-    const userData = userSnap.data() as User;
+  // Map predictions by userId for fast lookup
+  const predByUserId = new Map<string, any>();
+  predictionsSnap.docs.forEach(d => {
+    const p = d.data() as Prediction;
+    predByUserId.set(p.userId, { docRef: d.ref, ...p });
+  });
+
+  // 3. Process scoring for all users
+  for (const userData of allUsers) {
     if (userData.role === 'admin') continue;
 
+    const prediction = predByUserId.get(userData.uid);
     let pointsChange = 0;
     let isCorrect = false;
     let wrongCountIncrement = 0;
+    const isBanned = userData.bannedMatchIds?.includes(matchId);
 
-    if (matchWinner === 'push') {
-      pointsChange = 0;
-      isCorrect = false; // It's a push, not correct nor wrong for penalty
-    } else {
-      if (prediction.choice === matchWinner) {
-        pointsChange = (match.customWinScore !== undefined && match.customWinScore !== null) ? match.customWinScore : roundScores.correct;
-        isCorrect = true;
-      } else {
-        pointsChange = (match.customLossScore !== undefined && match.customLossScore !== null) ? match.customLossScore : roundScores.wrong;
-        isCorrect = false;
-        if (match.round === TournamentRound.GROUP) {
-          wrongCountIncrement = 1;
+    if (prediction) {
+      if (prediction.isVoided) {
+        // If prediction is voided, check if it was a penalty doc created earlier
+        if (prediction.choice === null || prediction.choice === undefined) {
+          pointsChange = NO_PRED_PENALTY[match.round];
+          isCorrect = false;
+          wrongCountIncrement = 0;
+        } else {
+          pointsChange = 0;
+          isCorrect = false;
+          wrongCountIncrement = 0;
         }
+      } else {
+        if (matchWinner === 'push') {
+          pointsChange = (match.customWinScore !== undefined && match.customWinScore !== null) ? match.customWinScore : roundScores.correct;
+          isCorrect = true;
+          wrongCountIncrement = 0;
+        } else {
+          if (prediction.choice === matchWinner) {
+            pointsChange = (match.customWinScore !== undefined && match.customWinScore !== null) ? match.customWinScore : roundScores.correct;
+            isCorrect = true;
+          } else {
+            pointsChange = (match.customLossScore !== undefined && match.customLossScore !== null) ? match.customLossScore : roundScores.wrong;
+            isCorrect = false;
+            if (match.round === TournamentRound.GROUP) {
+              wrongCountIncrement = 1;
+            }
+          }
+        }
+      }
+
+      // Update Prediction
+      batch.update(prediction.docRef, {
+        pointsEarned: pointsChange,
+        isResultCorrect: isCorrect,
+      });
+    } else {
+      // No prediction exists for this user!
+      if (isBanned) {
+        // Banned users are not penalized since they are not allowed to predict
+        pointsChange = 0;
+        isCorrect = false;
+        wrongCountIncrement = 0;
+      } else {
+        pointsChange = NO_PRED_PENALTY[match.round];
+        isCorrect = false;
+        wrongCountIncrement = 0;
+
+        // Create a penalty prediction doc to preserve history and prevent double penalization
+        const predId = `${userData.uid}_${matchId}`;
+        const newPredRef = doc(db, 'predictions', predId);
+        batch.set(newPredRef, {
+          id: predId,
+          userId: userData.uid,
+          matchId,
+          choice: null, // null represents no prediction
+          pointsEarned: pointsChange,
+          isResultCorrect: false,
+          isVoided: true,
+          createdAt: Timestamp.now()
+        });
       }
     }
 
-    // Update Prediction
-    batch.update(predDoc.ref, {
-      pointsEarned: pointsChange,
-      isResultCorrect: isCorrect,
-    });
-
-    // Update User
-    let newPoints = userData.points + pointsChange;
-    let newWrongCount = (userData.round1_wrong_count || 0) + wrongCountIncrement;
+    // Update User points (with double-calculation protection)
+    const oldPointsEarned = (prediction && prediction.pointsEarned !== undefined) ? prediction.pointsEarned : 0;
+    const newPoints = userData.points - oldPointsEarned + pointsChange;
+    
+    const newWrongCount = (userData.round1_wrong_count || 0) + wrongCountIncrement;
     let newYellowCards = userData.yellow_cards || 0;
     let newRedCards = userData.red_cards || 0;
-    let newBannedMatchIds = [...(userData.bannedMatchIds || [])];
+    const newBannedMatchIds = [...(userData.bannedMatchIds || [])];
 
     // Card Logic (Group Stage Only)
     if (match.round === TournamentRound.GROUP && wrongCountIncrement > 0) {
@@ -132,16 +194,17 @@ export const calculateMatchResults = async (matchId: string) => {
       if (newWrongCount === 12) {
         newYellowCards += 1;
         // Ban for 1 next upcoming match
-        await applyBan(newBannedMatchIds, 1, prediction.userId, batch);
+        await applyBan(newBannedMatchIds, 1, userData.uid, batch);
       } 
       // Check for Red Card (24 wrong - 2nd Yellow)
       else if (newWrongCount === 24) {
         newRedCards += 1;
         // Ban for 2 next upcoming matches
-        await applyBan(newBannedMatchIds, 2, prediction.userId, batch);
+        await applyBan(newBannedMatchIds, 2, userData.uid, batch);
       }
     }
 
+    const userRef = doc(db, 'users', userData.uid);
     batch.update(userRef, {
       points: newPoints,
       round1_wrong_count: newWrongCount,
