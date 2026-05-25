@@ -12,8 +12,7 @@ const ScoreGraph: React.FC = () => {
     const unsubscribe = onSnapshot(q, (snap) => {
       const data = snap.docs
         .map(d => d.data() as User)
-        .filter(u => u.role !== 'admin')
-        .slice(0, 15);
+        .filter(u => u.role !== 'admin');
       setUsers(data);
     });
 
@@ -62,8 +61,8 @@ const ScoreGraph: React.FC = () => {
         </span>
       </div>
 
-      {/* Custom Proportional Bilateral Bar Chart */}
-      <div className="space-y-3.5 max-h-[460px] overflow-y-auto pr-1 no-scrollbar">
+      {/* Custom Proportional Bilateral Bar Chart - Height grows naturally to see everyone */}
+      <div className="space-y-3.5">
         {users.map((u, idx) => {
           const isPositive = u.points >= 0;
           const pct = (Math.abs(u.points) / range) * 100;
@@ -95,18 +94,23 @@ const ScoreGraph: React.FC = () => {
               key={u.uid} 
               className="flex items-center gap-3.5 w-full py-1 hover:bg-slate-800/10 px-2 rounded-xl transition-all"
             >
-              {/* Left Column: Rank & Name (Fully aligned and safe from bars) */}
-              <div className="flex items-center gap-2 w-[110px] shrink-0">
+              {/* Left Column: Rank, Name & Score next to name */}
+              <div className="flex items-center gap-2 w-[140px] sm:w-[160px] shrink-0">
                 <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0 ${rankColor}`}>
                   {rankText}
                 </span>
-                <span className="text-xs sm:text-sm font-black text-slate-200 truncate" title={u.displayName}>
-                  {u.displayName}
-                </span>
+                <div className="flex items-baseline gap-1.5 min-w-0">
+                  <span className="text-xs sm:text-sm font-black text-slate-200 truncate" title={u.displayName}>
+                    {u.displayName}
+                  </span>
+                  <span className={`text-[10px] sm:text-xs font-black ${isPositive ? 'text-emerald-400' : 'text-rose-400'} shrink-0`}>
+                    ({isPositive ? `+${u.points}` : u.points})
+                  </span>
+                </div>
               </div>
 
-              {/* Right Column: Custom Bar Track */}
-              <div className="relative flex-1 h-7 bg-slate-950/40 rounded-lg overflow-visible border border-slate-850/60 shadow-inner">
+              {/* Right Column: Custom Bar Track (Clean, borderless and flat) */}
+              <div className="relative flex-1 h-7 bg-slate-950/45 rounded-lg overflow-visible shadow-inner">
                 {/* Dashed Zero-Axis Indicator */}
                 <div 
                   className="w-[1.5px] h-full bg-fuchsia-500/20 border-dashed absolute top-0 z-0" 
@@ -115,38 +119,20 @@ const ScoreGraph: React.FC = () => {
 
                 {/* The Bar */}
                 {isPositive ? (
-                  <>
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${pct}%` }}
-                      transition={{ duration: 1.2, ease: "easeOut" }}
-                      className={`h-4.5 bg-gradient-to-r ${barGradient} rounded-r-full rounded-l-sm absolute top-1.25 z-10`}
-                      style={{ left: `${zeroPosition}%` }}
-                    />
-                    {/* Points Label (Outside the positive bar to the right) */}
-                    <span 
-                      className="text-[11px] font-black text-emerald-400 absolute top-1.5 drop-shadow-md select-none transition-all duration-300"
-                      style={{ left: `calc(${zeroPosition + pct}% + 8px)` }}
-                    >
-                      {u.points > 0 ? `+${u.points}` : '0'}
-                    </span>
-                  </>
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${pct}%` }}
+                    transition={{ duration: 1.2, ease: "easeOut" }}
+                    className={`h-4.5 bg-gradient-to-r ${barGradient} rounded-r-full rounded-l-sm absolute top-1.25 z-10`}
+                    style={{ left: `${zeroPosition}%` }}
+                  />
                 ) : (
-                  <>
-                    <motion.div
-                      initial={{ width: 0, left: `${zeroPosition}%` }}
-                      animate={{ width: `${pct}%`, left: `calc(${zeroPosition}% - ${pct}%)` }}
-                      transition={{ duration: 1.2, ease: "easeOut" }}
-                      className="h-4.5 bg-gradient-to-l from-rose-600 to-orange-500 rounded-l-full rounded-r-sm absolute top-1.25 z-10 shadow-[0_0_12px_rgba(244,63,94,0.22)]"
-                    />
-                    {/* Points Label (Outside the negative bar to the left) */}
-                    <span 
-                      className="text-[11px] font-black text-rose-450 absolute top-1.5 drop-shadow-md select-none transition-all duration-300"
-                      style={{ left: `calc(${zeroPosition - pct}% - 26px)` }}
-                    >
-                      {u.points}
-                    </span>
-                  </>
+                  <motion.div
+                    initial={{ width: 0, left: `${zeroPosition}%` }}
+                    animate={{ width: `${pct}%`, left: `calc(${zeroPosition}% - ${pct}%)` }}
+                    transition={{ duration: 1.2, ease: "easeOut" }}
+                    className="h-4.5 bg-gradient-to-l from-rose-600 to-orange-500 rounded-l-full rounded-r-sm absolute top-1.25 z-10 shadow-[0_0_12px_rgba(244,63,94,0.22)]"
+                  />
                 )}
               </div>
             </div>
