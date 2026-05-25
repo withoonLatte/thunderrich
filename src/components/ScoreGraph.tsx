@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { User } from '../types';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { motion } from 'motion/react';
 
 const ScoreGraph: React.FC = () => {
@@ -21,19 +20,24 @@ const ScoreGraph: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
-  const chartData = users.map(u => ({
-    name: u.displayName,
-    points: u.points
-  }));
+  // Calculate dynamic axis range for bilateral alignment
+  const pointsList = users.map(u => u.points);
+  const minVal = Math.min(...pointsList, 0);
+  const maxVal = Math.max(...pointsList, 10);
+  const range = Math.max(maxVal - minVal, 10);
+
+  // Position of 0 points axis (percentage from the left of the bar area)
+  const zeroPosition = (Math.abs(minVal) / range) * 100;
 
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-[#0f172a]/90 backdrop-blur-2xl rounded-[2rem] p-6 shadow-[0_15px_40px_rgba(0,0,0,0.4)] border border-slate-800/80 overflow-hidden"
+      className="bg-[#0f172a]/90 backdrop-blur-2xl rounded-[2.2rem] p-6 shadow-[0_15px_40px_rgba(0,0,0,0.4)] border border-slate-800/80 overflow-hidden"
     >
-      <div className="flex items-center gap-3.5 mb-6">
-        <div className="w-9 h-9 bg-gradient-to-br from-yellow-400 via-fuchsia-500 to-indigo-600 rounded-full flex items-center justify-center text-white shadow-lg">
+      {/* Header Info */}
+      <div className="flex items-center gap-3.5 mb-5">
+        <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 via-fuchsia-500 to-indigo-600 rounded-full flex items-center justify-center text-white shadow-lg">
           <span className="text-sm font-black">📈</span>
         </div>
         <div>
@@ -42,65 +46,112 @@ const ScoreGraph: React.FC = () => {
         </div>
       </div>
 
-      <div className="h-[400px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={chartData}
-            layout="vertical"
-            margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
-          >
-            <XAxis type="number" hide />
-            <YAxis 
-              dataKey="name" 
-              type="category" 
-              width={90} 
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 11, fontWeight: 900, fill: '#cbd5e1' }}
-            />
-            <Tooltip 
-              cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
-              contentStyle={{ 
-                backgroundColor: '#0f172a',
-                borderRadius: '16px',
-                border: '1.5px solid #334155',
-                boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
-                padding: '12px'
-              }}
-              labelStyle={{ fontWeight: 900, marginBottom: '4px', color: '#ffffff', fontSize: '13px' }}
-              itemStyle={{ fontWeight: 800, fontSize: '14px', color: '#22c55e' }}
-            />
-            <Bar 
-              dataKey="points" 
-              radius={[0, 8, 8, 0]} 
-              animationDuration={1500}
-              label={{ 
-                position: 'right', 
-                fill: '#ffffff', 
-                fontSize: 12, 
-                fontWeight: 900,
-                offset: 8,
-                formatter: (val: number) => `${val}`
-              }}
+      {/* Modern Colorful Legend */}
+      <div className="flex flex-wrap gap-x-5 gap-y-2 mb-6 text-[10px] font-black text-slate-400 px-1 border-b border-slate-800/50 pb-3">
+        <span className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-400" />
+          คะแนนบวก (Positive)
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-rose-600 to-orange-500 animate-pulse" />
+          คะแนนติดลบ (Negative)
+        </span>
+        <span className="flex items-center gap-1.5 border-l border-slate-850 pl-4">
+          <span className="w-[1.5px] h-3 bg-fuchsia-500/50 border-dashed" />
+          เส้นแกนกลาง (0 แต้ม)
+        </span>
+      </div>
+
+      {/* Custom Proportional Bilateral Bar Chart */}
+      <div className="space-y-3.5 max-h-[460px] overflow-y-auto pr-1 no-scrollbar">
+        {users.map((u, idx) => {
+          const isPositive = u.points >= 0;
+          const pct = (Math.abs(u.points) / range) * 100;
+
+          // Establish harmonious premium gradients
+          let barGradient = 'from-emerald-500 via-emerald-400 to-teal-400 shadow-[0_0_12px_rgba(16,185,129,0.12)]'; // Default Green
+          let rankColor = 'bg-slate-800 text-slate-400';
+          let rankText = `#${idx + 1}`;
+
+          if (idx === 0) {
+            barGradient = 'from-yellow-500 via-amber-400 to-yellow-300 shadow-[0_0_15px_rgba(234,179,8,0.25)]';
+            rankColor = 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30';
+            rankText = '🥇';
+          } else if (idx === 1) {
+            barGradient = 'from-slate-400 via-slate-350 to-slate-200 shadow-[0_0_12px_rgba(203,213,225,0.18)]';
+            rankColor = 'bg-slate-400/20 text-slate-300 border border-slate-400/30';
+            rankText = '🥈';
+          } else if (idx === 2) {
+            barGradient = 'from-amber-700 via-amber-600 to-orange-500 shadow-[0_0_12px_rgba(180,83,9,0.18)]';
+            rankColor = 'bg-amber-700/20 text-amber-500 border border-amber-700/30';
+            rankText = '🥉';
+          } else if (idx < 5) {
+            barGradient = 'from-fuchsia-600 via-pink-500 to-rose-450 shadow-[0_0_12px_rgba(217,70,239,0.15)]';
+            rankColor = 'bg-fuchsia-500/10 text-fuchsia-400 border border-fuchsia-500/20';
+          }
+
+          return (
+            <div 
+              key={u.uid} 
+              className="flex items-center gap-3.5 w-full py-1 hover:bg-slate-800/10 px-2 rounded-xl transition-all"
             >
-              {chartData.map((entry, index) => {
-                const rankFromTop = index; // index 0 is the highest (top bar)
-                let fill = '#22c55e'; // Default Green
-                if (rankFromTop === 0) fill = '#facc15'; // 1st: Gold
-                else if (rankFromTop === 1) fill = '#94a3b8'; // 2nd: Silver
-                else if (rankFromTop === 2) fill = '#b45309'; // 3rd: Bronze
-                else if (rankFromTop < 5) fill = '#ec4899'; // Top 5: Fuchsia Pink
-                
-                return (
-                  <Cell 
-                    key={`cell-${index}`} 
-                    fill={fill} 
-                  />
-                );
-              })}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+              {/* Left Column: Rank & Name (Fully aligned and safe from bars) */}
+              <div className="flex items-center gap-2 w-[110px] shrink-0">
+                <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0 ${rankColor}`}>
+                  {rankText}
+                </span>
+                <span className="text-xs sm:text-sm font-black text-slate-200 truncate" title={u.displayName}>
+                  {u.displayName}
+                </span>
+              </div>
+
+              {/* Right Column: Custom Bar Track */}
+              <div className="relative flex-1 h-7 bg-slate-950/40 rounded-lg overflow-visible border border-slate-850/60 shadow-inner">
+                {/* Dashed Zero-Axis Indicator */}
+                <div 
+                  className="w-[1.5px] h-full bg-fuchsia-500/20 border-dashed absolute top-0 z-0" 
+                  style={{ left: `${zeroPosition}%` }}
+                />
+
+                {/* The Bar */}
+                {isPositive ? (
+                  <>
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${pct}%` }}
+                      transition={{ duration: 1.2, ease: "easeOut" }}
+                      className={`h-4.5 bg-gradient-to-r ${barGradient} rounded-r-full rounded-l-sm absolute top-1.25 z-10`}
+                      style={{ left: `${zeroPosition}%` }}
+                    />
+                    {/* Points Label (Outside the positive bar to the right) */}
+                    <span 
+                      className="text-[11px] font-black text-emerald-400 absolute top-1.5 drop-shadow-md select-none transition-all duration-300"
+                      style={{ left: `calc(${zeroPosition + pct}% + 8px)` }}
+                    >
+                      {u.points > 0 ? `+${u.points}` : '0'}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <motion.div
+                      initial={{ width: 0, left: `${zeroPosition}%` }}
+                      animate={{ width: `${pct}%`, left: `calc(${zeroPosition}% - ${pct}%)` }}
+                      transition={{ duration: 1.2, ease: "easeOut" }}
+                      className="h-4.5 bg-gradient-to-l from-rose-600 to-orange-500 rounded-l-full rounded-r-sm absolute top-1.25 z-10 shadow-[0_0_12px_rgba(244,63,94,0.22)]"
+                    />
+                    {/* Points Label (Outside the negative bar to the left) */}
+                    <span 
+                      className="text-[11px] font-black text-rose-450 absolute top-1.5 drop-shadow-md select-none transition-all duration-300"
+                      style={{ left: `calc(${zeroPosition - pct}% - 26px)` }}
+                    >
+                      {u.points}
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </motion.div>
   );
