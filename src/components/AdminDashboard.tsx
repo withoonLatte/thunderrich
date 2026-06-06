@@ -84,39 +84,63 @@ const AdminDashboard: React.FC = () => {
   const handleBulkImportText = async () => {
     if (!bulkText.trim()) return;
 
-    const lines = bulkText.split('\n').filter(l => l.trim().length > 0);
-    const processedLines = lines.map(line => {
-      let cols: string[] = [];
-      if (line.includes('|')) cols = line.split('|').map(s => s.trim());
-      else if (line.includes('\t')) cols = line.split('\t').map(s => s.trim());
-      
-      // Handle the user's specific 3-column format: [DateStr, Team1, Team2]
-      if (cols.length === 3) {
-        const [rawDate, team1, team2] = cols;
-        // Clean date: "Thursday, June 11, at 3:00 PM" -> "June 11, 2026 3:00 PM"
+    const lines = bulkText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    let processedLines: [string, string, string, string][] = []; // [homeTeam, awayTeam, handicap, startTimeStr]
+
+    // Check if there are delimiters in the input
+    const hasDelimiters = lines.some(line => line.includes('|') || line.includes('\t'));
+
+    if (hasDelimiters) {
+      processedLines = lines.map(line => {
+        let cols: string[] = [];
+        if (line.includes('|')) cols = line.split('|').map(s => s.trim());
+        else if (line.includes('\t')) cols = line.split('\t').map(s => s.trim());
+        
+        // Handle the user's specific 3-column format: [DateStr, Team1, Team2]
+        if (cols.length === 3) {
+          const [rawDate, team1, team2] = cols;
+          let cleanDateStr = rawDate.replace(/^[A-Za-z]+,\s+/, '').replace(/at\s+/g, '');
+          if (!cleanDateStr.includes('2026')) {
+             if (cleanDateStr.includes(',')) {
+               cleanDateStr = cleanDateStr.replace(',', ', 2026,');
+             } else {
+               const parts = cleanDateStr.split(' ');
+               if (parts.length >= 2) {
+                  cleanDateStr = `${parts[0]} ${parts[1]}, 2026 ${parts.slice(2).join(' ')}`;
+               }
+             }
+          }
+          return [team1, team2, "0.0", cleanDateStr] as [string, string, string, string];
+        }
+        
+        if (cols.length >= 4) return [cols[0], cols[1], cols[2], cols[3]] as [string, string, string, string];
+        return null;
+      }).filter((l): l is [string, string, string, string] => l !== null);
+    } else {
+      // 3-line format:
+      // Loop through lines by step of 3
+      for (let i = 0; i < lines.length - 2; i += 3) {
+        const rawDate = lines[i];
+        const team1 = lines[i+1];
+        const team2 = lines[i+2];
+
         let cleanDateStr = rawDate.replace(/^[A-Za-z]+,\s+/, '').replace(/at\s+/g, '');
         if (!cleanDateStr.includes('2026')) {
-           // If it's something like "June 11", we add ", 2026"
            if (cleanDateStr.includes(',')) {
              cleanDateStr = cleanDateStr.replace(',', ', 2026,');
            } else {
-             // Split by space to insert year after month and day
              const parts = cleanDateStr.split(' ');
              if (parts.length >= 2) {
-                // June 11 3:00 PM -> June 11, 2026 3:00 PM
                 cleanDateStr = `${parts[0]} ${parts[1]}, 2026 ${parts.slice(2).join(' ')}`;
              }
            }
         }
-        return [team1, team2, "0.0", cleanDateStr];
+        processedLines.push([team1, team2, "0.0", cleanDateStr]);
       }
-      
-      if (cols.length >= 4) return cols;
-      return null;
-    }).filter(l => l !== null);
+    }
 
     if (processedLines.length === 0) {
-      alert('ไม่พบข้อมูลที่ถูกต้อง (รูปแบบ: ทีมเหย้า | ทีมเยือน | ราคา | เวลา หรือ ตารางจาก Excel)');
+      alert('ไม่พบข้อมูลที่ถูกต้อง (รูปแบบ: ทีมเหย้า | ทีมเยือน | ราคา | เวลา หรือ สลับ 3 บรรทัด: วันเวลา\\nทีม1\\nทีม2)');
       return;
     }
 
@@ -128,7 +152,7 @@ const AdminDashboard: React.FC = () => {
         let addedCount = 0;
 
         processedLines.forEach((cols) => {
-          const [h, a, hc, st] = cols as string[];
+          const [h, a, hc, st] = cols;
           if (h && a && hc && st) {
             const startDate = new Date(st);
             if (isNaN(startDate.getTime())) return;
@@ -594,7 +618,9 @@ const AdminDashboard: React.FC = () => {
       'Uruguay': 'uy', 'Iran': 'ir', 'New Zealand': 'nz', 'Senegal': 'sn',
       'Norway': 'no', 'Algeria': 'dz', 'Austria': 'at', 'Jordan': 'jo',
       'Portugal': 'pt', 'Croatia': 'hr', 'Ghana': 'gh', 'Panama': 'pa',
-      'Uzbekistan': 'uz', 'Colombia': 'co', 'Iraq': 'iq', 'Italy': 'it'
+      'Uzbekistan': 'uz', 'Colombia': 'co', 'Iraq': 'iq', 'Italy': 'it',
+      'Czechia': 'cz', 'Bosnia and Herzegovina': 'ba', 'Türkiye': 'tr', 'Turkey': 'tr',
+      'Curacao': 'cw', 'Sweden': 'se', 'Congo DR': 'cd'
     };
     
     const teamLower = team.toUpperCase();
