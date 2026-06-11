@@ -14,8 +14,7 @@ const Leaderboard: React.FC = () => {
     const unsubscribe = onSnapshot(q, async (snap) => {
       const topUsers = snap.docs
         .map(d => d.data() as User)
-        .filter(u => u.role !== 'admin')
-        .slice(0, 15);
+        .filter(u => u.role !== 'admin');
       setUsers(topUsers);
 
       // Fetch histories for top users
