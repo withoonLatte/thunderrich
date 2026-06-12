@@ -172,7 +172,7 @@ const AdminDashboard: React.FC = () => {
               awayTeam: a,
               handicap: hc,
               startTime: Timestamp.fromDate(startDate),
-              predictionDeadline: Timestamp.fromDate(new Date(startDate.getTime() - 3600000)),
+              predictionDeadline: Timestamp.fromDate(startDate),
               round: TournamentRound.GROUP,
               homeFlag: getTeamFlag(h),
               awayFlag: getTeamFlag(a),
