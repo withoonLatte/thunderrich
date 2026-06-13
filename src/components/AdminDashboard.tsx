@@ -1538,11 +1538,11 @@ const AdminDashboard: React.FC = () => {
                           <span className="text-world-cup-green text-[11px] font-black">{match.handicap}</span>
                         </div>
                         {match.customWinScore !== undefined && match.customWinScore !== null && (
-                        <div className="bg-red-500 text-white px-2 py-0.5 rounded-lg text-[10px] font-black uppercase flex flex-col items-center justify-center min-w-[55px] shadow-sm border border-red-400">
-                          <span className="leading-tight">คู่เอก</span>
-                          <span className="leading-tight">(+{match.customWinScore}/{match.customLossScore})</span>
-                        </div>
-                      )}
+                          <div className="bg-red-500 text-white px-2 py-0.5 rounded-lg text-[10px] font-black uppercase flex flex-col items-center justify-center min-w-[55px] shadow-sm border border-red-400">
+                            <span className="leading-tight">คู่เอก</span>
+                            <span className="leading-tight">(+{match.customWinScore}/{match.customLossScore})</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1597,6 +1597,42 @@ const AdminDashboard: React.FC = () => {
 
                 {match.status !== MatchStatus.FINISHED ? (
                   <div className="space-y-6">
+                    {/* Prediction Status Control */}
+                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner">
+                      <div className="space-y-1">
+                        <span className="text-xs font-black text-black uppercase tracking-widest block">สิทธิ์การทายผลจากผู้เล่น</span>
+                        <p className="text-[10px] text-slate-500 font-bold">
+                          {match.allowPredictions 
+                            ? 'เปิดให้ผู้เล่นทายผลอยู่ (สมาชิกส่งคำทำนายได้ตามปกติ)' 
+                            : 'ปิดกั้นการทายผลอยู่ (สมาชิกเห็นข้อมูลแต่ยังทายไม่ได้)'}
+                        </p>
+                      </div>
+                      <button 
+                        onClick={async () => {
+                          await updateDoc(doc(db, 'matches', match.id), {
+                            allowPredictions: !match.allowPredictions
+                          });
+                        }}
+                        className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all border cursor-pointer select-none flex items-center gap-2 shadow-sm ${
+                          match.allowPredictions 
+                            ? 'bg-emerald-500 text-white border-emerald-400 hover:bg-emerald-600 shadow-emerald-500/20' 
+                            : 'bg-rose-500 text-white border-rose-400 hover:bg-rose-600 shadow-rose-500/20'
+                        }`}
+                      >
+                        {match.allowPredictions ? (
+                          <>
+                            <span className="w-2.5 h-2.5 rounded-full bg-white animate-pulse" />
+                            <span>เปิดทายผลแล้ว</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="w-2.5 h-2.5 rounded-full bg-white" />
+                            <span>คลิกเพื่อเปิดทาย</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
                     <div className="flex items-center justify-center gap-6 py-4 bg-gray-50 rounded-2xl border border-gray-100">
                       <div className="text-center space-y-2">
                         <label className="text-[10px] font-black text-black uppercase tracking-widest">Team 1</label>
