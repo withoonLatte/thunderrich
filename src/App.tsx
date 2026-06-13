@@ -20,7 +20,7 @@ import { db } from './lib/firebase';
 
 function AppContent() {
   const { user, loading } = useAuth();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'admin'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'predictions' | 'standings' | 'chat' | 'admin'>('predictions');
   const [config, setConfig] = useState<AppConfig | null>(null);
 
   useEffect(() => {
@@ -117,8 +117,8 @@ function AppContent() {
         {user.role === UserRole.ADMIN && (
           <div className="flex bg-[#1e293b] rounded-2xl p-1 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] shrink-0 ml-1.5 border border-slate-700/50">
             <button 
-              onClick={() => setActiveTab('dashboard')}
-              className={`px-4.5 py-2.5 rounded-xl text-sm font-black transition-all tracking-wide ${activeTab === 'dashboard' ? 'bg-gradient-to-r from-emerald-500 to-green-400 text-white shadow-md scale-102' : 'text-slate-400 hover:text-slate-200'}`}
+              onClick={() => setActiveTab('predictions')}
+              className={`px-4.5 py-2.5 rounded-xl text-sm font-black transition-all tracking-wide ${activeTab !== 'admin' ? 'bg-gradient-to-r from-emerald-500 to-green-400 text-white shadow-md scale-102' : 'text-slate-400 hover:text-slate-200'}`}
             >
               ผู้เล่น
             </button>
@@ -133,7 +133,11 @@ function AppContent() {
       </header>
 
       <main className="max-w-md mx-auto p-5 space-y-8 mt-2">
-        {activeTab === 'dashboard' ? <Dashboard /> : <AdminDashboard />}
+        {activeTab === 'predictions' || activeTab === 'standings' || activeTab === 'chat' ? (
+          <Dashboard activeSubTab={activeTab} />
+        ) : (
+          <AdminDashboard />
+        )}
       </main>
 
       <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
