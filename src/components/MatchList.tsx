@@ -113,6 +113,13 @@ const MatchList: React.FC = () => {
       return;
     }
 
+    // Check if predictions are allowed by admin
+    if (match.allowPredictions !== true) {
+      alert('แมตช์นี้ยังไม่เปิดให้ร่วมทายผล');
+      setSavingMap(prev => ({ ...prev, [matchId]: false }));
+      return;
+    }
+
     // Check if user is banned for this match
     if (user.bannedMatchIds?.includes(matchId)) {
       setSavingMap(prev => ({ ...prev, [matchId]: false }));
@@ -192,7 +199,7 @@ const MatchList: React.FC = () => {
         const isStarted = match.startTime.seconds < Timestamp.now().seconds;
         const isPastDeadline = deadline.getTime() < now.getTime();
         const isBanned = user?.bannedMatchIds?.includes(match.id);
-        const canPredict = user?.role !== 'admin' && !isPastDeadline && !isBanned;
+        const canPredict = user?.role !== 'admin' && !isPastDeadline && !isBanned && match.allowPredictions === true;
 
         // Calculate community votes
         const matchPreds = allPredictions.filter(p => p.matchId === match.id);
@@ -380,15 +387,22 @@ const MatchList: React.FC = () => {
               </AnimatePresence>
 
               {!isPastDeadline && !isBanned && (
-                <div className="flex flex-col items-center gap-2 bg-slate-950/60 py-4 rounded-[1.5rem] border border-slate-800/80">
-                  <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                    <Clock className="w-4 h-4 text-fuchsia-400" />
-                    ปิดทายผลในอีก
+                match.allowPredictions === true ? (
+                  <div className="flex flex-col items-center gap-2 bg-slate-950/60 py-4 rounded-[1.5rem] border border-slate-800/80">
+                    <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                      <Clock className="w-4 h-4 text-fuchsia-400" />
+                      ปิดทายผลในอีก
+                    </div>
+                    <div className="text-2xl font-black text-yellow-450 tabular-nums drop-shadow-[0_0_8px_rgba(250,204,21,0.25)]">
+                      {countdownStr}
+                    </div>
                   </div>
-                  <div className="text-2xl font-black text-yellow-450 tabular-nums drop-shadow-[0_0_8px_rgba(250,204,21,0.25)]">
-                    {countdownStr}
+                ) : (
+                  <div className="flex items-center justify-center gap-2 text-[11.5px] font-black text-amber-400 uppercase tracking-widest bg-amber-950/20 py-4 rounded-2xl border border-amber-500/25">
+                    <Info className="w-4 h-4 text-amber-500 animate-pulse" />
+                    รอแอดมินเปิดระบบให้ร่วมทายผล
                   </div>
-                </div>
+                )
               )}
 
               {isPastDeadline && !isStarted && match.status !== MatchStatus.FINISHED && (

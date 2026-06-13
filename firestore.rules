@@ -1,8 +1,28 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if request.auth != null || true; // Force true for now to debug
+    // Secure predictions collection
+    match /predictions/{predId} {
+      allow read, delete: if request.auth != null;
+      allow create, update: if request.auth != null && 
+        get(/databases/$(database)/documents/matches/$(request.resource.data.matchId)).data.allowPredictions == true;
+    }
+
+    // Rules for other collections
+    match /matches/{matchId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    match /webboard/{msgId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    match /users/{userId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    match /settings/{settingId} {
+      allow read, write: if request.auth != null;
     }
   }
 }
