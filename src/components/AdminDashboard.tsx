@@ -369,7 +369,8 @@ const AdminDashboard: React.FC = () => {
                 homeFlag: getTeamFlag(row.h),
                 awayFlag: getTeamFlag(row.a),
                 status: MatchStatus.SCHEDULED,
-                isPublished: false
+                isPublished: false,
+                allowPredictions: false
               });
             });
             await batch.commit();
@@ -551,7 +552,8 @@ const AdminDashboard: React.FC = () => {
           predictionDeadline: Timestamp.fromDate(deadlineDate),
           customWinScore: isSpecialMatch ? Number(customWinScore) : null,
           customLossScore: isSpecialMatch ? Number(customLossScore) : null,
-          isPublished: true // Auto publish on save edit
+          isPublished: true, // Auto publish on save edit
+          allowPredictions: false // Reset to locked on edit/save
         });
         setEditingMatchId(null);
       } else {
@@ -567,7 +569,8 @@ const AdminDashboard: React.FC = () => {
           status: MatchStatus.SCHEDULED,
           customWinScore: isSpecialMatch ? Number(customWinScore) : null,
           customLossScore: isSpecialMatch ? Number(customLossScore) : null,
-          isPublished: true // Auto publish on manual add
+          isPublished: true, // Auto publish on manual add
+          allowPredictions: false // Initialize to closed by default
         } as any);
       }
 
