@@ -120,8 +120,7 @@ const Dashboard: React.FC<DashboardProps> = ({ activeSubTab }) => {
               <X className="w-5 h-5" />
             </button>
           </div>
-          
-          <div className="w-full max-w-2xl bg-slate-900 rounded-2xl border border-slate-800 overflow-auto shadow-2xl max-h-[75vh] flex items-center justify-center p-1 select-none">
+          <div className={`w-full max-w-2xl bg-slate-900 rounded-2xl border border-slate-800 overflow-auto shadow-2xl max-h-[75vh] p-1 select-none ${isZoomed ? 'block' : 'flex items-center justify-center'}`}>
             <img 
               src="/handicap_rules.jpg" 
               alt="ตารางราคาบอลแฮนดิแคป" 
