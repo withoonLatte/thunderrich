@@ -132,7 +132,7 @@ function AppContent() {
         )}
       </header>
 
-      <main className="max-w-md mx-auto p-5 space-y-8 mt-2">
+      <main className={`${activeTab === 'admin' ? 'max-w-6xl' : 'max-w-md'} mx-auto p-3 xs:p-5 space-y-8 mt-2 transition-all duration-300`}>
         {activeTab === 'predictions' || activeTab === 'standings' || activeTab === 'chat' ? (
           <Dashboard activeSubTab={activeTab} />
         ) : (

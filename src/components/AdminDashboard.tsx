@@ -1499,264 +1499,549 @@ const AdminDashboard: React.FC = () => {
                 ไม่มีแมตช์ในส่วนนี้
               </div>
             ) : (
-              matches.filter(match => {
-                if (deferredAdminTab === 'history') {
-                  return match.status === MatchStatus.FINISHED;
-                }
-                return match.status !== MatchStatus.FINISHED;
-              }).map(match => (
-              <div key={match.id} className={`wc-glass rounded-3xl p-6 flex flex-col gap-6 border-l-8 transition-all ${calcStagedIds.includes(match.id) ? 'border-world-cup-gold bg-world-cup-gold/5 ring-2 ring-world-cup-gold/20' : 'border-world-cup-green shadow-xl'}`}>
-                <div className="flex justify-between items-start">
-                  <div className="flex items-start gap-3 flex-1">
-                    {match.status !== MatchStatus.FINISHED && (
-                      <button 
-                        onClick={() => toggleCalcStage(match.id)}
-                        className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${calcStagedIds.includes(match.id) ? 'bg-world-cup-gold border-world-cup-gold text-white' : 'border-gray-200'}`}
-                      >
-                        {calcStagedIds.includes(match.id) && <Check className="w-3.5 h-3.5 font-black" />}
-                      </button>
-                    )}
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <p className="text-[10px] font-bold text-world-cup-green uppercase tracking-widest">
-                          {match.round === TournamentRound.GROUP && 'รอบแบ่งกลุ่ม'}
-                          {match.round === TournamentRound.TOP32 && 'รอบ 32 ทีม'}
-                          {match.round === TournamentRound.TOP16 && 'รอบ 16 ทีม'}
-                          {match.round === TournamentRound.TOP8 && 'รอบ 8 ทีม'}
-                          {match.round === TournamentRound.TOP4 && 'รอบรองชนะเลิศ'}
-                          {match.round === TournamentRound.THIRD_PLACE && 'ชิงอันดับ 3'}
-                          {match.round === TournamentRound.FINAL && 'รอบชิงชนะเลิศ'}
-                        </p>
-                        {!match.isPublished && (
-                          <span className="bg-slate-800 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-widest animate-pulse">
-                            ดรอฟต์
-                          </span>
+              <>
+                {/* 1. Mobile Card View */}
+                <div className="lg:hidden space-y-6">
+                  {matches.filter(match => {
+                    if (deferredAdminTab === 'history') {
+                      return match.status === MatchStatus.FINISHED;
+                    }
+                    return match.status !== MatchStatus.FINISHED;
+                  }).map(match => (
+                  <div key={match.id} className={`wc-glass rounded-3xl p-6 flex flex-col gap-6 border-l-8 transition-all ${calcStagedIds.includes(match.id) ? 'border-world-cup-gold bg-world-cup-gold/5 ring-2 ring-world-cup-gold/20' : 'border-world-cup-green shadow-xl'}`}>
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-start gap-3 flex-1">
+                        {match.status !== MatchStatus.FINISHED && (
+                          <button 
+                            onClick={() => toggleCalcStage(match.id)}
+                            className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${calcStagedIds.includes(match.id) ? 'bg-world-cup-gold border-world-cup-gold text-white' : 'border-gray-200'}`}
+                          >
+                            {calcStagedIds.includes(match.id) && <Check className="w-3.5 h-3.5 font-black" />}
+                          </button>
                         )}
-                      </div>
-                      <h3 className="text-xl font-black text-black">{match.homeTeam} vs {match.awayTeam}</h3>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-black text-black">{format(new Date(match.startTime.seconds * 1000), 'dd/MM/yyyy HH:mm')}</span>
-                        <div className="flex items-center gap-1 bg-world-cup-green/10 px-2 py-0.5 rounded border border-world-cup-green/20">
-                          <span className="text-[8px] font-black text-black uppercase tracking-tighter">ราคา:</span>
-                          <span className="text-world-cup-green text-[11px] font-black">{match.handicap}</span>
-                        </div>
-                        {match.customWinScore !== undefined && match.customWinScore !== null && (
-                          <div className="bg-red-500 text-white px-2 py-0.5 rounded-lg text-[10px] font-black uppercase flex flex-col items-center justify-center min-w-[55px] shadow-sm border border-red-400">
-                            <span className="leading-tight">คู่เอก</span>
-                            <span className="leading-tight">(+{match.customWinScore}/{match.customLossScore})</span>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <p className="text-[10px] font-bold text-world-cup-green uppercase tracking-widest">
+                              {match.round === TournamentRound.GROUP && 'รอบแบ่งกลุ่ม'}
+                              {match.round === TournamentRound.TOP32 && 'รอบ 32 ทีม'}
+                              {match.round === TournamentRound.TOP16 && 'รอบ 16 ทีม'}
+                              {match.round === TournamentRound.TOP8 && 'รอบ 8 ทีม'}
+                              {match.round === TournamentRound.TOP4 && 'รอบรองชนะเลิศ'}
+                              {match.round === TournamentRound.THIRD_PLACE && 'ชิงอันดับ 3'}
+                              {match.round === TournamentRound.FINAL && 'รอบชิงชนะเลิศ'}
+                            </p>
+                            {!match.isPublished && (
+                              <span className="bg-slate-800 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-widest animate-pulse">
+                                ดรอฟต์
+                              </span>
+                            )}
                           </div>
-                        )}
+                          <h3 className="text-xl font-black text-black">{match.homeTeam} vs {match.awayTeam}</h3>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-black text-black">{format(new Date(match.startTime.seconds * 1000), 'dd/MM/yyyy HH:mm')}</span>
+                            <div className="flex items-center gap-1 bg-world-cup-green/10 px-2 py-0.5 rounded border border-world-cup-green/20">
+                              <span className="text-[8px] font-black text-black uppercase tracking-tighter">ราคา:</span>
+                              <span className="text-world-cup-green text-[11px] font-black">{match.handicap}</span>
+                            </div>
+                            {match.customWinScore !== undefined && match.customWinScore !== null && (
+                              <div className="bg-red-500 text-white px-2 py-0.5 rounded-lg text-[10px] font-black uppercase flex flex-col items-center justify-center min-w-[55px] shadow-sm border border-red-400">
+                                <span className="leading-tight">คู่เอก</span>
+                                <span className="leading-tight">(+{match.customWinScore}/{match.customLossScore})</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 ml-2">
+                        <button 
+                          onClick={async () => {
+                            await updateDoc(doc(db, 'matches', match.id), {
+                              isPublished: !match.isPublished
+                            });
+                          }}
+                          className={`p-1 rounded-md transition-all ${match.isPublished ? 'bg-green-50 text-green-500 hover:bg-green-100' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
+                          title={match.isPublished ? "ซ่อน" : "แสดง"}
+                        >
+                          <CheckCircle className={`w-3.5 h-3.5 ${match.isPublished ? 'fill-current' : ''}`} />
+                        </button>
+                        <button 
+                          onClick={() => handleEditMatch(match)}
+                          className="p-1 rounded-md bg-blue-50 text-blue-500 hover:bg-blue-100 transition-all shadow-sm"
+                          title="แก้ไข"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                        <button 
+                          onClick={async () => {
+                            const isSpecial = match.customWinScore !== undefined && match.customWinScore !== null;
+                            if (isSpecial) {
+                              await updateDoc(doc(db, 'matches', match.id), {
+                                customWinScore: null,
+                                customLossScore: null
+                              });
+                            } else {
+                              await updateDoc(doc(db, 'matches', match.id), {
+                                customWinScore: 5,
+                                customLossScore: -3
+                              });
+                            }
+                          }}
+                          className={`p-1 rounded-md transition-all ${match.customWinScore !== undefined && match.customWinScore !== null ? 'bg-world-cup-gold text-white shadow-lg' : 'bg-white border border-gray-100 text-gray-400 hover:bg-gray-50'}`}
+                          title="ไฮไลท์"
+                        >
+                          <Star className={`w-3.5 h-3.5 ${match.customWinScore !== undefined && match.customWinScore !== null ? 'fill-current' : ''}`} />
+                        </button>
+                        <button 
+                          onClick={() => deleteMatch(match.id)} 
+                          className="p-1 rounded-md text-red-100 bg-red-50 hover:bg-red-500 hover:text-white transition-all shadow-sm"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center gap-1 ml-2">
-                    <button 
-                      onClick={async () => {
-                        await updateDoc(doc(db, 'matches', match.id), {
-                          isPublished: !match.isPublished
-                        });
-                      }}
-                      className={`p-1 rounded-md transition-all ${match.isPublished ? 'bg-green-50 text-green-500 hover:bg-green-100' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
-                      title={match.isPublished ? "ซ่อน" : "แสดง"}
-                    >
-                      <CheckCircle className={`w-3.5 h-3.5 ${match.isPublished ? 'fill-current' : ''}`} />
-                    </button>
-                    <button 
-                      onClick={() => handleEditMatch(match)}
-                      className="p-1 rounded-md bg-blue-50 text-blue-500 hover:bg-blue-100 transition-all shadow-sm"
-                      title="แก้ไข"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" />
-                    </button>
-                    <button 
-                      onClick={async () => {
-                        const isSpecial = match.customWinScore !== undefined && match.customWinScore !== null;
-                        if (isSpecial) {
-                          await updateDoc(doc(db, 'matches', match.id), {
-                            customWinScore: null,
-                            customLossScore: null
-                          });
-                        } else {
-                          await updateDoc(doc(db, 'matches', match.id), {
-                            customWinScore: 5,
-                            customLossScore: -3
-                          });
-                        }
-                      }}
-                      className={`p-1 rounded-md transition-all ${match.customWinScore !== undefined && match.customWinScore !== null ? 'bg-world-cup-gold text-white shadow-lg' : 'bg-white border border-gray-100 text-gray-400 hover:bg-gray-50'}`}
-                      title="ไฮไลท์"
-                    >
-                      <Star className={`w-3.5 h-3.5 ${match.customWinScore !== undefined && match.customWinScore !== null ? 'fill-current' : ''}`} />
-                    </button>
-                    <button 
-                      onClick={() => deleteMatch(match.id)} 
-                      className="p-1 rounded-md text-red-100 bg-red-50 hover:bg-red-500 hover:text-white transition-all shadow-sm"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    {match.status !== MatchStatus.FINISHED ? (
+                      <div className="space-y-6">
+                        {/* Prediction Status Control */}
+                        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner">
+                          <div className="space-y-1">
+                            <span className="text-xs font-black text-black uppercase tracking-widest block">สิทธิ์การทายผลจากผู้เล่น</span>
+                            <p className="text-[10px] text-slate-500 font-bold">
+                              {match.allowPredictions 
+                                ? 'เปิดให้ผู้เล่นทายผลอยู่ (สมาชิกส่งคำทำนายได้ตามปกติ)' 
+                                : 'ปิดกั้นการทายผลอยู่ (สมาชิกเห็นข้อมูลแต่ยังทายไม่ได้)'}
+                            </p>
+                          </div>
+                          <button 
+                            onClick={async () => {
+                              await updateDoc(doc(db, 'matches', match.id), {
+                                allowPredictions: !match.allowPredictions
+                              });
+                            }}
+                            className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all border cursor-pointer select-none flex items-center gap-2 shadow-sm ${
+                              match.allowPredictions 
+                                ? 'bg-emerald-500 text-white border-emerald-400 hover:bg-emerald-600 shadow-emerald-500/20' 
+                                : 'bg-rose-500 text-white border-rose-400 hover:bg-rose-600 shadow-rose-500/20'
+                            }`}
+                          >
+                            {match.allowPredictions ? (
+                              <>
+                                <span className="w-2.5 h-2.5 rounded-full bg-white animate-pulse" />
+                                <span>เปิดทายผลแล้ว</span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="w-2.5 h-2.5 rounded-full bg-white" />
+                                <span>คลิกเพื่อเปิดทาย</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+
+                        <div className="flex items-center justify-center gap-6 py-4 bg-gray-50 rounded-2xl border border-gray-100">
+                          <div className="text-center space-y-2">
+                            <label className="text-[10px] font-black text-black uppercase tracking-widest">Team 1</label>
+                            <input id={`home-${match.id}`} type="number" placeholder="-" className="w-14 h-14 bg-white border-2 border-gray-200 rounded-xl text-center text-2xl font-black text-black focus:border-world-cup-green focus:outline-none transition-all shadow-inner" />
+                          </div>
+                          <div className="text-3xl font-black text-black self-end mb-3">:</div>
+                          <div className="text-center space-y-2">
+                            <label className="text-[10px] font-black text-black uppercase tracking-widest">Team 2</label>
+                            <input id={`away-${match.id}`} type="number" placeholder="-" className="w-14 h-14 bg-white border-2 border-gray-200 rounded-xl text-center text-2xl font-black text-black focus:border-world-cup-green focus:outline-none transition-all shadow-inner" />
+                          </div>
+                        </div>
+
+                        <div className="space-y-3">
+                          <label className="text-xs font-black text-black uppercase tracking-widest block text-center">ใครชนะในราคาต่อรอง? (Handicap Winner)</label>
+                          <div className="grid grid-cols-3 gap-3">
+                            <button 
+                              onClick={() => setWinners({...winners, [match.id]: 'home'})}
+                              className={`py-4 rounded-xl text-sm font-black border-2 transition-all ${winners[match.id] === 'home' ? 'bg-world-cup-green border-world-cup-green text-white shadow-lg' : 'bg-white border-gray-200 text-slate-800 hover:border-world-cup-green/50'}`}
+                            >
+                              ทีม 1 ชนะ
+                            </button>
+                            <button 
+                              onClick={() => setWinners({...winners, [match.id]: 'push'})}
+                              className={`py-4 rounded-xl text-sm font-black border-2 transition-all ${winners[match.id] === 'push' ? 'bg-amber-500 border-amber-500 text-white shadow-lg' : 'bg-white border-gray-200 text-slate-800 hover:border-amber-500/50'}`}
+                            >
+                              ยกเลิก/เสมอ
+                            </button>
+                            <button 
+                              onClick={() => setWinners({...winners, [match.id]: 'away'})}
+                              className={`py-4 rounded-xl text-sm font-black border-2 transition-all ${winners[match.id] === 'away' ? 'bg-blue-500 border-blue-500 text-white shadow-lg' : 'bg-white border-gray-200 text-slate-800 hover:border-blue-500/50'}`}
+                            >
+                              ทีม 2 ชนะ
+                            </button>
+                          </div>
+                        </div>
+
+                        {!calcStagedIds.includes(match.id) && (
+                          <button 
+                            onClick={() => {
+                              const h = (document.getElementById(`home-${match.id}`) as HTMLInputElement).value;
+                              const a = (document.getElementById(`away-${match.id}`) as HTMLInputElement).value;
+                              const manualWinner = winners[match.id];
+                              
+                              if (!h || !a) {
+                                alert('กรุณาใส่ผลสกอร์');
+                                return;
+                              }
+                              if (!manualWinner) {
+                                alert('กรุณาเลือกฝั่งที่ชนะในราคาต่อรอง');
+                                return;
+                              }
+                              
+                              setScores(match.id, Number(h), Number(a), manualWinner);
+                            }}
+                            className="w-full bg-slate-900 text-white py-5 rounded-2xl text-huge font-black flex items-center justify-center gap-3 shadow-xl hover:bg-black transition-all active:scale-[0.98]"
+                          >
+                            {calcLoading === match.id ? (
+                              <Loader2 className="w-6 h-6 animate-spin text-world-cup-green" />
+                            ) : (
+                              <>
+                                <CheckCircle className="w-6 h-6 text-world-cup-green" />
+                                คำนวณและสรุปคะแนน
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-4">
+                        <div className="flex justify-between items-center bg-gray-50 p-6 rounded-2xl border border-gray-200 shadow-inner">
+                          <div className="text-center">
+                            <p className="text-[10px] text-black font-black uppercase tracking-widest">{match.homeTeam}</p>
+                            <p className="text-giant font-black text-black">{match.homeScore}</p>
+                          </div>
+                          <div className="text-giant font-black text-black">-</div>
+                          <div className="text-center">
+                            <p className="text-[10px] text-black font-black uppercase tracking-widest">{match.awayTeam}</p>
+                            <p className="text-giant font-black text-black">{match.awayScore}</p>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center border-t border-gray-100 pt-3">
+                          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 italic">
+                             <span className="text-black font-black">ฝั่งชนะ:</span>
+                             <span className="text-world-cup-green uppercase tracking-tighter font-black">
+                               {match.manualWinner === 'home' && `ทีม 1 (${match.homeTeam})`}
+                               {match.manualWinner === 'away' && `ทีม 2 (${match.awayTeam})`}
+                               {match.manualWinner === 'push' && 'ยกเลิก/เสมอ'}
+                             </span>
+                             <Check className="w-3.5 h-3.5 text-green-500" />
+                          </div>
+                          <button
+                            onClick={async () => {
+                              if (window.confirm(`ต้องการคำนวณคะแนนใหม่สำหรับคู่ ${match.homeTeam} vs ${match.awayTeam} หรือไม่? (จะปรับแต้มของผู้เล่นทุกคนรวมถึงผู้ที่ไม่ได้ทายผลตามกติกาใหม่ทันที)`)) {
+                                setCalcLoading(match.id);
+                                try {
+                                  await calculateMatchResults(match.id);
+                                  alert('คำนวณและอัปเดตคะแนนใหม่เรียบร้อยแล้ว!');
+                                } catch (err: any) {
+                                  console.error(err);
+                                  alert('เกิดข้อผิดพลาดในการคำนวณใหม่: ' + err.message);
+                                } finally {
+                                  setCalcLoading(null);
+                                }
+                              }
+                            }}
+                            disabled={calcLoading === match.id}
+                            className="flex items-center gap-1.5 bg-slate-900 hover:bg-black text-white text-[10px] font-black uppercase px-3 py-2 rounded-xl transition-all cursor-pointer disabled:opacity-50"
+                          >
+                            {calcLoading === match.id ? (
+                              <Loader2 className="w-3 h-3 animate-spin text-world-cup-gold" />
+                            ) : (
+                              <RefreshCw className="w-3 h-3 text-world-cup-gold" />
+                            )}
+                            คำนวณคะแนนใหม่
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
+                  ))}
                 </div>
 
-                {match.status !== MatchStatus.FINISHED ? (
-                  <div className="space-y-6">
-                    {/* Prediction Status Control */}
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner">
-                      <div className="space-y-1">
-                        <span className="text-xs font-black text-black uppercase tracking-widest block">สิทธิ์การทายผลจากผู้เล่น</span>
-                        <p className="text-[10px] text-slate-500 font-bold">
-                          {match.allowPredictions 
-                            ? 'เปิดให้ผู้เล่นทายผลอยู่ (สมาชิกส่งคำทำนายได้ตามปกติ)' 
-                            : 'ปิดกั้นการทายผลอยู่ (สมาชิกเห็นข้อมูลแต่ยังทายไม่ได้)'}
-                        </p>
-                      </div>
-                      <button 
-                        onClick={async () => {
-                          await updateDoc(doc(db, 'matches', match.id), {
-                            allowPredictions: !match.allowPredictions
-                          });
-                        }}
-                        className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all border cursor-pointer select-none flex items-center gap-2 shadow-sm ${
-                          match.allowPredictions 
-                            ? 'bg-emerald-500 text-white border-emerald-400 hover:bg-emerald-600 shadow-emerald-500/20' 
-                            : 'bg-rose-500 text-white border-rose-400 hover:bg-rose-600 shadow-rose-500/20'
-                        }`}
-                      >
-                        {match.allowPredictions ? (
-                          <>
-                            <span className="w-2.5 h-2.5 rounded-full bg-white animate-pulse" />
-                            <span>เปิดทายผลแล้ว</span>
-                          </>
-                        ) : (
-                          <>
-                            <span className="w-2.5 h-2.5 rounded-full bg-white" />
-                            <span>คลิกเพื่อเปิดทาย</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
+                {/* 2. Desktop Table View */}
+                <div className="hidden lg:block overflow-x-auto bg-[#0f172a]/95 backdrop-blur-2xl rounded-[2.3rem] border border-slate-800/80 shadow-2xl p-6 text-slate-100">
+                  <table className="w-full border-collapse text-left">
+                    <thead>
+                      <tr className="border-b border-slate-800 text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                        <th className="pb-3 pl-2 w-14 text-center">เลือก</th>
+                        <th className="pb-3 w-24 text-center">เวลา / รอบ</th>
+                        <th className="pb-3 text-right pr-6 w-[28%]">ทีมเหย้า</th>
+                        <th className="pb-3 text-center w-40">ผลสกอร์ (HT)</th>
+                        <th className="pb-3 text-left pl-6 w-[28%]">ทีมเยือน</th>
+                        <th className="pb-3 text-center w-28">ราคาบอล</th>
+                        <th className="pb-3 text-center w-32">สิทธิ์ทายผล</th>
+                        <th className="pb-3 text-right pr-2 w-36">การจัดการ</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/50">
+                      {matches.filter(match => {
+                        if (deferredAdminTab === 'history') {
+                          return match.status === MatchStatus.FINISHED;
+                        }
+                        return match.status !== MatchStatus.FINISHED;
+                      }).map(match => {
+                        const startTime = new Date(match.startTime.seconds * 1000);
+                        const formattedTime = format(startTime, 'HH:mm');
+                        const formattedDate = format(startTime, 'dd/MM');
+                        const isFinished = match.status === MatchStatus.FINISHED;
 
-                    <div className="flex items-center justify-center gap-6 py-4 bg-gray-50 rounded-2xl border border-gray-100">
-                      <div className="text-center space-y-2">
-                        <label className="text-[10px] font-black text-black uppercase tracking-widest">Team 1</label>
-                        <input id={`home-${match.id}`} type="number" placeholder="-" className="w-14 h-14 bg-white border-2 border-gray-200 rounded-xl text-center text-2xl font-black text-black focus:border-world-cup-green focus:outline-none transition-all shadow-inner" />
-                      </div>
-                      <div className="text-3xl font-black text-black self-end mb-3">:</div>
-                      <div className="text-center space-y-2">
-                        <label className="text-[10px] font-black text-black uppercase tracking-widest">Team 2</label>
-                        <input id={`away-${match.id}`} type="number" placeholder="-" className="w-14 h-14 bg-white border-2 border-gray-200 rounded-xl text-center text-2xl font-black text-black focus:border-world-cup-green focus:outline-none transition-all shadow-inner" />
-                      </div>
-                    </div>
+                        return (
+                          <tr key={match.id} className={`border-b border-slate-800/40 hover:bg-slate-800/30 transition-colors ${calcStagedIds.includes(match.id) ? 'bg-world-cup-gold/5' : ''}`}>
+                            {/* Checkbox (select for batch calc) */}
+                            <td className="py-4 pl-2 text-center align-middle">
+                              {!isFinished && (
+                                <button 
+                                  onClick={() => toggleCalcStage(match.id)}
+                                  className={`w-5 h-5 rounded border flex items-center justify-center transition-all cursor-pointer mx-auto ${calcStagedIds.includes(match.id) ? 'bg-world-cup-gold border-world-cup-gold text-slate-950' : 'border-slate-700 bg-slate-900/50'}`}
+                                >
+                                  {calcStagedIds.includes(match.id) && <Check className="w-3.5 h-3.5 font-bold" />}
+                                </button>
+                              )}
+                            </td>
 
-                    <div className="space-y-3">
-                      <label className="text-xs font-black text-black uppercase tracking-widest block text-center">ใครชนะในราคาต่อรอง? (Handicap Winner)</label>
-                      <div className="grid grid-cols-3 gap-3">
-                        <button 
-                          onClick={() => setWinners({...winners, [match.id]: 'home'})}
-                          className={`py-4 rounded-xl text-sm font-black border-2 transition-all ${winners[match.id] === 'home' ? 'bg-world-cup-green border-world-cup-green text-white shadow-lg' : 'bg-white border-gray-200 text-slate-800 hover:border-world-cup-green/50'}`}
-                        >
-                          ทีม 1 ชนะ
-                        </button>
-                        <button 
-                          onClick={() => setWinners({...winners, [match.id]: 'push'})}
-                          className={`py-4 rounded-xl text-sm font-black border-2 transition-all ${winners[match.id] === 'push' ? 'bg-amber-500 border-amber-500 text-white shadow-lg' : 'bg-white border-gray-200 text-slate-800 hover:border-amber-500/50'}`}
-                        >
-                          ยกเลิก/เสมอ
-                        </button>
-                        <button 
-                          onClick={() => setWinners({...winners, [match.id]: 'away'})}
-                          className={`py-4 rounded-xl text-sm font-black border-2 transition-all ${winners[match.id] === 'away' ? 'bg-blue-500 border-blue-500 text-white shadow-lg' : 'bg-white border-gray-200 text-slate-800 hover:border-blue-500/50'}`}
-                        >
-                          ทีม 2 ชนะ
-                        </button>
-                      </div>
-                    </div>
+                            {/* Time / Round */}
+                            <td className="py-4 text-center align-middle">
+                              <div className="flex flex-col items-center justify-center">
+                                {isFinished ? (
+                                  <span className="text-[10px] font-black text-rose-500 uppercase bg-rose-500/10 px-1.5 py-0.5 rounded">จบ</span>
+                                ) : (
+                                  <>
+                                    <span className="text-[10px] text-slate-400 font-bold">{formattedDate}</span>
+                                    <span className="text-xs font-black text-white">{formattedTime}</span>
+                                  </>
+                                )}
+                                <span className="text-[8px] font-bold text-slate-500 mt-0.5 uppercase tracking-tighter">
+                                  {match.round === TournamentRound.GROUP && 'แบ่งกลุ่ม'}
+                                  {match.round === TournamentRound.TOP32 && 'รอบ 32'}
+                                  {match.round === TournamentRound.TOP16 && 'รอบ 16'}
+                                  {match.round === TournamentRound.TOP8 && 'รอบ 8'}
+                                  {match.round === TournamentRound.TOP4 && 'รอบรอง'}
+                                  {match.round === TournamentRound.THIRD_PLACE && 'ชิงที่ 3'}
+                                  {match.round === TournamentRound.FINAL && 'ชิงชนะเลิศ'}
+                                </span>
+                              </div>
+                            </td>
 
-                    {!calcStagedIds.includes(match.id) && (
-                      <button 
-                        onClick={() => {
-                          const h = (document.getElementById(`home-${match.id}`) as HTMLInputElement).value;
-                          const a = (document.getElementById(`away-${match.id}`) as HTMLInputElement).value;
-                          const manualWinner = winners[match.id];
-                          
-                          if (!h || !a) {
-                            alert('กรุณาใส่ผลสกอร์');
-                            return;
-                          }
-                          if (!manualWinner) {
-                            alert('กรุณาเลือกฝั่งที่ชนะในราคาต่อรอง');
-                            return;
-                          }
-                          
-                          setScores(match.id, Number(h), Number(a), manualWinner);
-                        }}
-                        className="w-full bg-slate-900 text-white py-5 rounded-2xl text-huge font-black flex items-center justify-center gap-3 shadow-xl hover:bg-black transition-all active:scale-[0.98]"
-                      >
-                        {calcLoading === match.id ? (
-                          <Loader2 className="w-6 h-6 animate-spin text-world-cup-green" />
-                        ) : (
-                          <>
-                            <CheckCircle className="w-6 h-6 text-world-cup-green" />
-                            คำนวณและสรุปคะแนน
-                          </>
-                        )}
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-4">
-                    <div className="flex justify-between items-center bg-gray-50 p-6 rounded-2xl border border-gray-200 shadow-inner">
-                      <div className="text-center">
-                        <p className="text-[10px] text-black font-black uppercase tracking-widest">{match.homeTeam}</p>
-                        <p className="text-giant font-black text-black">{match.homeScore}</p>
-                      </div>
-                      <div className="text-giant font-black text-black">-</div>
-                      <div className="text-center">
-                        <p className="text-[10px] text-black font-black uppercase tracking-widest">{match.awayTeam}</p>
-                        <p className="text-giant font-black text-black">{match.awayScore}</p>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center border-t border-gray-100 pt-3">
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 italic">
-                         <span className="text-black font-black">ฝั่งชนะ:</span>
-                         <span className="text-world-cup-green uppercase tracking-tighter font-black">
-                           {match.manualWinner === 'home' && `ทีม 1 (${match.homeTeam})`}
-                           {match.manualWinner === 'away' && `ทีม 2 (${match.awayTeam})`}
-                           {match.manualWinner === 'push' && 'ยกเลิก/เสมอ'}
-                         </span>
-                         <Check className="w-3.5 h-3.5 text-green-500" />
-                      </div>
-                      <button
-                        onClick={async () => {
-                          if (window.confirm(`ต้องการคำนวณคะแนนใหม่สำหรับคู่ ${match.homeTeam} vs ${match.awayTeam} หรือไม่? (จะปรับแต้มของผู้เล่นทุกคนรวมถึงผู้ที่ไม่ได้ทายผลตามกติกาใหม่ทันที)`)) {
-                            setCalcLoading(match.id);
-                            try {
-                              await calculateMatchResults(match.id);
-                              alert('คำนวณและอัปเดตคะแนนใหม่เรียบร้อยแล้ว!');
-                            } catch (err: any) {
-                              console.error(err);
-                              alert('เกิดข้อผิดพลาดในการคำนวณใหม่: ' + err.message);
-                            } finally {
-                              setCalcLoading(null);
-                            }
-                          }
-                        }}
-                        disabled={calcLoading === match.id}
-                        className="flex items-center gap-1.5 bg-slate-900 hover:bg-black text-white text-[10px] font-black uppercase px-3 py-2 rounded-xl transition-all cursor-pointer disabled:opacity-50"
-                      >
-                        {calcLoading === match.id ? (
-                          <Loader2 className="w-3 h-3 animate-spin text-world-cup-gold" />
-                        ) : (
-                          <RefreshCw className="w-3 h-3 text-world-cup-gold" />
-                        )}
-                        คำนวณคะแนนใหม่
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-              ))
-            )}
+                            {/* Home Team */}
+                            <td className="py-4 text-right pr-6 align-middle">
+                              <div className="flex items-center justify-end gap-3.5">
+                                <span className="text-sm font-black text-white tracking-tight">{match.homeTeam}</span>
+                                <img src={match.homeFlag} alt={match.homeTeam} className="w-7 h-5 object-cover rounded shadow-md border border-slate-700" />
+                              </div>
+                            </td>
+
+                            {/* Score / Scoring inputs */}
+                            <td className="py-4 text-center align-middle">
+                              {isFinished ? (
+                                <div className="flex flex-col items-center justify-center gap-1">
+                                  <span className="text-base font-black text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-xl">
+                                    {match.homeScore} - {match.awayScore}
+                                  </span>
+                                  <button
+                                    onClick={async () => {
+                                      if (window.confirm(`ต้องการคำนวณคะแนนใหม่สำหรับคู่ ${match.homeTeam} vs ${match.awayTeam} หรือไม่?`)) {
+                                        setCalcLoading(match.id);
+                                        try {
+                                          await calculateMatchResults(match.id);
+                                          alert('คำนวณและอัปเดตคะแนนใหม่เรียบร้อยแล้ว!');
+                                        } catch (err: any) {
+                                          console.error(err);
+                                          alert('เกิดข้อผิดพลาดในการคำนวณใหม่: ' + err.message);
+                                        } finally {
+                                          setCalcLoading(null);
+                                        }
+                                      }
+                                    }}
+                                    disabled={calcLoading === match.id}
+                                    className="flex items-center gap-1 bg-slate-800 hover:bg-slate-700 text-slate-350 hover:text-white text-[8px] font-black uppercase px-2 py-0.5 rounded cursor-pointer transition-colors disabled:opacity-50"
+                                  >
+                                    {calcLoading === match.id ? (
+                                      <Loader2 className="w-2.5 h-2.5 animate-spin text-world-cup-gold" />
+                                    ) : (
+                                      <RefreshCw className="w-2.5 h-2.5 text-world-cup-gold" />
+                                    )}
+                                    <span>คำนวณใหม่</span>
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex flex-col items-center gap-1.5 justify-center">
+                                  <div className="flex items-center gap-1 justify-center">
+                                    <input 
+                                      id={`desktop-home-${match.id}`} 
+                                      type="number" 
+                                      placeholder="-" 
+                                      className="w-8 h-8 bg-slate-900 border border-slate-750 rounded-lg text-center text-sm font-black text-white focus:border-world-cup-green focus:outline-none" 
+                                    />
+                                    <span className="text-slate-500 font-black px-0.5">:</span>
+                                    <input 
+                                      id={`desktop-away-${match.id}`} 
+                                      type="number" 
+                                      placeholder="-" 
+                                      className="w-8 h-8 bg-slate-900 border border-slate-750 rounded-lg text-center text-sm font-black text-white focus:border-world-cup-green focus:outline-none" 
+                                    />
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-1 scale-90 -my-0.5">
+                                    <select 
+                                      id={`desktop-winner-${match.id}`}
+                                      onChange={(e) => {
+                                        setWinners(prev => ({ ...prev, [match.id]: e.target.value as any }));
+                                      }}
+                                      value={winners[match.id] || ''}
+                                      className="bg-slate-900 border border-slate-700 text-[8px] font-black text-slate-300 rounded px-1 py-0.5 focus:outline-none"
+                                    >
+                                      <option value="">ฝั่งชนะ</option>
+                                      <option value="home">ทีม 1</option>
+                                      <option value="away">ทีม 2</option>
+                                      <option value="push">เสมอ</option>
+                                    </select>
+                                    
+                                    <button
+                                      onClick={async () => {
+                                        const hInput = document.getElementById(`desktop-home-${match.id}`) as HTMLInputElement;
+                                        const aInput = document.getElementById(`desktop-away-${match.id}`) as HTMLInputElement;
+                                        const h = hInput?.value;
+                                        const a = aInput?.value;
+                                        const winner = winners[match.id];
+                                        
+                                        if (!h || !a || !winner) {
+                                          alert('กรุณากรอกสกอร์และเลือกทีมที่ชนะราคาต่อรองให้ครบถ้วน');
+                                          return;
+                                        }
+                                        
+                                        if (window.confirm(`ยืนยันบันทึกผลการแข่งขัน ${match.homeTeam} vs ${match.awayTeam}?`)) {
+                                          await setScores(match.id, Number(h), Number(a), winner);
+                                        }
+                                      }}
+                                      disabled={calcLoading === match.id}
+                                      className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-[8px] px-1 py-0.5 rounded cursor-pointer transition-colors disabled:opacity-50"
+                                    >
+                                      บันทึก
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </td>
+
+                            {/* Away Team */}
+                            <td className="py-4 text-left pl-6 align-middle">
+                              <div className="flex items-center justify-start gap-3.5">
+                                <img src={match.awayFlag} alt={match.awayTeam} className="w-7 h-5 object-cover rounded shadow-md border border-slate-700" />
+                                <span className="text-sm font-black text-white tracking-tight">{match.awayTeam}</span>
+                              </div>
+                            </td>
+
+                            {/* Handicap Price */}
+                            <td className="py-4 text-center align-middle">
+                              <div className="flex flex-col items-center justify-center gap-0.5">
+                                <span className="text-emerald-400 text-xs font-black bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
+                                  {match.handicap || '0.0'}
+                                </span>
+                                {match.customWinScore !== undefined && match.customWinScore !== null && (
+                                  <span className="text-[7px] font-bold text-rose-400 border border-rose-500/20 px-1 rounded bg-rose-500/5 scale-90">
+                                    คู่เอก (+{match.customWinScore}/{match.customLossScore})
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* Prediction Status Allow Switch */}
+                            <td className="py-4 text-center align-middle">
+                              {!isFinished ? (
+                                <button
+                                  onClick={async () => {
+                                    await updateDoc(doc(db, 'matches', match.id), {
+                                      allowPredictions: !match.allowPredictions
+                                    });
+                                  }}
+                                  className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all border cursor-pointer select-none flex items-center gap-1 justify-center mx-auto shadow-sm ${
+                                    match.allowPredictions 
+                                      ? 'bg-emerald-500 text-white border-emerald-400 hover:bg-emerald-600 shadow-emerald-500/20' 
+                                      : 'bg-rose-500 text-white border-rose-400 hover:bg-rose-600 shadow-rose-500/20'
+                                  }`}
+                                >
+                                  {match.allowPredictions ? (
+                                    <>
+                                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                                      <span>เปิดทายแล้ว</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                                      <span>ปิดรับทาย</span>
+                                    </>
+                                  )}
+                                </button>
+                              ) : (
+                                <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">หมดเวลาทาย</span>
+                              )}
+                            </td>
+
+                            {/* Actions / Management */}
+                            <td className="py-4 text-right pr-2 align-middle">
+                              <div className="flex items-center justify-end gap-1">
+                                <button 
+                                  onClick={async () => {
+                                    await updateDoc(doc(db, 'matches', match.id), {
+                                      isPublished: !match.isPublished
+                                    });
+                                  }}
+                                  className={`p-1.5 rounded-md transition-all cursor-pointer ${match.isPublished ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
+                                  title={match.isPublished ? "ซ่อนแมตช์" : "แสดงแมตช์"}
+                                >
+                                  <CheckCircle className={`w-3.5 h-3.5 ${match.isPublished ? 'fill-current text-green-400' : ''}`} />
+                                </button>
+                                
+                                <button 
+                                  onClick={() => handleEditMatch(match)}
+                                  className="p-1.5 rounded-md bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all cursor-pointer shadow-sm"
+                                  title="แก้ไขแมตช์"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                </button>
+                                
+                                <button 
+                                  onClick={async () => {
+                                    const isSpecial = match.customWinScore !== undefined && match.customWinScore !== null;
+                                    if (isSpecial) {
+                                      await updateDoc(doc(db, 'matches', match.id), {
+                                        customWinScore: null,
+                                        customLossScore: null
+                                      });
+                                    } else {
+                                      await updateDoc(doc(db, 'matches', match.id), {
+                                        customWinScore: 5,
+                                        customLossScore: -3
+                                      });
+                                    }
+                                  }}
+                                  className={`p-1.5 rounded-md transition-all cursor-pointer ${match.customWinScore !== undefined && match.customWinScore !== null ? 'bg-yellow-500 text-slate-950 hover:bg-yellow-400' : 'bg-slate-800 text-yellow-400/70 hover:bg-slate-700'}`}
+                                  title="คู่เอก (ไฮไลท์)"
+                                >
+                                  <Star className={`w-3.5 h-3.5 ${match.customWinScore !== undefined && match.customWinScore !== null ? 'fill-current' : ''}`} />
+                                </button>
+                                
+                                <button 
+                                  onClick={() => deleteMatch(match.id)} 
+                                  className="p-1.5 rounded-md text-red-400 bg-red-500/10 hover:bg-red-500 hover:text-white transition-all cursor-pointer shadow-sm"
+                                  title="ลบแมตช์"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )
+          }
           </div>
         )}
     </>

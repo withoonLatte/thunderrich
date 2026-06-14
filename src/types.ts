@@ -56,6 +56,7 @@ export interface Match {
   customWinScore?: number;
   customLossScore?: number;
   isPublished?: boolean;
+  allowPredictions?: boolean;
 }
 
 export interface Prediction {
