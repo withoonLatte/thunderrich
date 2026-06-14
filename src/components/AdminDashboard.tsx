@@ -1889,42 +1889,42 @@ const AdminDashboard: React.FC = () => {
                                       }
                                     }}
                                     disabled={calcLoading === match.id}
-                                    className="flex items-center gap-1 bg-slate-800 hover:bg-slate-700 text-slate-350 hover:text-white text-[8px] font-black uppercase px-2 py-0.5 rounded cursor-pointer transition-colors disabled:opacity-50"
+                                    className="flex items-center gap-1 bg-slate-800 hover:bg-slate-700 text-slate-350 hover:text-white text-[10px] font-black uppercase px-2.5 py-1.5 rounded-lg cursor-pointer transition-colors disabled:opacity-50"
                                   >
                                     {calcLoading === match.id ? (
-                                      <Loader2 className="w-2.5 h-2.5 animate-spin text-world-cup-gold" />
+                                      <Loader2 className="w-3 h-3 animate-spin text-world-cup-gold" />
                                     ) : (
-                                      <RefreshCw className="w-2.5 h-2.5 text-world-cup-gold" />
+                                      <RefreshCw className="w-3 h-3 text-world-cup-gold" />
                                     )}
                                     <span>คำนวณใหม่</span>
                                   </button>
                                 </div>
                               ) : (
-                                <div className="flex flex-col items-center gap-1.5 justify-center">
-                                  <div className="flex items-center gap-1 justify-center">
+                                <div className="flex flex-col items-center gap-2 justify-center">
+                                  <div className="flex items-center gap-1.5 justify-center">
                                     <input 
                                       id={`desktop-home-${match.id}`} 
                                       type="number" 
                                       placeholder="-" 
-                                      className="w-8 h-8 bg-slate-900 border border-slate-750 rounded-lg text-center text-sm font-black text-white focus:border-world-cup-green focus:outline-none" 
+                                      className="w-10 h-10 bg-slate-900 border border-slate-700 rounded-lg text-center text-sm font-black text-white focus:border-world-cup-green focus:outline-none" 
                                     />
                                     <span className="text-slate-500 font-black px-0.5">:</span>
                                     <input 
                                       id={`desktop-away-${match.id}`} 
                                       type="number" 
                                       placeholder="-" 
-                                      className="w-8 h-8 bg-slate-900 border border-slate-750 rounded-lg text-center text-sm font-black text-white focus:border-world-cup-green focus:outline-none" 
+                                      className="w-10 h-10 bg-slate-900 border border-slate-700 rounded-lg text-center text-sm font-black text-white focus:border-world-cup-green focus:outline-none" 
                                     />
                                   </div>
                                   
-                                  <div className="flex items-center gap-1 scale-90 -my-0.5">
+                                  <div className="flex items-center gap-1.5 mt-0.5">
                                     <select 
                                       id={`desktop-winner-${match.id}`}
                                       onChange={(e) => {
                                         setWinners(prev => ({ ...prev, [match.id]: e.target.value as any }));
                                       }}
                                       value={winners[match.id] || ''}
-                                      className="bg-slate-900 border border-slate-700 text-[8px] font-black text-slate-300 rounded px-1 py-0.5 focus:outline-none"
+                                      className="bg-slate-900 border border-slate-700 text-xs font-bold text-slate-200 rounded-lg px-2.5 py-1 focus:outline-none"
                                     >
                                       <option value="">ฝั่งชนะ</option>
                                       <option value="home">ทีม 1</option>
@@ -1950,7 +1950,7 @@ const AdminDashboard: React.FC = () => {
                                         }
                                       }}
                                       disabled={calcLoading === match.id}
-                                      className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-[8px] px-1 py-0.5 rounded cursor-pointer transition-colors disabled:opacity-50"
+                                      className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-xs px-2.5 py-1 rounded-lg cursor-pointer transition-colors disabled:opacity-50"
                                     >
                                       บันทึก
                                     </button>
