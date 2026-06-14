@@ -1322,52 +1322,54 @@ const AdminDashboard: React.FC = () => {
 
               <form onSubmit={handleAddMatch} className="space-y-6">
                 {/* Excel Import Section - Rendered as a nice, clean card on both mobile and desktop */}
-                <div className="wc-glass p-6 rounded-3xl border-t-4 border-slate-700 shadow-2xl">
-                  <div className="flex flex-col gap-4">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[10px] font-black text-black uppercase tracking-widest ml-4">นำเข้าจาก Excel / Google Sheets</label>
-                      <div className="flex gap-4 items-center">
-                        <label className="cursor-pointer text-[10px] font-black text-blue-500 uppercase flex items-center gap-1 hover:underline">
-                          <FileUp className="w-3 h-3" /> เลือกไฟล์ .xlsx
-                          <input 
-                            type="file" 
-                            className="hidden" 
-                            accept=".xlsx, .xls, .csv" 
-                            onChange={(e) => e.target.files?.[0] && handleExcelImport(e.target.files[0])}
-                          />
-                        </label>
-                        <button 
-                          type="button"
-                          onClick={() => {
-                            setBulkText("France | Senegal | -0.5 | 2026-06-19 20:00\nArgentina | Italy | +0.25 | 2026-06-20 18:00");
-                          }}
-                          className="text-[10px] font-black text-world-cup-gold uppercase underline"
-                        >
-                          ดูตัวอย่าง
-                        </button>
+                {!editingMatchId && (
+                  <div className="wc-glass p-6 rounded-3xl border-t-4 border-slate-700 shadow-2xl">
+                    <div className="flex flex-col gap-4">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[10px] font-black text-black uppercase tracking-widest ml-4">นำเข้าจาก Excel / Google Sheets</label>
+                        <div className="flex gap-4 items-center">
+                          <label className="cursor-pointer text-[10px] font-black text-blue-500 uppercase flex items-center gap-1 hover:underline">
+                            <FileUp className="w-3 h-3" /> เลือกไฟล์ .xlsx
+                            <input 
+                              type="file" 
+                              className="hidden" 
+                              accept=".xlsx, .xls, .csv" 
+                              onChange={(e) => e.target.files?.[0] && handleExcelImport(e.target.files[0])}
+                            />
+                          </label>
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              setBulkText("France | Senegal | -0.5 | 2026-06-19 20:00\nArgentina | Italy | +0.25 | 2026-06-20 18:00");
+                            }}
+                            className="text-[10px] font-black text-world-cup-gold uppercase underline"
+                          >
+                            ดูตัวอย่าง
+                          </button>
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <textarea 
+                          placeholder="Copy คอลัมน์จาก Excel แล้วมา 'วาง' (Paste) ที่นี่ได้เลยครับ..."
+                          className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 lg:p-3 text-xs font-bold text-black focus:border-world-cup-green focus:outline-none min-h-[120px]"
+                          value={bulkText}
+                          onChange={(e) => setBulkText(e.target.value)}
+                        />
+                        {bulkText.trim() && (
+                          <button 
+                            type="button"
+                            onClick={handleBulkImportText}
+                            disabled={batchLoading}
+                            className="w-full bg-slate-800 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-2"
+                          >
+                            {batchLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
+                            ดำเนินการเพิ่ม {bulkText.split('\n').filter(l => l.trim()).length} คู่
+                          </button>
+                        )}
                       </div>
                     </div>
-                    <div className="space-y-3">
-                      <textarea 
-                        placeholder="Copy คอลัมน์จาก Excel แล้วมา 'วาง' (Paste) ที่นี่ได้เลยครับ..."
-                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 lg:p-3 text-xs font-bold text-black focus:border-world-cup-green focus:outline-none min-h-[120px]"
-                        value={bulkText}
-                        onChange={(e) => setBulkText(e.target.value)}
-                      />
-                      {bulkText.trim() && (
-                        <button 
-                          type="button"
-                          onClick={handleBulkImportText}
-                          disabled={batchLoading}
-                          className="w-full bg-slate-800 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-2"
-                        >
-                          {batchLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
-                          ดำเนินการเพิ่ม {bulkText.split('\n').filter(l => l.trim()).length} คู่
-                        </button>
-                      )}
-                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* 1. Mobile Form View (lg:hidden) */}
                 <div className="lg:hidden wc-glass p-8 rounded-3xl space-y-6 border-t-4 border-world-cup-gold shadow-2xl">
@@ -1461,16 +1463,16 @@ const AdminDashboard: React.FC = () => {
                 </div>
 
                 {/* 2. Desktop Table Form View (hidden lg:block) */}
-                <div className="hidden lg:block bg-slate-950/95 p-6 rounded-[2rem] border border-slate-800/80 shadow-2xl space-y-4 text-white">
+                <div className="hidden lg:block wc-glass p-6 rounded-[2rem] border border-gray-250/50 shadow-2xl space-y-4 text-slate-800">
                   <div className="flex justify-between items-center px-1">
-                    <h4 className="text-sm font-black text-slate-350 uppercase tracking-widest">
+                    <h4 className="text-xs font-black text-slate-700 uppercase tracking-widest">
                       กรอกข้อมูลแมตช์ (Table Form)
                     </h4>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full border-collapse text-left min-w-[900px]">
                       <thead>
-                        <tr className="border-b border-slate-800 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        <tr className="border-b border-gray-200 text-[8px] font-black text-slate-500 uppercase tracking-widest">
                           <th className="pb-3 pr-3 w-[20%]">ทีมเหย้า (Team 1)</th>
                           <th className="pb-3 pr-3 w-[20%]">ทีมเยือน (Team 2)</th>
                           <th className="pb-3 pr-3 w-[12%]">ราคาบอล (Handicap)</th>
@@ -1482,39 +1484,39 @@ const AdminDashboard: React.FC = () => {
                       </thead>
                       <tbody>
                         <tr>
-                          <td className="py-4 pr-3 align-middle">
+                          <td className="py-3 pr-3 align-middle">
                             <input 
                               required 
                               value={homeTeam} 
                               onChange={e => setHomeTeam(e.target.value)} 
-                              className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm font-bold text-white focus:outline-none focus:ring-1 focus:ring-emerald-400" 
+                              className="w-full bg-white border border-gray-300 rounded-lg p-2 text-xs font-bold text-black focus:outline-none focus:ring-1 focus:ring-emerald-500" 
                               placeholder="เช่น Belgium" 
                             />
                           </td>
-                          <td className="py-4 pr-3 align-middle">
+                          <td className="py-3 pr-3 align-middle">
                             <input 
                               required 
                               value={awayTeam} 
                               onChange={e => setAwayTeam(e.target.value)} 
-                              className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm font-bold text-white focus:outline-none focus:ring-1 focus:ring-emerald-400" 
+                              className="w-full bg-white border border-gray-300 rounded-lg p-2 text-xs font-bold text-black focus:outline-none focus:ring-1 focus:ring-emerald-500" 
                               placeholder="เช่น Egypt" 
                             />
                           </td>
-                          <td className="py-4 pr-3 align-middle">
+                          <td className="py-3 pr-3 align-middle">
                             <input 
                               type="text" 
                               required 
                               value={handicap} 
                               onChange={e => setHandicap(e.target.value)} 
-                              className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm font-bold text-white focus:outline-none focus:ring-1 focus:ring-emerald-400" 
+                              className="w-full bg-white border border-gray-300 rounded-lg p-2 text-xs font-bold text-black focus:outline-none focus:ring-1 focus:ring-emerald-500" 
                               placeholder="เช่น 0.0" 
                             />
                           </td>
-                          <td className="py-4 pr-3 align-middle">
+                          <td className="py-3 pr-3 align-middle">
                             <select 
                               value={round} 
                               onChange={e => setRound(e.target.value as TournamentRound)} 
-                              className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm font-bold text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                              className="w-full bg-white border border-gray-300 rounded-lg p-2 text-xs font-bold text-black focus:outline-none focus:ring-1 focus:ring-emerald-500"
                             >
                               <option value={TournamentRound.GROUP}>รอบแบ่งกลุ่ม</option>
                               <option value={TournamentRound.TOP32}>รอบ 32 ทีม</option>
@@ -1525,26 +1527,26 @@ const AdminDashboard: React.FC = () => {
                               <option value={TournamentRound.FINAL}>รอบชิงชนะเลิศ</option>
                             </select>
                           </td>
-                          <td className="py-4 pr-3 align-middle">
+                          <td className="py-3 pr-3 align-middle">
                             <input 
                               type="datetime-local" 
                               required 
                               value={startTime} 
                               onChange={e => setStartTime(e.target.value)} 
-                              className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs font-bold text-white focus:outline-none focus:ring-1 focus:ring-emerald-400" 
+                              className="w-full bg-white border border-gray-300 rounded-lg p-1.5 text-[10px] font-bold text-black focus:outline-none focus:ring-1 focus:ring-emerald-500" 
                             />
                           </td>
-                          <td className="py-4 pr-3 align-middle">
+                          <td className="py-3 pr-3 align-middle">
                             <input 
                               type="datetime-local" 
                               required 
                               value={predictionDeadline} 
                               onChange={e => setPredictionDeadline(e.target.value)} 
-                              className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs font-bold text-white focus:outline-none focus:ring-1 focus:ring-emerald-400" 
+                              className="w-full bg-white border border-gray-300 rounded-lg p-1.5 text-[10px] font-bold text-black focus:outline-none focus:ring-1 focus:ring-emerald-500" 
                             />
                           </td>
-                          <td className="py-4 align-middle">
-                            <div className="flex flex-col gap-2">
+                          <td className="py-3 align-middle">
+                            <div className="flex flex-col gap-1.5">
                               <select 
                                 value={isSpecialMatch ? 'special' : 'normal'} 
                                 onChange={e => {
@@ -1558,19 +1560,19 @@ const AdminDashboard: React.FC = () => {
                                     setCustomLossScore('');
                                   }
                                 }}
-                                className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs font-bold text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                                className="w-full bg-white border border-gray-300 rounded-lg p-1.5 text-[10px] font-bold text-black focus:outline-none focus:ring-1 focus:ring-emerald-500"
                               >
                                 <option value="normal">ปกติ</option>
                                 <option value="special">คู่เอก</option>
                               </select>
                               {isSpecialMatch && (
-                                <div className="flex gap-1.5 justify-center">
+                                <div className="flex gap-1 justify-center">
                                   <input 
                                     type="number" 
                                     placeholder="ถูก" 
                                     value={customWinScore} 
                                     onChange={e => setCustomWinScore(e.target.value)} 
-                                    className="w-12 bg-slate-900 border border-red-500/40 rounded-lg p-1.5 text-center text-xs font-black text-rose-400 focus:outline-none" 
+                                    className="w-10 bg-white border border-red-300 rounded-lg p-1 text-center text-[10px] font-black text-red-600 focus:outline-none" 
                                     title="คะแนนทายถูก" 
                                   />
                                   <input 
@@ -1578,7 +1580,7 @@ const AdminDashboard: React.FC = () => {
                                     placeholder="ผิด" 
                                     value={customLossScore} 
                                     onChange={e => setCustomLossScore(e.target.value)} 
-                                    className="w-12 bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-center text-xs font-black text-slate-400 focus:outline-none" 
+                                    className="w-10 bg-white border border-gray-300 rounded-lg p-1 text-center text-[10px] font-black text-slate-600 focus:outline-none" 
                                     title="คะแนนทายผิด" 
                                   />
                                 </div>
@@ -1589,20 +1591,20 @@ const AdminDashboard: React.FC = () => {
                       </tbody>
                     </table>
                   </div>
-                  <div className="flex justify-end gap-3 pt-3.5 border-t border-slate-800/60">
+                  <div className="flex justify-end gap-3 pt-3.5 border-t border-gray-200">
                     <button 
                       type="button" 
                       onClick={resetForm} 
-                      className="px-5 py-2 rounded-xl text-xs font-black uppercase tracking-wider text-slate-450 hover:text-white transition-all bg-slate-900 border border-slate-800 cursor-pointer"
+                      className="px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider text-slate-700 hover:text-slate-900 transition-all bg-slate-100 hover:bg-slate-200 border border-gray-300 cursor-pointer"
                     >
                       ยกเลิก
                     </button>
                     <button 
                       type="submit" 
                       disabled={matchSaving}
-                      className="px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider bg-world-cup-green text-white hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 shadow-md shadow-world-cup-green/20 cursor-pointer"
+                      className="px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider bg-world-cup-green text-white hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 shadow-md shadow-world-cup-green/10 cursor-pointer"
                     >
-                      {matchSaving ? <Loader2 className="w-4.5 h-4.5 animate-spin" /> : (editingMatchId ? 'บันทึกการแก้ไข' : 'บันทึกแมตช์ใหม่')}
+                      {matchSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : (editingMatchId ? 'บันทึกการแก้ไข' : 'บันทึกแมตช์ใหม่')}
                     </button>
                   </div>
                 </div>
