@@ -883,6 +883,123 @@ const AdminDashboard: React.FC = () => {
     setCalcLoading(null);
   };
 
+  const renderConsensusSummary = (filteredMatches: Match[], title: string) => {
+    return (
+      <div className="bg-slate-950/95 p-6 rounded-[2rem] border border-slate-800/80 shadow-2xl space-y-6 text-white mt-4">
+        <div className="border-b border-slate-850 pb-3.5 flex justify-between items-center">
+          <h3 className="text-base font-black text-emerald-400 uppercase tracking-widest flex items-center gap-2">
+            📊 {title}
+          </h3>
+          <span className="text-xs font-black bg-emerald-500/10 text-emerald-400 px-3.5 py-1 rounded-lg border border-emerald-500/20">
+            จำนวน {filteredMatches.length} คู่
+          </span>
+        </div>
+
+        {filteredMatches.length > 0 ? (
+          <div className="space-y-4 max-h-[480px] overflow-y-auto pr-1 no-scrollbar">
+            {filteredMatches.map(m => {
+              const matchPreds = allPredictions.filter(p => p.matchId === m.id);
+              const homeCount = matchPreds.filter(p => p.choice === PredictionChoice.HOME).length;
+              const awayCount = matchPreds.filter(p => p.choice === PredictionChoice.AWAY).length;
+              const total = homeCount + awayCount;
+              const homePercent = total > 0 ? Math.round((homeCount / total) * 100) : 0;
+              const awayPercent = total > 0 ? Math.round((awayCount / total) * 100) : 0;
+
+              // Round Name in Thai
+              const roundNames: Record<string, string> = {
+                'group': 'รอบแบ่งกลุ่ม',
+                'top32': 'รอบ 32 ทีม',
+                'top16': 'รอบ 16 ทีม',
+                'top8': 'รอบ 8 ทีม',
+                'top4': 'รอบรองชนะเลิศ',
+                'third_place': 'ชิงอันดับ 3',
+                'final': 'รอบชิงชนะเลิศ'
+              };
+              const roundThai = roundNames[m.round] || m.round;
+
+              return (
+                <div key={m.id} className="bg-slate-900/60 p-4.5 rounded-2xl border border-slate-850/80 space-y-3.5">
+                  {/* Match Title & Status */}
+                  <div className="flex justify-between items-center text-xs font-bold border-b border-slate-850/60 pb-2">
+                    <span className="text-slate-300 tracking-wider text-xs uppercase font-black">
+                      {roundThai}
+                    </span>
+                    <span className={`text-[10px] sm:text-xs font-black uppercase px-2 py-0.5 rounded border ${
+                      m.status === MatchStatus.FINISHED 
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                        : 'bg-slate-800 text-slate-200 border-slate-700/50'
+                    }`}>
+                      {m.status === MatchStatus.FINISHED ? `จบแล้ว (${m.homeScore}-${m.awayScore})` : 'ปิดทายแล้ว'}
+                    </span>
+                  </div>
+
+                  {/* Graph Breakdown */}
+                  <div className="space-y-2.5">
+                    <div className="grid grid-cols-2 gap-4 text-xs sm:text-sm font-black">
+                      {/* Home Team Details */}
+                      <div className={`flex items-start gap-2 justify-start ${homeCount > awayCount ? 'text-emerald-400' : 'text-slate-200'}`}>
+                        <img 
+                          src={m.homeFlag} 
+                          className="w-5 h-5 object-contain rounded-sm mt-0.5 shrink-0" 
+                          onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w80/un.png'; }} 
+                        />
+                        <div className="flex flex-col items-start min-w-0">
+                          <span className="break-words whitespace-normal leading-tight font-black">{m.homeTeam}</span>
+                          <span className="font-mono text-[10px] sm:text-xs text-slate-400 mt-0.5">({homeCount} คน)</span>
+                        </div>
+                        {homeCount > awayCount && (
+                          <Star className="w-4 h-4 text-emerald-400 fill-emerald-400 shrink-0 mt-0.5 animate-pulse" />
+                        )}
+                      </div>
+
+                      {/* Away Team Details */}
+                      <div className={`flex items-start gap-2 justify-end text-right ${awayCount > homeCount ? 'text-fuchsia-400' : 'text-slate-200'}`}>
+                        {awayCount > homeCount && (
+                          <Star className="w-4 h-4 text-fuchsia-400 fill-fuchsia-400 shrink-0 mt-0.5 animate-pulse" />
+                        )}
+                        <div className="flex flex-col items-end min-w-0">
+                          <span className="break-words whitespace-normal leading-tight font-black">{m.awayTeam}</span>
+                          <span className="font-mono text-[10px] sm:text-xs text-slate-400 mt-0.5">({awayCount} คน)</span>
+                        </div>
+                        <img 
+                          src={m.awayFlag} 
+                          className="w-5 h-5 object-contain rounded-sm mt-0.5 shrink-0" 
+                          onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w80/un.png'; }} 
+                        />
+                      </div>
+                    </div>
+
+                    {/* Visual Vote Progress Bar */}
+                    <div className="w-full h-3.5 bg-slate-950 rounded-full overflow-hidden flex border border-slate-800">
+                      <div 
+                        style={{ width: `${homePercent}%` }} 
+                        className="h-full bg-gradient-to-r from-emerald-650 to-emerald-400 transition-all duration-500"
+                      />
+                      <div 
+                        style={{ width: `${awayPercent}%` }} 
+                        className="h-full bg-gradient-to-l from-fuchsia-650 to-fuchsia-400 transition-all duration-500"
+                      />
+                    </div>
+
+                    {/* Percentage Labels */}
+                    <div className="flex justify-between text-[10px] sm:text-xs font-black text-slate-400 tracking-widest px-0.5">
+                      <span>{homePercent}% VOTE</span>
+                      <span>{awayPercent}% VOTE</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-xs font-bold text-center text-slate-400 py-6 italic bg-slate-900/40 rounded-2xl border border-dashed border-slate-800">
+            ยังไม่มีแมตช์ในส่วนนี้ขณะนี้
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4">
@@ -1004,123 +1121,39 @@ const AdminDashboard: React.FC = () => {
             const nowTime = new Date();
             const closedMatches = matches.filter(m => {
               const deadline = m.predictionDeadline ? new Date(m.predictionDeadline.seconds * 1000) : new Date(m.startTime.seconds * 1000);
-              return deadline.getTime() < nowTime.getTime() || m.status === MatchStatus.FINISHED;
+              const isClosed = deadline.getTime() < nowTime.getTime() || m.status === MatchStatus.FINISHED;
+              if (!isClosed) return false;
+              
+              if (m.status === MatchStatus.FINISHED) {
+                const finishedTimeLimit = m.startTime.seconds * 1000 + 24 * 60 * 60 * 1000;
+                if (nowTime.getTime() > finishedTimeLimit) {
+                  return false; // Move to history
+                }
+              }
+              return true;
             });
+            const sortedClosedMatches = [...closedMatches].sort((a, b) => b.startTime.seconds - a.startTime.seconds);
 
-            return (
-              <div className="bg-slate-950/95 p-6 rounded-[2rem] border border-slate-800/80 shadow-2xl space-y-6 text-white mt-4">
-                <div className="border-b border-slate-850 pb-3.5 flex justify-between items-center">
-                  <h3 className="text-base font-black text-emerald-400 uppercase tracking-widest flex items-center gap-2">
-                    📊 สรุปกราฟผลโหวตล่าสุด (Consensus Summary)
-                  </h3>
-                  <span className="text-xs font-black bg-emerald-500/10 text-emerald-400 px-3.5 py-1 rounded-lg border border-emerald-500/20">
-                    ปิดทายแล้ว {closedMatches.length} คู่
-                  </span>
-                </div>
+            return renderConsensusSummary(sortedClosedMatches, 'สรุปกราฟผลโหวตล่าสุด (Consensus Summary)');
+          })()}
+        </>
+      )}
 
-                {closedMatches.length > 0 ? (
-                  <div className="space-y-4 max-h-[480px] overflow-y-auto pr-1 no-scrollbar">
-                    {closedMatches.map(m => {
-                      const matchPreds = allPredictions.filter(p => p.matchId === m.id);
-                      const homeCount = matchPreds.filter(p => p.choice === PredictionChoice.HOME).length;
-                      const awayCount = matchPreds.filter(p => p.choice === PredictionChoice.AWAY).length;
-                      const total = homeCount + awayCount;
-                      const homePercent = total > 0 ? Math.round((homeCount / total) * 100) : 0;
-                      const awayPercent = total > 0 ? Math.round((awayCount / total) * 100) : 0;
+      {deferredAdminTab === 'history' && (
+        <>
+          {/* Consolidated Closed Match Vote Graphs Card for History (Finished > 24 hours) */}
+          {(() => {
+            const nowTime = new Date();
+            const historyMatches = matches.filter(m => {
+              const isFinished = m.status === MatchStatus.FINISHED;
+              if (!isFinished) return false;
+              
+              const finishedTimeLimit = m.startTime.seconds * 1000 + 24 * 60 * 60 * 1000;
+              return nowTime.getTime() > finishedTimeLimit;
+            });
+            const sortedHistoryMatches = [...historyMatches].sort((a, b) => b.startTime.seconds - a.startTime.seconds);
 
-                      // Round Name in Thai
-                      const roundNames: Record<string, string> = {
-                        'group': 'รอบแบ่งกลุ่ม',
-                        'top32': 'รอบ 32 ทีม',
-                        'top16': 'รอบ 16 ทีม',
-                        'top8': 'รอบ 8 ทีม',
-                        'top4': 'รอบรองชนะเลิศ',
-                        'third_place': 'ชิงอันดับ 3',
-                        'final': 'รอบชิงชนะเลิศ'
-                      };
-                      const roundThai = roundNames[m.round] || m.round;
-
-                      return (
-                        <div key={m.id} className="bg-slate-900/60 p-4.5 rounded-2xl border border-slate-850/80 space-y-3.5">
-                          {/* Match Title & Status */}
-                          <div className="flex justify-between items-center text-xs font-bold border-b border-slate-850/60 pb-2">
-                            <span className="text-slate-300 tracking-wider text-xs uppercase font-black">
-                              {roundThai}
-                            </span>
-                            <span className={`text-[10px] sm:text-xs font-black uppercase px-2 py-0.5 rounded border ${
-                              m.status === MatchStatus.FINISHED 
-                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
-                                : 'bg-slate-800 text-slate-200 border-slate-700/50'
-                            }`}>
-                              {m.status === MatchStatus.FINISHED ? `จบแล้ว (${m.homeScore}-${m.awayScore})` : 'ปิดทายแล้ว'}
-                            </span>
-                          </div>
-
-                          {/* Graph Breakdown */}
-                          <div className="space-y-2.5">
-                            <div className="grid grid-cols-2 gap-4 text-xs sm:text-sm font-black">
-                              {/* Home Team Details */}
-                              <div className={`flex items-start gap-2 justify-start ${homeCount > awayCount ? 'text-emerald-400' : 'text-slate-200'}`}>
-                                <img 
-                                  src={m.homeFlag} 
-                                  className="w-5 h-5 object-contain rounded-sm mt-0.5 shrink-0" 
-                                  onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w80/un.png'; }} 
-                                />
-                                <div className="flex flex-col items-start min-w-0">
-                                  <span className="break-words whitespace-normal leading-tight font-black">{m.homeTeam}</span>
-                                  <span className="font-mono text-[10px] sm:text-xs text-slate-400 mt-0.5">({homeCount} คน)</span>
-                                </div>
-                                {homeCount > awayCount && (
-                                  <Star className="w-4 h-4 text-emerald-400 fill-emerald-400 shrink-0 mt-0.5 animate-pulse" />
-                                )}
-                              </div>
-
-                              {/* Away Team Details */}
-                              <div className={`flex items-start gap-2 justify-end text-right ${awayCount > homeCount ? 'text-fuchsia-400' : 'text-slate-200'}`}>
-                                {awayCount > homeCount && (
-                                  <Star className="w-4 h-4 text-fuchsia-400 fill-fuchsia-400 shrink-0 mt-0.5 animate-pulse" />
-                                )}
-                                <div className="flex flex-col items-end min-w-0">
-                                  <span className="break-words whitespace-normal leading-tight font-black">{m.awayTeam}</span>
-                                  <span className="font-mono text-[10px] sm:text-xs text-slate-400 mt-0.5">({awayCount} คน)</span>
-                                </div>
-                                <img 
-                                  src={m.awayFlag} 
-                                  className="w-5 h-5 object-contain rounded-sm mt-0.5 shrink-0" 
-                                  onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w80/un.png'; }} 
-                                />
-                              </div>
-                            </div>
-
-                            {/* Visual Vote Progress Bar */}
-                            <div className="w-full h-3.5 bg-slate-950 rounded-full overflow-hidden flex border border-slate-800">
-                              <div 
-                                style={{ width: `${homePercent}%` }} 
-                                className="h-full bg-gradient-to-r from-emerald-650 to-emerald-400 transition-all duration-500"
-                              />
-                              <div 
-                                style={{ width: `${awayPercent}%` }} 
-                                className="h-full bg-gradient-to-l from-fuchsia-650 to-fuchsia-400 transition-all duration-500"
-                              />
-                            </div>
-
-                            {/* Percentage Labels */}
-                            <div className="flex justify-between text-[10px] sm:text-xs font-black text-slate-400 tracking-widest px-0.5">
-                              <span>{homePercent}% VOTE</span>
-                              <span>{awayPercent}% VOTE</span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="text-xs font-bold text-center text-slate-400 py-6 italic bg-slate-900/40 rounded-2xl border border-dashed border-slate-800">
-                    ยังไม่มีแมตช์ที่ปิดการทายผลในขณะนี้
-                  </div>
-                )}
-              </div>
-            );
+            return renderConsensusSummary(sortedHistoryMatches, 'สรุปกราฟผลโหวตประวัติการแข่งขัน (Consensus Summary History)');
           })()}
         </>
       )}
