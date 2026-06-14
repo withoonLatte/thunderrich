@@ -884,6 +884,8 @@ const AdminDashboard: React.FC = () => {
   };
 
   const renderConsensusSummary = (filteredMatches: Match[], title: string) => {
+    if (editingMatchId !== null) return null;
+
     return (
       <div className="bg-slate-950/95 p-6 rounded-[2rem] border border-slate-800/80 shadow-2xl space-y-6 text-white mt-4">
         <div className="border-b border-slate-850 pb-3.5 flex justify-between items-center">
@@ -1305,7 +1307,7 @@ const AdminDashboard: React.FC = () => {
       {(deferredAdminTab === 'matches' || deferredAdminTab === 'history') && (
         <>
           {showAdd && (
-            <div className="space-y-4">
+            <div className="space-y-4 max-w-3xl mx-auto">
               <div className="flex items-center justify-between px-2">
                 <h3 className="text-xl font-black text-slate-800 italic uppercase">
                   {editingMatchId ? 'แก้ไขแมตช์' : 'เพิ่มแมตช์ใหม่'}
@@ -1318,7 +1320,7 @@ const AdminDashboard: React.FC = () => {
               </div>
 
 
-              <form onSubmit={handleAddMatch} className="wc-glass p-8 rounded-3xl space-y-6 border-t-4 border-world-cup-gold">
+              <form onSubmit={handleAddMatch} className="wc-glass p-8 lg:p-6 rounded-3xl space-y-6 lg:space-y-4 border-t-4 border-world-cup-gold shadow-2xl">
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center justify-between">
                     <label className="text-[10px] font-black text-black uppercase tracking-widest ml-4">นำเข้าจาก Excel / Google Sheets</label>
@@ -1346,7 +1348,7 @@ const AdminDashboard: React.FC = () => {
                   <div className="space-y-3">
                     <textarea 
                       placeholder="Copy คอลัมน์จาก Excel แล้วมา 'วาง' (Paste) ที่นี่ได้เลยครับ..."
-                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-xs font-bold text-black focus:border-world-cup-green focus:outline-none min-h-[120px]"
+                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 lg:p-3 text-xs font-bold text-black focus:border-world-cup-green focus:outline-none min-h-[120px]"
                       value={bulkText}
                       onChange={(e) => setBulkText(e.target.value)}
                     />
@@ -1367,21 +1369,21 @@ const AdminDashboard: React.FC = () => {
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-xs text-black font-black uppercase tracking-widest">ทีม 1 (Team 1)</label>
-                    <input required value={homeTeam} onChange={e => setHomeTeam(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-4 text-huge text-black font-black focus:outline-none focus:ring-2 focus:ring-world-cup-green/20 focus:border-world-cup-green transition-all" placeholder="เช่น Argentina" />
+                    <input required value={homeTeam} onChange={e => setHomeTeam(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-4 lg:p-3 text-huge lg:text-base text-black font-black focus:outline-none focus:ring-2 focus:ring-world-cup-green/20 focus:border-world-cup-green transition-all" placeholder="เช่น Argentina" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs text-black font-black uppercase tracking-widest">ทีม 2 (Team 2)</label>
-                    <input required value={awayTeam} onChange={e => setAwayTeam(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-4 text-huge text-black font-black focus:outline-none focus:ring-2 focus:ring-world-cup-green/20 focus:border-world-cup-green transition-all" placeholder="เช่น France" />
+                    <input required value={awayTeam} onChange={e => setAwayTeam(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-4 lg:p-3 text-huge lg:text-base text-black font-black focus:outline-none focus:ring-2 focus:ring-world-cup-green/20 focus:border-world-cup-green transition-all" placeholder="เช่น France" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-xs text-black font-black uppercase tracking-widest">ราคาต่อรอง (Handicap)</label>
-                    <input type="text" required value={handicap} onChange={e => setHandicap(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-4 text-huge text-black font-black focus:outline-none focus:ring-2 focus:ring-world-cup-green/20 focus:border-world-cup-green transition-all" placeholder="เช่น 0.5 หรือ 0.5/1" title="เป็นราคาต่อรองของฝั่งเจ้าบ้าน" />
+                    <input type="text" required value={handicap} onChange={e => setHandicap(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-4 lg:p-3 text-huge lg:text-base text-black font-black focus:outline-none focus:ring-2 focus:ring-world-cup-green/20 focus:border-world-cup-green transition-all" placeholder="เช่น 0.5 หรือ 0.5/1" title="เป็นราคาต่อรองของฝั่งเจ้าบ้าน" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs text-black font-black uppercase tracking-widest">รอบการแข่งขัน</label>
-                    <select value={round} onChange={e => setRound(e.target.value as TournamentRound)} className="w-full bg-white border border-gray-200 rounded-xl p-4 text-huge text-black font-black focus:outline-none focus:ring-2 focus:ring-world-cup-green/20 focus:border-world-cup-green transition-all">
+                    <select value={round} onChange={e => setRound(e.target.value as TournamentRound)} className="w-full bg-white border border-gray-200 rounded-xl p-4 lg:p-3 text-huge lg:text-base text-black font-black focus:outline-none focus:ring-2 focus:ring-world-cup-green/20 focus:border-world-cup-green transition-all">
                       <option value={TournamentRound.GROUP}>รอบแบ่งกลุ่ม</option>
                       <option value={TournamentRound.TOP32}>รอบ 32 ทีม</option>
                       <option value={TournamentRound.TOP16}>รอบ 16 ทีม</option>
@@ -1395,11 +1397,11 @@ const AdminDashboard: React.FC = () => {
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-xs text-black font-black uppercase tracking-widest">เวลาแข่งขัน (Start Time)</label>
-                    <input type="datetime-local" required value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-4 text-huge text-black font-black focus:outline-none focus:ring-2 focus:ring-world-cup-green/20 focus:border-world-cup-green transition-all" />
+                    <input type="datetime-local" required value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-4 lg:p-3 text-huge lg:text-base text-black font-black focus:outline-none focus:ring-2 focus:ring-world-cup-green/20 focus:border-world-cup-green transition-all" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs text-black font-black uppercase tracking-widest">ปิดทายผล (Deadline)</label>
-                    <input type="datetime-local" required value={predictionDeadline} onChange={e => setPredictionDeadline(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-4 text-huge text-black font-black focus:outline-none focus:ring-2 focus:ring-world-cup-gold/20 focus:border-world-cup-gold transition-all" />
+                    <input type="datetime-local" required value={predictionDeadline} onChange={e => setPredictionDeadline(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-4 lg:p-3 text-huge lg:text-base text-black font-black focus:outline-none focus:ring-2 focus:ring-world-cup-gold/20 focus:border-world-cup-gold transition-all" />
                   </div>
                 </div>
 
@@ -1427,7 +1429,7 @@ const AdminDashboard: React.FC = () => {
                           value={customWinScore} 
                           onChange={e => setCustomWinScore(e.target.value)} 
                           placeholder="เช่น 10" 
-                          className="w-full bg-white border-2 border-red-500/20 rounded-xl p-4 text-huge font-black text-black focus:border-red-500 focus:outline-none transition-all"
+                          className="w-full bg-white border-2 border-red-500/20 rounded-xl p-4 lg:p-3 text-huge lg:text-base font-black text-black focus:border-red-500 focus:outline-none transition-all"
                         />
                       </div>
                       <div className="space-y-2">
@@ -1437,7 +1439,7 @@ const AdminDashboard: React.FC = () => {
                           value={customLossScore} 
                           onChange={e => setCustomLossScore(e.target.value)} 
                           placeholder="เช่น -5" 
-                          className="w-full bg-white border-2 border-slate-200 rounded-xl p-4 text-huge font-black text-black focus:border-slate-500 focus:outline-none transition-all"
+                          className="w-full bg-white border-2 border-slate-200 rounded-xl p-4 lg:p-3 text-huge lg:text-base font-black text-black focus:border-slate-500 focus:outline-none transition-all"
                         />
                       </div>
                     </motion.div>
@@ -1447,7 +1449,7 @@ const AdminDashboard: React.FC = () => {
                 <button 
                   type="submit" 
                   disabled={matchSaving}
-                  className="w-full bg-world-cup-green text-white py-5 rounded-2xl font-black uppercase text-huge shadow-lg shadow-world-cup-green/30 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full bg-world-cup-green text-white py-5 lg:py-3.5 rounded-2xl font-black uppercase text-huge lg:text-base shadow-lg shadow-world-cup-green/30 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {matchSaving ? <Loader2 className="w-6 h-6 animate-spin" /> : (editingMatchId ? 'ตกลงแก้ไขข้อมูล' : 'บันทึกข้อมูลแมตช์')}
                 </button>
