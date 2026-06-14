@@ -1320,139 +1320,292 @@ const AdminDashboard: React.FC = () => {
               </div>
 
 
-              <form onSubmit={handleAddMatch} className="wc-glass p-8 lg:p-6 rounded-3xl space-y-6 lg:space-y-4 border-t-4 border-world-cup-gold shadow-2xl">
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center justify-between">
-                    <label className="text-[10px] font-black text-black uppercase tracking-widest ml-4">นำเข้าจาก Excel / Google Sheets</label>
-                    <div className="flex gap-4 items-center">
-                      <label className="cursor-pointer text-[10px] font-black text-blue-500 uppercase flex items-center gap-1 hover:underline">
-                        <FileUp className="w-3 h-3" /> เลือกไฟล์ .xlsx
-                        <input 
-                          type="file" 
-                          className="hidden" 
-                          accept=".xlsx, .xls, .csv" 
-                          onChange={(e) => e.target.files?.[0] && handleExcelImport(e.target.files[0])}
-                        />
-                      </label>
-                      <button 
-                        type="button"
-                        onClick={() => {
-                          setBulkText("France | Senegal | -0.5 | 2026-06-19 20:00\nArgentina | Italy | +0.25 | 2026-06-20 18:00");
-                        }}
-                        className="text-[10px] font-black text-world-cup-gold uppercase underline"
-                      >
-                        ดูตัวอย่าง
-                      </button>
+              <form onSubmit={handleAddMatch} className="space-y-6">
+                {/* Excel Import Section - Rendered as a nice, clean card on both mobile and desktop */}
+                <div className="wc-glass p-6 rounded-3xl border-t-4 border-slate-700 shadow-2xl">
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-black text-black uppercase tracking-widest ml-4">นำเข้าจาก Excel / Google Sheets</label>
+                      <div className="flex gap-4 items-center">
+                        <label className="cursor-pointer text-[10px] font-black text-blue-500 uppercase flex items-center gap-1 hover:underline">
+                          <FileUp className="w-3 h-3" /> เลือกไฟล์ .xlsx
+                          <input 
+                            type="file" 
+                            className="hidden" 
+                            accept=".xlsx, .xls, .csv" 
+                            onChange={(e) => e.target.files?.[0] && handleExcelImport(e.target.files[0])}
+                          />
+                        </label>
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            setBulkText("France | Senegal | -0.5 | 2026-06-19 20:00\nArgentina | Italy | +0.25 | 2026-06-20 18:00");
+                          }}
+                          className="text-[10px] font-black text-world-cup-gold uppercase underline"
+                        >
+                          ดูตัวอย่าง
+                        </button>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <textarea 
+                        placeholder="Copy คอลัมน์จาก Excel แล้วมา 'วาง' (Paste) ที่นี่ได้เลยครับ..."
+                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 lg:p-3 text-xs font-bold text-black focus:border-world-cup-green focus:outline-none min-h-[120px]"
+                        value={bulkText}
+                        onChange={(e) => setBulkText(e.target.value)}
+                      />
+                      {bulkText.trim() && (
+                        <button 
+                          type="button"
+                          onClick={handleBulkImportText}
+                          disabled={batchLoading}
+                          className="w-full bg-slate-800 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-2"
+                        >
+                          {batchLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
+                          ดำเนินการเพิ่ม {bulkText.split('\n').filter(l => l.trim()).length} คู่
+                        </button>
+                      )}
                     </div>
                   </div>
-                  <div className="space-y-3">
-                    <textarea 
-                      placeholder="Copy คอลัมน์จาก Excel แล้วมา 'วาง' (Paste) ที่นี่ได้เลยครับ..."
-                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 lg:p-3 text-xs font-bold text-black focus:border-world-cup-green focus:outline-none min-h-[120px]"
-                      value={bulkText}
-                      onChange={(e) => setBulkText(e.target.value)}
-                    />
-                    {bulkText.trim() && (
-                      <button 
-                        type="button"
-                        onClick={handleBulkImportText}
-                        disabled={batchLoading}
-                        className="w-full bg-slate-800 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-2"
+                </div>
+
+                {/* 1. Mobile Form View (lg:hidden) */}
+                <div className="lg:hidden wc-glass p-8 rounded-3xl space-y-6 border-t-4 border-world-cup-gold shadow-2xl">
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-xs text-black font-black uppercase tracking-widest">ทีม 1 (Team 1)</label>
+                      <input required value={homeTeam} onChange={e => setHomeTeam(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-4 text-huge text-black font-black focus:outline-none focus:ring-2 focus:ring-world-cup-green/20 focus:border-world-cup-green transition-all" placeholder="เช่น Argentina" />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs text-black font-black uppercase tracking-widest">ทีม 2 (Team 2)</label>
+                      <input required value={awayTeam} onChange={e => setAwayTeam(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-4 text-huge text-black font-black focus:outline-none focus:ring-2 focus:ring-world-cup-green/20 focus:border-world-cup-green transition-all" placeholder="เช่น France" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-xs text-black font-black uppercase tracking-widest">ราคาต่อรอง (Handicap)</label>
+                      <input type="text" required value={handicap} onChange={e => setHandicap(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-4 text-huge text-black font-black focus:outline-none focus:ring-2 focus:ring-world-cup-green/20 focus:border-world-cup-green transition-all" placeholder="เช่น 0.5 หรือ 0.5/1" title="เป็นราคาต่อรองของฝั่งเจ้าบ้าน" />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs text-black font-black uppercase tracking-widest">รอบการแข่งขัน</label>
+                      <select value={round} onChange={e => setRound(e.target.value as TournamentRound)} className="w-full bg-white border border-gray-200 rounded-xl p-4 text-huge text-black font-black focus:outline-none focus:ring-2 focus:ring-world-cup-green/20 focus:border-world-cup-green transition-all">
+                        <option value={TournamentRound.GROUP}>รอบแบ่งกลุ่ม</option>
+                        <option value={TournamentRound.TOP32}>รอบ 32 ทีม</option>
+                        <option value={TournamentRound.TOP16}>รอบ 16 ทีม</option>
+                        <option value={TournamentRound.TOP8}>รอบ 8 ทีม</option>
+                        <option value={TournamentRound.TOP4}>รอบรองชนะเลิศ</option>
+                        <option value={TournamentRound.THIRD_PLACE}>ชิงอันดับ 3</option>
+                        <option value={TournamentRound.FINAL}>รอบชิงชนะเลิศ</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-xs text-black font-black uppercase tracking-widest">เวลาแข่งขัน (Start Time)</label>
+                      <input type="datetime-local" required value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-4 text-huge text-black font-black focus:outline-none focus:ring-2 focus:ring-world-cup-green/20 focus:border-world-cup-green transition-all" />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs text-black font-black uppercase tracking-widest">ปิดทายผล (Deadline)</label>
+                      <input type="datetime-local" required value={predictionDeadline} onChange={e => setPredictionDeadline(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-4 text-huge text-black font-black focus:outline-none focus:ring-2 focus:ring-world-cup-gold/20 focus:border-world-cup-gold transition-all" />
+                    </div>
+                  </div>
+
+                  <div className="p-6 rounded-2xl border-2 border-dashed border-gray-100 space-y-4">
+                    <label className="flex items-center gap-3 cursor-pointer group">
+                      <div 
+                        onClick={() => setIsSpecialMatch(!isSpecialMatch)}
+                        className={`w-12 h-6 rounded-full transition-all relative ${isSpecialMatch ? 'bg-red-500' : 'bg-gray-200'}`}
                       >
-                        {batchLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
-                        ดำเนินการเพิ่ม {bulkText.split('\n').filter(l => l.trim()).length} คู่
-                      </button>
+                        <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${isSpecialMatch ? 'translate-x-6' : ''}`} />
+                      </div>
+                      <span className="text-sm font-black text-black uppercase tracking-widest">เปิดระบบคะแนนพิเศษ (คู่เอก)</span>
+                    </label>
+
+                    {isSpecialMatch && (
+                      <motion.div 
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        className="grid grid-cols-2 gap-4 pt-2"
+                      >
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-red-500 uppercase tracking-widest">คะแนนทายถูก (+)</label>
+                          <input 
+                            type="number" 
+                            value={customWinScore} 
+                            onChange={e => setCustomWinScore(e.target.value)} 
+                            placeholder="เช่น 10" 
+                            className="w-full bg-white border-2 border-red-500/20 rounded-xl p-4 text-huge font-black text-black focus:border-red-500 focus:outline-none transition-all"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-black uppercase tracking-widest">คะแนนทายผิด (-)</label>
+                          <input 
+                            type="number" 
+                            value={customLossScore} 
+                            onChange={e => setCustomLossScore(e.target.value)} 
+                            placeholder="เช่น -5" 
+                            className="w-full bg-white border-2 border-slate-200 rounded-xl p-4 text-huge font-black text-black focus:border-slate-500 focus:outline-none transition-all"
+                          />
+                        </div>
+                      </motion.div>
                     )}
                   </div>
+
+                  <button 
+                    type="submit" 
+                    disabled={matchSaving}
+                    className="w-full bg-world-cup-green text-white py-5 rounded-2xl font-black uppercase text-huge shadow-lg shadow-world-cup-green/30 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {matchSaving ? <Loader2 className="w-6 h-6 animate-spin" /> : (editingMatchId ? 'ตกลงแก้ไขข้อมูล' : 'บันทึกข้อมูลแมตช์')}
+                  </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-xs text-black font-black uppercase tracking-widest">ทีม 1 (Team 1)</label>
-                    <input required value={homeTeam} onChange={e => setHomeTeam(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-4 lg:p-3 text-huge lg:text-base text-black font-black focus:outline-none focus:ring-2 focus:ring-world-cup-green/20 focus:border-world-cup-green transition-all" placeholder="เช่น Argentina" />
+                {/* 2. Desktop Table Form View (hidden lg:block) */}
+                <div className="hidden lg:block bg-slate-950/95 p-6 rounded-[2rem] border border-slate-800/80 shadow-2xl space-y-4 text-white">
+                  <div className="flex justify-between items-center px-1">
+                    <h4 className="text-sm font-black text-slate-350 uppercase tracking-widest">
+                      กรอกข้อมูลแมตช์ (Table Form)
+                    </h4>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-xs text-black font-black uppercase tracking-widest">ทีม 2 (Team 2)</label>
-                    <input required value={awayTeam} onChange={e => setAwayTeam(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-4 lg:p-3 text-huge lg:text-base text-black font-black focus:outline-none focus:ring-2 focus:ring-world-cup-green/20 focus:border-world-cup-green transition-all" placeholder="เช่น France" />
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse text-left min-w-[900px]">
+                      <thead>
+                        <tr className="border-b border-slate-800 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                          <th className="pb-3 pr-3 w-[20%]">ทีมเหย้า (Team 1)</th>
+                          <th className="pb-3 pr-3 w-[20%]">ทีมเยือน (Team 2)</th>
+                          <th className="pb-3 pr-3 w-[12%]">ราคาบอล (Handicap)</th>
+                          <th className="pb-3 pr-3 w-[15%]">รอบการแข่งขัน (Round)</th>
+                          <th className="pb-3 pr-3 w-[16%]">เวลาแข่งขัน (Start Time)</th>
+                          <th className="pb-3 pr-3 w-[16%]">ปิดทายผล (Deadline)</th>
+                          <th className="pb-3 w-[15%]">คู่เอก (คะแนนพิเศษ)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td className="py-4 pr-3 align-middle">
+                            <input 
+                              required 
+                              value={homeTeam} 
+                              onChange={e => setHomeTeam(e.target.value)} 
+                              className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm font-bold text-white focus:outline-none focus:ring-1 focus:ring-emerald-400" 
+                              placeholder="เช่น Belgium" 
+                            />
+                          </td>
+                          <td className="py-4 pr-3 align-middle">
+                            <input 
+                              required 
+                              value={awayTeam} 
+                              onChange={e => setAwayTeam(e.target.value)} 
+                              className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm font-bold text-white focus:outline-none focus:ring-1 focus:ring-emerald-400" 
+                              placeholder="เช่น Egypt" 
+                            />
+                          </td>
+                          <td className="py-4 pr-3 align-middle">
+                            <input 
+                              type="text" 
+                              required 
+                              value={handicap} 
+                              onChange={e => setHandicap(e.target.value)} 
+                              className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm font-bold text-white focus:outline-none focus:ring-1 focus:ring-emerald-400" 
+                              placeholder="เช่น 0.0" 
+                            />
+                          </td>
+                          <td className="py-4 pr-3 align-middle">
+                            <select 
+                              value={round} 
+                              onChange={e => setRound(e.target.value as TournamentRound)} 
+                              className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm font-bold text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                            >
+                              <option value={TournamentRound.GROUP}>รอบแบ่งกลุ่ม</option>
+                              <option value={TournamentRound.TOP32}>รอบ 32 ทีม</option>
+                              <option value={TournamentRound.TOP16}>รอบ 16 ทีม</option>
+                              <option value={TournamentRound.TOP8}>รอบ 8 ทีม</option>
+                              <option value={TournamentRound.TOP4}>รอบรองชนะเลิศ</option>
+                              <option value={TournamentRound.THIRD_PLACE}>ชิงอันดับ 3</option>
+                              <option value={TournamentRound.FINAL}>รอบชิงชนะเลิศ</option>
+                            </select>
+                          </td>
+                          <td className="py-4 pr-3 align-middle">
+                            <input 
+                              type="datetime-local" 
+                              required 
+                              value={startTime} 
+                              onChange={e => setStartTime(e.target.value)} 
+                              className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs font-bold text-white focus:outline-none focus:ring-1 focus:ring-emerald-400" 
+                            />
+                          </td>
+                          <td className="py-4 pr-3 align-middle">
+                            <input 
+                              type="datetime-local" 
+                              required 
+                              value={predictionDeadline} 
+                              onChange={e => setPredictionDeadline(e.target.value)} 
+                              className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs font-bold text-white focus:outline-none focus:ring-1 focus:ring-emerald-400" 
+                            />
+                          </td>
+                          <td className="py-4 align-middle">
+                            <div className="flex flex-col gap-2">
+                              <select 
+                                value={isSpecialMatch ? 'special' : 'normal'} 
+                                onChange={e => {
+                                  const val = e.target.value === 'special';
+                                  setIsSpecialMatch(val);
+                                  if (val) {
+                                    setCustomWinScore('5');
+                                    setCustomLossScore('-3');
+                                  } else {
+                                    setCustomWinScore('');
+                                    setCustomLossScore('');
+                                  }
+                                }}
+                                className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs font-bold text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                              >
+                                <option value="normal">ปกติ</option>
+                                <option value="special">คู่เอก</option>
+                              </select>
+                              {isSpecialMatch && (
+                                <div className="flex gap-1.5 justify-center">
+                                  <input 
+                                    type="number" 
+                                    placeholder="ถูก" 
+                                    value={customWinScore} 
+                                    onChange={e => setCustomWinScore(e.target.value)} 
+                                    className="w-12 bg-slate-900 border border-red-500/40 rounded-lg p-1.5 text-center text-xs font-black text-rose-400 focus:outline-none" 
+                                    title="คะแนนทายถูก" 
+                                  />
+                                  <input 
+                                    type="number" 
+                                    placeholder="ผิด" 
+                                    value={customLossScore} 
+                                    onChange={e => setCustomLossScore(e.target.value)} 
+                                    className="w-12 bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-center text-xs font-black text-slate-400 focus:outline-none" 
+                                    title="คะแนนทายผิด" 
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
-                </div>
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-xs text-black font-black uppercase tracking-widest">ราคาต่อรอง (Handicap)</label>
-                    <input type="text" required value={handicap} onChange={e => setHandicap(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-4 lg:p-3 text-huge lg:text-base text-black font-black focus:outline-none focus:ring-2 focus:ring-world-cup-green/20 focus:border-world-cup-green transition-all" placeholder="เช่น 0.5 หรือ 0.5/1" title="เป็นราคาต่อรองของฝั่งเจ้าบ้าน" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs text-black font-black uppercase tracking-widest">รอบการแข่งขัน</label>
-                    <select value={round} onChange={e => setRound(e.target.value as TournamentRound)} className="w-full bg-white border border-gray-200 rounded-xl p-4 lg:p-3 text-huge lg:text-base text-black font-black focus:outline-none focus:ring-2 focus:ring-world-cup-green/20 focus:border-world-cup-green transition-all">
-                      <option value={TournamentRound.GROUP}>รอบแบ่งกลุ่ม</option>
-                      <option value={TournamentRound.TOP32}>รอบ 32 ทีม</option>
-                      <option value={TournamentRound.TOP16}>รอบ 16 ทีม</option>
-                      <option value={TournamentRound.TOP8}>รอบ 8 ทีม</option>
-                      <option value={TournamentRound.TOP4}>รอบรองชนะเลิศ</option>
-                      <option value={TournamentRound.THIRD_PLACE}>ชิงอันดับ 3</option>
-                      <option value={TournamentRound.FINAL}>รอบชิงชนะเลิศ</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-xs text-black font-black uppercase tracking-widest">เวลาแข่งขัน (Start Time)</label>
-                    <input type="datetime-local" required value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-4 lg:p-3 text-huge lg:text-base text-black font-black focus:outline-none focus:ring-2 focus:ring-world-cup-green/20 focus:border-world-cup-green transition-all" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs text-black font-black uppercase tracking-widest">ปิดทายผล (Deadline)</label>
-                    <input type="datetime-local" required value={predictionDeadline} onChange={e => setPredictionDeadline(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-4 lg:p-3 text-huge lg:text-base text-black font-black focus:outline-none focus:ring-2 focus:ring-world-cup-gold/20 focus:border-world-cup-gold transition-all" />
-                  </div>
-                </div>
-
-                <div className="p-6 rounded-2xl border-2 border-dashed border-gray-100 space-y-4">
-                  <label className="flex items-center gap-3 cursor-pointer group">
-                    <div 
-                      onClick={() => setIsSpecialMatch(!isSpecialMatch)}
-                      className={`w-12 h-6 rounded-full transition-all relative ${isSpecialMatch ? 'bg-red-500' : 'bg-gray-200'}`}
+                  <div className="flex justify-end gap-3 pt-3.5 border-t border-slate-800/60">
+                    <button 
+                      type="button" 
+                      onClick={resetForm} 
+                      className="px-5 py-2 rounded-xl text-xs font-black uppercase tracking-wider text-slate-450 hover:text-white transition-all bg-slate-900 border border-slate-800 cursor-pointer"
                     >
-                      <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${isSpecialMatch ? 'translate-x-6' : ''}`} />
-                    </div>
-                    <span className="text-sm font-black text-black uppercase tracking-widest">เปิดระบบคะแนนพิเศษ (คู่เอก)</span>
-                  </label>
-
-                  {isSpecialMatch && (
-                    <motion.div 
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      className="grid grid-cols-2 gap-4 pt-2"
+                      ยกเลิก
+                    </button>
+                    <button 
+                      type="submit" 
+                      disabled={matchSaving}
+                      className="px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider bg-world-cup-green text-white hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 shadow-md shadow-world-cup-green/20 cursor-pointer"
                     >
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-red-500 uppercase tracking-widest">คะแนนทายถูก (+)</label>
-                        <input 
-                          type="number" 
-                          value={customWinScore} 
-                          onChange={e => setCustomWinScore(e.target.value)} 
-                          placeholder="เช่น 10" 
-                          className="w-full bg-white border-2 border-red-500/20 rounded-xl p-4 lg:p-3 text-huge lg:text-base font-black text-black focus:border-red-500 focus:outline-none transition-all"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-black uppercase tracking-widest">คะแนนทายผิด (-)</label>
-                        <input 
-                          type="number" 
-                          value={customLossScore} 
-                          onChange={e => setCustomLossScore(e.target.value)} 
-                          placeholder="เช่น -5" 
-                          className="w-full bg-white border-2 border-slate-200 rounded-xl p-4 lg:p-3 text-huge lg:text-base font-black text-black focus:border-slate-500 focus:outline-none transition-all"
-                        />
-                      </div>
-                    </motion.div>
-                  )}
+                      {matchSaving ? <Loader2 className="w-4.5 h-4.5 animate-spin" /> : (editingMatchId ? 'บันทึกการแก้ไข' : 'บันทึกแมตช์ใหม่')}
+                    </button>
+                  </div>
                 </div>
-
-                <button 
-                  type="submit" 
-                  disabled={matchSaving}
-                  className="w-full bg-world-cup-green text-white py-5 lg:py-3.5 rounded-2xl font-black uppercase text-huge lg:text-base shadow-lg shadow-world-cup-green/30 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {matchSaving ? <Loader2 className="w-6 h-6 animate-spin" /> : (editingMatchId ? 'ตกลงแก้ไขข้อมูล' : 'บันทึกข้อมูลแมตช์')}
-                </button>
               </form>
             </div>
           )}
