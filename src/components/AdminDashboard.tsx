@@ -588,16 +588,36 @@ const AdminDashboard: React.FC = () => {
   const safeFormatTimestamp = (timestamp: any): string => {
     if (!timestamp) return '';
     try {
+      let date: Date;
       if (typeof timestamp.toDate === 'function') {
-        return format(timestamp.toDate(), "yyyy-MM-dd'T'HH:mm");
+        date = timestamp.toDate();
+      } else if (timestamp.seconds !== undefined) {
+        date = new Date(timestamp.seconds * 1000);
+      } else {
+        date = new Date(timestamp);
       }
-      if (timestamp.seconds !== undefined) {
-        return format(new Date(timestamp.seconds * 1000), "yyyy-MM-dd'T'HH:mm");
-      }
-      const d = new Date(timestamp);
-      if (!isNaN(d.getTime())) {
-        return format(d, "yyyy-MM-dd'T'HH:mm");
-      }
+      if (isNaN(date.getTime())) return '';
+
+      // Format explicitly in Thailand Timezone (Asia/Bangkok)
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Bangkok',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+      const parts = formatter.formatToParts(date);
+      const year = parts.find(p => p.type === 'year').value;
+      const month = parts.find(p => p.type === 'month').value;
+      const day = parts.find(p => p.type === 'day').value;
+      let hour = parts.find(p => p.type === 'hour').value;
+      const minute = parts.find(p => p.type === 'minute').value;
+      
+      if (hour === '24') hour = '00';
+
+      return `${year}-${month}-${day}T${hour}:${minute}`;
     } catch (err) {
       console.error('Error formatting date:', err);
     }
@@ -614,10 +634,19 @@ const AdminDashboard: React.FC = () => {
     const startStr = safeFormatTimestamp(match.startTime);
     setStartTime(startStr);
 
-    // Set prediction deadline to 8 PM of today (current date)
-    const today = new Date();
-    today.setHours(20, 0, 0, 0);
-    const deadlineStr = format(today, "yyyy-MM-dd'T'HH:mm");
+    // Set prediction deadline to 8 PM of today (current date) in Thailand Time
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Bangkok',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    const parts = formatter.formatToParts(now);
+    const year = parts.find(p => p.type === 'year').value;
+    const month = parts.find(p => p.type === 'month').value;
+    const day = parts.find(p => p.type === 'day').value;
+    const deadlineStr = `${year}-${month}-${day}T20:00`;
     setPredictionDeadline(deadlineStr);
     
     if (match.customWinScore !== undefined && match.customWinScore !== null) {
