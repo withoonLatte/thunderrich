@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { collection, onSnapshot, query, orderBy, setDoc, doc, Timestamp, updateDoc, where } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { Match, Prediction, PredictionChoice, MatchStatus } from '../types';
+import { Match, Prediction, PredictionChoice, MatchStatus, User } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'motion/react';
@@ -37,6 +37,49 @@ const TeamLogo: React.FC<TeamLogoProps> = ({ src, teamName, isActive }) => {
       )}
     </div>
   );
+};
+
+const formatInThailandTime = (timestamp: any, formatStr: 'dd/MM/yyyy HH:mm' | 'HH:mm' | 'dd/MM'): string => {
+  if (!timestamp) return '';
+  try {
+    let date: Date;
+    if (typeof timestamp.toDate === 'function') {
+      date = timestamp.toDate();
+    } else if (timestamp.seconds !== undefined) {
+      date = new Date(timestamp.seconds * 1000);
+    } else {
+      date = new Date(timestamp);
+    }
+    if (isNaN(date.getTime())) return '';
+
+    const formatter = new Intl.DateTimeFormat('sv-SE', {
+      timeZone: 'Asia/Bangkok',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+    const formatted = formatter.format(date);
+    const parts = formatted.split(' ');
+    if (parts.length !== 2) return '';
+    const [datePart, timePart] = parts;
+    const [year, month, day] = datePart.split('-');
+    const [hour, minute] = timePart.split(':');
+
+    if (formatStr === 'dd/MM/yyyy HH:mm') {
+      return `${day}/${month}/${year} ${hour}:${minute}`;
+    } else if (formatStr === 'HH:mm') {
+      return `${hour}:${minute}`;
+    } else if (formatStr === 'dd/MM') {
+      return `${day}/${month}`;
+    }
+  } catch (err) {
+    console.error('Error formatting Thailand time:', err);
+  }
+  return '';
 };
 
 const MatchList: React.FC = () => {
@@ -271,7 +314,7 @@ const MatchList: React.FC = () => {
               </div>
               <div className="flex items-center gap-2 text-xs font-black text-slate-350 bg-slate-950/40 px-3.5 py-2 rounded-xl border border-slate-800">
                 <Clock className="w-4 h-4 text-yellow-400" />
-                {isStarted ? 'เริ่มการแข่งขันแล้ว' : format(startTime, 'dd/MM/yyyy HH:mm')}
+                {isStarted ? 'เริ่มการแข่งขันแล้ว' : formatInThailandTime(match.startTime, 'dd/MM/yyyy HH:mm')}
               </div>
             </div>
 

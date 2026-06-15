@@ -154,7 +154,7 @@ const AdminDashboard: React.FC = () => {
         processedLines.forEach((cols) => {
           const [h, a, hc, st] = cols;
           if (h && a && hc && st) {
-            const startDate = new Date(st);
+            const startDate = parseThailandDate(st);
             if (isNaN(startDate.getTime())) return;
             
             const startMs = startDate.getTime();
@@ -257,14 +257,14 @@ const AdminDashboard: React.FC = () => {
             for (let i = 0; i < cells.length; i++) {
               const cell = cells[i];
               if (cell instanceof Date) {
-                startDate = cell;
+                startDate = parseLocalDateToThailandDate(cell);
                 dateIndex = i;
                 break;
               }
               if (typeof cell === 'number') {
                 // If it is serial format like 45000+
                 if (cell > 40000 && cell < 60000) {
-                  startDate = parseExcelSerialDate(cell);
+                  startDate = parseLocalDateToThailandDate(parseExcelSerialDate(cell));
                   dateIndex = i;
                   break;
                 }
@@ -278,7 +278,7 @@ const AdminDashboard: React.FC = () => {
                     cleanStr = `${parts[0]} ${parts[1]}, 2026 ${parts.slice(2).join(' ')}`;
                   }
                 }
-                const d = new Date(cleanStr);
+                const d = parseThailandDate(cleanStr);
                 if (!isNaN(d.getTime())) {
                   startDate = d;
                   dateIndex = i;
@@ -537,8 +537,8 @@ const AdminDashboard: React.FC = () => {
 
     setMatchSaving(true);
     try {
-      const date = new Date(startTime);
-      const deadlineDate = predictionDeadline ? new Date(predictionDeadline) : date;
+      const date = parseThailandDate(startTime);
+      const deadlineDate = predictionDeadline ? parseThailandDate(predictionDeadline) : date;
       
       if (editingMatchId) {
         await updateDoc(doc(db, 'matches', editingMatchId), {
@@ -585,6 +585,36 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const parseThailandDate = (dateStr: string): Date => {
+    if (!dateStr) return new Date(NaN);
+    const trimmed = dateStr.trim();
+    if (trimmed.includes('+') || trimmed.includes('Z') || /-[0-9]{2}:[0-9]{2}$/.test(trimmed)) {
+      return new Date(trimmed);
+    }
+    let isoStr = trimmed.replace(' ', 'T');
+    const tParts = isoStr.split('T');
+    if (tParts.length === 2) {
+      const timeParts = tParts[1].split(':');
+      if (timeParts.length === 2) {
+        isoStr = isoStr + ':00';
+      }
+    }
+    return new Date(isoStr + '+07:00');
+  };
+
+  const parseLocalDateToThailandDate = (d: Date): Date => {
+    if (!d || isNaN(d.getTime())) return new Date(NaN);
+    const year = d.getFullYear();
+    const month = d.getMonth() + 1;
+    const date = d.getDate();
+    const hours = d.getHours();
+    const minutes = d.getMinutes();
+    const seconds = d.getSeconds();
+    
+    const isoStr = `${year}-${String(month).padStart(2, '0')}-${String(date).padStart(2, '0')}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    return parseThailandDate(isoStr);
+  };
+
   const safeFormatTimestamp = (timestamp: any): string => {
     if (!timestamp) return '';
     try {
@@ -597,9 +627,64 @@ const AdminDashboard: React.FC = () => {
         date = new Date(timestamp);
       }
       if (isNaN(date.getTime())) return '';
-      return format(date, "yyyy-MM-dd'T'HH:mm");
+
+      const formatter = new Intl.DateTimeFormat('sv-SE', {
+        timeZone: 'Asia/Bangkok',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+      const formatted = formatter.format(date);
+      return formatted.replace(' ', 'T').substring(0, 16);
     } catch (err) {
       console.error('Error formatting date:', err);
+    }
+    return '';
+  };
+
+  const formatInThailandTime = (timestamp: any, formatStr: 'dd/MM/yyyy HH:mm' | 'HH:mm' | 'dd/MM'): string => {
+    if (!timestamp) return '';
+    try {
+      let date: Date;
+      if (typeof timestamp.toDate === 'function') {
+        date = timestamp.toDate();
+      } else if (timestamp.seconds !== undefined) {
+        date = new Date(timestamp.seconds * 1000);
+      } else {
+        date = new Date(timestamp);
+      }
+      if (isNaN(date.getTime())) return '';
+
+      const formatter = new Intl.DateTimeFormat('sv-SE', {
+        timeZone: 'Asia/Bangkok',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+      const formatted = formatter.format(date);
+      const parts = formatted.split(' ');
+      if (parts.length !== 2) return '';
+      const [datePart, timePart] = parts;
+      const [year, month, day] = datePart.split('-');
+      const [hour, minute] = timePart.split(':');
+
+      if (formatStr === 'dd/MM/yyyy HH:mm') {
+        return `${day}/${month}/${year} ${hour}:${minute}`;
+      } else if (formatStr === 'HH:mm') {
+        return `${hour}:${minute}`;
+      } else if (formatStr === 'dd/MM') {
+        return `${day}/${month}`;
+      }
+    } catch (err) {
+      console.error('Error formatting Thailand time:', err);
     }
     return '';
   };
@@ -614,10 +699,17 @@ const AdminDashboard: React.FC = () => {
     const startStr = safeFormatTimestamp(match.startTime);
     setStartTime(startStr);
 
-    // Set prediction deadline to 8 PM of today (current date)
-    const today = new Date();
-    today.setHours(20, 0, 0, 0);
-    const deadlineStr = format(today, "yyyy-MM-dd'T'HH:mm");
+    // Set prediction deadline to 8 PM of today (current date) in Thailand Time
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('sv-SE', {
+      timeZone: 'Asia/Bangkok',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    const formattedDate = formatter.format(now);
+    const deadlineDatePart = formattedDate.substring(0, 10);
+    const deadlineStr = `${deadlineDatePart}T20:00`;
     setPredictionDeadline(deadlineStr);
     
     if (match.customWinScore !== undefined && match.customWinScore !== null) {
@@ -1754,7 +1846,7 @@ const AdminDashboard: React.FC = () => {
                           </div>
                           <h3 className="text-xl font-black text-black">{match.homeTeam} vs {match.awayTeam}</h3>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-black text-black">{format(new Date(match.startTime.seconds * 1000), 'dd/MM/yyyy HH:mm')}</span>
+                            <span className="text-xs font-black text-black">{formatInThailandTime(match.startTime, 'dd/MM/yyyy HH:mm')}</span>
                             <div className="flex items-center gap-1 bg-world-cup-green/10 px-2 py-0.5 rounded border border-world-cup-green/20">
                               <span className="text-[8px] font-black text-black uppercase tracking-tighter">ราคา:</span>
                               <span className="text-world-cup-green text-[11px] font-black">{match.handicap}</span>
@@ -1999,9 +2091,8 @@ const AdminDashboard: React.FC = () => {
                         }
                         return match.status !== MatchStatus.FINISHED;
                       }).map(match => {
-                        const startTime = new Date(match.startTime.seconds * 1000);
-                        const formattedTime = format(startTime, 'HH:mm');
-                        const formattedDate = format(startTime, 'dd/MM');
+                        const formattedTime = formatInThailandTime(match.startTime, 'HH:mm');
+                        const formattedDate = formatInThailandTime(match.startTime, 'dd/MM');
                         const isFinished = match.status === MatchStatus.FINISHED;
 
                         return (
