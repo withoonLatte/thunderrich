@@ -612,8 +612,12 @@ const AdminDashboard: React.FC = () => {
     setRound(match.round);
     
     const startStr = safeFormatTimestamp(match.startTime);
-    const deadlineStr = safeFormatTimestamp(match.predictionDeadline) || startStr;
     setStartTime(startStr);
+
+    // Set prediction deadline to 8 PM of today (current date)
+    const today = new Date();
+    today.setHours(20, 0, 0, 0);
+    const deadlineStr = format(today, "yyyy-MM-dd'T'HH:mm");
     setPredictionDeadline(deadlineStr);
     
     if (match.customWinScore !== undefined && match.customWinScore !== null) {
