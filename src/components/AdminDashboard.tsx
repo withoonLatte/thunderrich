@@ -597,27 +597,7 @@ const AdminDashboard: React.FC = () => {
         date = new Date(timestamp);
       }
       if (isNaN(date.getTime())) return '';
-
-      // Format explicitly in Thailand Timezone (Asia/Bangkok)
-      const formatter = new Intl.DateTimeFormat('en-US', {
-        timeZone: 'Asia/Bangkok',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      });
-      const parts = formatter.formatToParts(date);
-      const year = parts.find(p => p.type === 'year').value;
-      const month = parts.find(p => p.type === 'month').value;
-      const day = parts.find(p => p.type === 'day').value;
-      let hour = parts.find(p => p.type === 'hour').value;
-      const minute = parts.find(p => p.type === 'minute').value;
-      
-      if (hour === '24') hour = '00';
-
-      return `${year}-${month}-${day}T${hour}:${minute}`;
+      return format(date, "yyyy-MM-dd'T'HH:mm");
     } catch (err) {
       console.error('Error formatting date:', err);
     }
@@ -634,19 +614,10 @@ const AdminDashboard: React.FC = () => {
     const startStr = safeFormatTimestamp(match.startTime);
     setStartTime(startStr);
 
-    // Set prediction deadline to 8 PM of today (current date) in Thailand Time
-    const now = new Date();
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: 'Asia/Bangkok',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    });
-    const parts = formatter.formatToParts(now);
-    const year = parts.find(p => p.type === 'year').value;
-    const month = parts.find(p => p.type === 'month').value;
-    const day = parts.find(p => p.type === 'day').value;
-    const deadlineStr = `${year}-${month}-${day}T20:00`;
+    // Set prediction deadline to 8 PM of today (current date)
+    const today = new Date();
+    today.setHours(20, 0, 0, 0);
+    const deadlineStr = format(today, "yyyy-MM-dd'T'HH:mm");
     setPredictionDeadline(deadlineStr);
     
     if (match.customWinScore !== undefined && match.customWinScore !== null) {
