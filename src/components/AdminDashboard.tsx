@@ -585,14 +585,36 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const safeFormatTimestamp = (timestamp: any): string => {
+    if (!timestamp) return '';
+    try {
+      if (typeof timestamp.toDate === 'function') {
+        return format(timestamp.toDate(), "yyyy-MM-dd'T'HH:mm");
+      }
+      if (timestamp.seconds !== undefined) {
+        return format(new Date(timestamp.seconds * 1000), "yyyy-MM-dd'T'HH:mm");
+      }
+      const d = new Date(timestamp);
+      if (!isNaN(d.getTime())) {
+        return format(d, "yyyy-MM-dd'T'HH:mm");
+      }
+    } catch (err) {
+      console.error('Error formatting date:', err);
+    }
+    return '';
+  };
+
   const handleEditMatch = (match: Match) => {
     setEditingMatchId(match.id);
     setHomeTeam(match.homeTeam);
     setAwayTeam(match.awayTeam);
     setHandicap(match.handicap);
     setRound(match.round);
-    setStartTime(format(new Date(match.startTime.seconds * 1000), "yyyy-MM-dd'T'HH:mm"));
-    setPredictionDeadline(format(new Date(match.predictionDeadline.seconds * 1000), "yyyy-MM-dd'T'HH:mm"));
+    
+    const startStr = safeFormatTimestamp(match.startTime);
+    const deadlineStr = safeFormatTimestamp(match.predictionDeadline) || startStr;
+    setStartTime(startStr);
+    setPredictionDeadline(deadlineStr);
     
     if (match.customWinScore !== undefined && match.customWinScore !== null) {
       setIsSpecialMatch(true);
