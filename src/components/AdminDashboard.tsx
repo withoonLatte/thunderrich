@@ -147,6 +147,9 @@ const AdminDashboard: React.FC = () => {
     if (window.confirm(`ตรวจพบ ${processedLines.length} คู่ ต้องการเพิ่มทั้งหมดหรือไม่?`)) {
       setBatchLoading(true);
       try {
+        const querySnapshot = await getDocs(collection(db, 'matches'));
+        const existingMatches = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Match));
+
         const batch = writeBatch(db);
         const seenIds = new Set<string>();
         let addedCount = 0;
@@ -157,28 +160,43 @@ const AdminDashboard: React.FC = () => {
             const startDate = parseThailandDate(st);
             if (isNaN(startDate.getTime())) return;
             
-            const startMs = startDate.getTime();
-            const matchId = `${h.replace(/\s+/g, '_')}_${a.replace(/\s+/g, '_')}_${startMs}`;
-            
-            if (seenIds.has(matchId)) return;
-            seenIds.add(matchId);
-            addedCount++;
+            const existing = existingMatches.find(m => 
+              m.homeTeam.trim().toLowerCase() === h.trim().toLowerCase() && 
+              m.awayTeam.trim().toLowerCase() === a.trim().toLowerCase()
+            );
 
-            const matchRef = doc(db, 'matches', matchId);
-            
-            batch.set(matchRef, {
-              id: matchId,
-              homeTeam: h,
-              awayTeam: a,
-              handicap: hc,
-              startTime: Timestamp.fromDate(startDate),
-              predictionDeadline: Timestamp.fromDate(startDate),
-              round: TournamentRound.GROUP,
-              homeFlag: getTeamFlag(h),
-              awayFlag: getTeamFlag(a),
-              status: MatchStatus.SCHEDULED,
-              isPublished: false
-            });
+            if (existing) {
+              const matchRef = doc(db, 'matches', existing.id);
+              batch.update(matchRef, {
+                handicap: hc,
+                startTime: Timestamp.fromDate(startDate),
+                predictionDeadline: Timestamp.fromDate(startDate),
+              });
+              addedCount++;
+            } else {
+              const startMs = startDate.getTime();
+              const matchId = `${h.replace(/\s+/g, '_')}_${a.replace(/\s+/g, '_')}_${startMs}`;
+              
+              if (seenIds.has(matchId)) return;
+              seenIds.add(matchId);
+              addedCount++;
+
+              const matchRef = doc(db, 'matches', matchId);
+              
+              batch.set(matchRef, {
+                id: matchId,
+                homeTeam: h,
+                awayTeam: a,
+                handicap: hc,
+                startTime: Timestamp.fromDate(startDate),
+                predictionDeadline: Timestamp.fromDate(startDate),
+                round: TournamentRound.GROUP,
+                homeFlag: getTeamFlag(h),
+                awayFlag: getTeamFlag(a),
+                status: MatchStatus.SCHEDULED,
+                isPublished: false
+              });
+            }
           }
         });
 
@@ -344,34 +362,54 @@ const AdminDashboard: React.FC = () => {
           }
 
           if (window.confirm(`ตรวจพบ ${validRows.length} คู่ในไฟล์ Excel ต้องการนำเข้าทั้งหมดและบันทึกสู่ระบบใช่หรือไม่?`)) {
+            const querySnapshot = await getDocs(collection(db, 'matches'));
+            const existingMatches = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Match));
+
             const batch = writeBatch(db);
             const seenIds = new Set<string>();
             let addedCount = 0;
 
             validRows.forEach((row) => {
-              const startMs = row.startDate.getTime();
-              const matchId = `${row.h.replace(/\s+/g, '_')}_${row.a.replace(/\s+/g, '_')}_${startMs}`;
+              const startDate = row.startDate;
               
-              if (seenIds.has(matchId)) return;
-              seenIds.add(matchId);
-              addedCount++;
+              const existing = existingMatches.find(m => 
+                m.homeTeam.trim().toLowerCase() === row.h.trim().toLowerCase() && 
+                m.awayTeam.trim().toLowerCase() === row.a.trim().toLowerCase()
+              );
 
-              const matchRef = doc(db, 'matches', matchId);
-              
-              batch.set(matchRef, {
-                id: matchId,
-                homeTeam: row.h,
-                awayTeam: row.a,
-                handicap: row.hc,
-                startTime: Timestamp.fromDate(row.startDate),
-                predictionDeadline: Timestamp.fromDate(new Date(row.startDate.getTime() - 3600000)),
-                round: TournamentRound.GROUP,
-                homeFlag: getTeamFlag(row.h),
-                awayFlag: getTeamFlag(row.a),
-                status: MatchStatus.SCHEDULED,
-                isPublished: false,
-                allowPredictions: false
-              });
+              if (existing) {
+                const matchRef = doc(db, 'matches', existing.id);
+                batch.update(matchRef, {
+                  handicap: row.hc,
+                  startTime: Timestamp.fromDate(startDate),
+                  predictionDeadline: Timestamp.fromDate(new Date(startDate.getTime() - 3600000)),
+                });
+                addedCount++;
+              } else {
+                const startMs = startDate.getTime();
+                const matchId = `${row.h.replace(/\s+/g, '_')}_${row.a.replace(/\s+/g, '_')}_${startMs}`;
+                
+                if (seenIds.has(matchId)) return;
+                seenIds.add(matchId);
+                addedCount++;
+
+                const matchRef = doc(db, 'matches', matchId);
+                
+                batch.set(matchRef, {
+                  id: matchId,
+                  homeTeam: row.h,
+                  awayTeam: row.a,
+                  handicap: row.hc,
+                  startTime: Timestamp.fromDate(startDate),
+                  predictionDeadline: Timestamp.fromDate(new Date(startDate.getTime() - 3600000)),
+                  round: TournamentRound.GROUP,
+                  homeFlag: getTeamFlag(row.h),
+                  awayFlag: getTeamFlag(row.a),
+                  status: MatchStatus.SCHEDULED,
+                  isPublished: false,
+                  allowPredictions: false
+                });
+              }
             });
             await batch.commit();
             alert(`นำเข้าจาก Excel สำเร็จแล้ว! (เพิ่ม/อัปเดตเข้าสู่ระบบจำนวน ${addedCount} คู่สำเร็จ) 🎉`);
