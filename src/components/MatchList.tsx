@@ -367,7 +367,7 @@ const MatchList: React.FC = () => {
                         <div className="bg-emerald-500 text-slate-950 text-[9px] sm:text-[10px] font-black px-3 py-1 rounded-t-xl uppercase tracking-widest shadow-lg z-10 text-center w-full max-w-[70px]">
                           ราคาบอล
                         </div>
-                        <div className="bg-slate-900 border-2 border-emerald-400 text-emerald-400 text-[10px] sm:text-xs md:text-sm font-black px-2 py-1.5 rounded-b-xl rounded-tr-xl shadow-[0_8px_25px_rgba(0,0,0,0.3)] min-w-[80px] sm:min-w-[100px] max-w-[100px] sm:max-w-[120px] text-center -mt-0.5 leading-snug whitespace-normal break-words flex items-center justify-center">
+                        <div className="bg-slate-900 border-2 border-emerald-400 text-emerald-400 font-black px-2 py-1 rounded-b-xl rounded-tr-xl shadow-[0_8px_25px_rgba(0,0,0,0.3)] min-w-[80px] sm:min-w-[100px] max-w-[100px] sm:max-w-[120px] text-center -mt-0.5 leading-snug whitespace-normal break-words flex items-center justify-center" style={{ fontSize: '25px' }}>
                           {match.handicap || '0.0'}
                         </div>
                       </div>
