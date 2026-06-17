@@ -90,7 +90,7 @@ const Leaderboard: React.FC = () => {
             } else if (p) {
               earns = p.pointsEarned ?? 0;
               isCorrect = p.isResultCorrect ?? false;
-              isWrong = !isCorrect && earns < 0;
+              isWrong = !isCorrect && p.choice !== null && p.choice !== undefined;
             } else {
               const roundPenalty = NO_PRED_PENALTY[match.round] ?? -1;
               earns = roundPenalty;
