@@ -5,9 +5,19 @@ import { User, Prediction } from '../types';
 import { Trophy, Award, Medal } from 'lucide-react';
 import { motion } from 'motion/react';
 
+const NO_PRED_PENALTY: Record<string, number> = {
+  'group': -1,
+  'top32': -1,
+  'top16': -2,
+  'top8': -2,
+  'top4': -3,
+  'third_place': -3,
+  'final': -3,
+};
+
 const Leaderboard: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
-  const [userHistories, setUserHistories] = useState<Record<string, { points: number; cardType: 'yellow' | 'red' | null; isResultCorrect?: boolean }[]>>({});
+  const [userHistories, setUserHistories] = useState<Record<string, { points: number; cardType: 'yellow' | 'red' | null; isResultCorrect?: boolean; isBanned?: boolean }[]>>({});
 
   useEffect(() => {
     const q = query(collection(db, 'users'), orderBy('points', 'desc'));
@@ -50,29 +60,45 @@ const Leaderboard: React.FC = () => {
           });
         });
 
-        const newHistories: Record<string, { points: number; cardType: 'yellow' | 'red' | null; isResultCorrect?: boolean }[]> = {};
+        // Get all finished matches sorted chronologically
+        const finishedMatches = Object.keys(matchesMap)
+          .map(id => ({ id, ...matchesMap[id] }))
+          .filter(m => m.status === 'finished');
+        
+        finishedMatches.sort((a, b) => (a.startTime?.seconds || 0) - (b.startTime?.seconds || 0));
+
+        const newHistories: Record<string, { points: number; cardType: 'yellow' | 'red' | null; isResultCorrect?: boolean; isBanned?: boolean }[]> = {};
         
         userIds.forEach(uid => {
-          const userPreds = allPreds.filter(p => p.userId === uid && p.pointsEarned !== undefined);
+          const userPreds = allPreds.filter(p => p.userId === uid);
+          const u = topUsers.find(user => user.uid === uid);
           
-          // Sort chronologically by match startTime
-          userPreds.sort((a, b) => {
-            const matchA = matchesMap[a.matchId];
-            const matchB = matchesMap[b.matchId];
-            const timeA = matchA?.startTime?.seconds || 0;
-            const timeB = matchB?.startTime?.seconds || 0;
-            return timeA - timeB;
-          });
-
           let wrongCount = 0;
-          const processed = userPreds.map(p => {
-            const match = matchesMap[p.matchId];
-            const earns = p.pointsEarned ?? 0;
-            const isGroup = match?.round === 'group';
-            const isWrong = !p.isResultCorrect && earns < 0;
+          const processed = [];
+
+          finishedMatches.forEach(match => {
+            const p = userPreds.find(pred => pred.matchId === match.id);
+            const isBanned = u?.bannedMatchIds?.includes(match.id);
             
+            let earns = 0;
+            let isCorrect = false;
+            let isWrong = false;
+
+            if (isBanned) {
+              earns = 0;
+              isCorrect = false;
+            } else if (p) {
+              earns = p.pointsEarned ?? 0;
+              isCorrect = p.isResultCorrect ?? false;
+              isWrong = !isCorrect && earns < 0;
+            } else {
+              const roundPenalty = NO_PRED_PENALTY[match.round] ?? -1;
+              earns = roundPenalty;
+              isCorrect = false;
+            }
+
             let cardType: 'yellow' | 'red' | null = null;
-            if (isGroup && isWrong) {
+            if (match.round === 'group' && isWrong && !isBanned) {
               wrongCount++;
               if (wrongCount === 12) {
                 cardType = 'yellow';
@@ -81,11 +107,12 @@ const Leaderboard: React.FC = () => {
               }
             }
 
-            return {
+            processed.push({
               points: earns,
               cardType,
-              isResultCorrect: p.isResultCorrect
-            };
+              isResultCorrect: isCorrect,
+              isBanned: isBanned || (p?.isVoided ?? false)
+            });
           });
 
           newHistories[uid] = processed;
@@ -108,9 +135,9 @@ const Leaderboard: React.FC = () => {
         const history = userHistories[u.uid] || [];
 
         // Build inline items list with predictions and cards
-        const historyItems: ({ type: 'prediction'; points: number } | { type: 'yellow' } | { type: 'red' })[] = [];
+        const historyItems: ({ type: 'prediction'; points: number; isBanned?: boolean } | { type: 'yellow' } | { type: 'red' })[] = [];
         history.forEach(item => {
-          historyItems.push({ type: 'prediction', points: item.points });
+          historyItems.push({ type: 'prediction', points: item.points, isBanned: item.isBanned });
           if (item.cardType === 'yellow') {
             historyItems.push({ type: 'yellow' });
           } else if (item.cardType === 'red') {
@@ -239,6 +266,18 @@ const Leaderboard: React.FC = () => {
                           title="ได้รับใบแดงจากการผิด 24 นัด" 
                           className="w-5 h-7 bg-red-500 border border-red-300 rounded-[4px] shadow-md transform -rotate-[6deg] flex-shrink-0 animate-pulse"
                         />
+                      );
+                    }
+
+                    if (item.type === 'prediction' && item.isBanned) {
+                      return (
+                        <div 
+                          key={itemIdx}
+                          title="ถูกแบนจากการทายผลนัดนี้" 
+                          className="w-8 h-8 rounded-lg bg-yellow-450 border border-yellow-350 shadow-[0_0_8px_rgba(250,204,21,0.4)] flex items-center justify-center flex-shrink-0"
+                        >
+                          <div className="w-3.5 h-5 bg-yellow-400 border border-yellow-250 rounded-[2px] shadow-sm transform rotate-[6deg]" />
+                        </div>
                       );
                     }
 
