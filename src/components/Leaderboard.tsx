@@ -111,7 +111,7 @@ const Leaderboard: React.FC = () => {
               points: earns,
               cardType,
               isResultCorrect: isCorrect,
-              isBanned: isBanned || (p?.isVoided ?? false)
+              isBanned: !!isBanned
             });
           });
 
