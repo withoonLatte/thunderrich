@@ -358,7 +358,10 @@ const MatchList: React.FC = () => {
                       <span className="text-4xl sm:text-5xl italic font-black tracking-tighter text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]">
                         {match.homeScore} <span className="text-emerald-400 mx-0.5 animate-pulse">:</span> {match.awayScore}
                       </span>
-                      <span className="text-[10px] font-black text-slate-450 uppercase tracking-[0.2em] mt-1 bg-slate-950/60 px-2 py-0.5 rounded-md border border-slate-800">FINAL</span>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <span className="text-[10px] font-black text-slate-450 uppercase tracking-[0.2em] bg-slate-950/60 px-2 py-0.5 rounded-md border border-slate-800">FINAL</span>
+                        <span className="text-[10px] font-black text-emerald-400/90 bg-emerald-950/20 px-2 py-0.5 rounded-md border border-emerald-500/20">ราคา: {match.handicap || '0.0'}</span>
+                      </div>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center gap-1">
