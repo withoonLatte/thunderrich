@@ -57,7 +57,12 @@ async function main() {
   const allMatches = matchesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
   
   // Sort all matches chronologically
-  allMatches.sort((a, b) => (a.startTime?.seconds || 0) - (b.startTime?.seconds || 0));
+  allMatches.sort((a, b) => {
+    const timeA = a.startTime?.seconds || 0;
+    const timeB = b.startTime?.seconds || 0;
+    if (timeA !== timeB) return timeA - timeB;
+    return a.id.localeCompare(b.id);
+  });
 
   const allPreds = predictionsSnap.docs.map(d => ({ id: d.id, ref: d.ref, ...d.data() }));
 
@@ -86,36 +91,9 @@ async function main() {
 
     const userPreds = predsByUser[user.uid] || [];
 
-    // PASS 1: Calculate raw wrong count without yellow card ban to see if they reach 12 wrongs
-    let rawWrongCount = 0;
-    for (const match of allMatches) {
-      if (match.status !== 'finished') continue;
-      if (match.round !== 'group') continue;
-
-      const p = userPreds.find(pred => pred.matchId === match.id);
-      let matchWinner;
-      if (match.manualWinner) {
-        matchWinner = match.manualWinner;
-      } else {
-        const numericHandicap = parseHandicap(match.handicap);
-        const handicapDiff = match.homeScore - match.awayScore + numericHandicap;
-        if (handicapDiff > 0) matchWinner = 'home';
-        else if (handicapDiff < 0) matchWinner = 'away';
-        else matchWinner = 'push';
-      }
-
-      if (p && matchWinner !== 'push' && p.choice !== matchWinner && p.choice !== null && p.choice !== undefined) {
-        rawWrongCount++;
-      }
-    }
-
-    if (rawWrongCount >= 12) {
-      yellowCards = 1;
-      bannedMatchIds.push("Spain_Cape_Verde_1781499600000");
-    }
-
-    // PASS 2: Simulate match calculations chronologically with Match 13 banned if they qualify
-    for (const match of allMatches) {
+    // Simulate match calculations chronologically
+    for (let i = 0; i < allMatches.length; i++) {
+      const match = allMatches[i];
       if (match.status !== 'finished') continue;
 
       const isBanned = bannedMatchIds.includes(match.id);
@@ -214,19 +192,27 @@ async function main() {
       points += earns;
       wrongCount += wrongCountIncrement;
 
-      // Red Card Trigger Logic (24 wrong)
-      if (match.round === 'group' && wrongCountIncrement > 0 && wrongCount === 24) {
-        redCards += 1;
-        // Ban next 2 matches starting after this match
-        const next = allMatches
-          .filter(m => (m.startTime?.seconds || 0) > (match.startTime?.seconds || 0))
-          .sort((a, b) => (a.startTime?.seconds || 0) - (b.startTime?.seconds || 0))
-          .slice(0, 2);
-        next.forEach(m => {
-          if (!bannedMatchIds.includes(m.id)) {
-            bannedMatchIds.push(m.id);
-          }
-        });
+      // Card Trigger Logic
+      if (match.round === 'group' && wrongCountIncrement > 0) {
+        if (wrongCount === 12) {
+          yellowCards += 1;
+          // Ban the next chronological match
+          const nextMatches = allMatches.slice(i + 1, i + 2);
+          nextMatches.forEach(m => {
+            if (!bannedMatchIds.includes(m.id)) {
+              bannedMatchIds.push(m.id);
+            }
+          });
+        } else if (wrongCount === 24) {
+          redCards += 1;
+          // Ban the next 2 chronological matches
+          const nextMatches = allMatches.slice(i + 1, i + 3);
+          nextMatches.forEach(m => {
+            if (!bannedMatchIds.includes(m.id)) {
+              bannedMatchIds.push(m.id);
+            }
+          });
+        }
       }
     }
 

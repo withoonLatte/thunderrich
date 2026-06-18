@@ -195,13 +195,13 @@ export const calculateMatchResults = async (matchId: string) => {
       if (newWrongCount === 12) {
         newYellowCards += 1;
         // Ban for 1 next upcoming match
-        await applyBan(newBannedMatchIds, 1, userData.uid, batch);
+        await applyBan(newBannedMatchIds, 1, userData.uid, batch, match.id);
       } 
       // Check for Red Card (24 wrong - 2nd Yellow)
       else if (newWrongCount === 24) {
         newRedCards += 1;
         // Ban for 2 next upcoming matches
-        await applyBan(newBannedMatchIds, 2, userData.uid, batch);
+        await applyBan(newBannedMatchIds, 2, userData.uid, batch, match.id);
       }
     }
 
@@ -218,37 +218,22 @@ export const calculateMatchResults = async (matchId: string) => {
   await batch.commit();
 };
 
-async function applyBan(bannedIds: string[], count: number, userId: string, batch: any) {
-  if (count === 1) {
-    const match13Id = "Spain_Cape_Verde_1781499600000";
-    if (!bannedIds.includes(match13Id)) {
-      bannedIds.push(match13Id);
-      
-      // Void existing prediction if any
-      const predId = `${userId}_${match13Id}`;
-      const predSnap = await getDocs(query(collection(db, 'predictions'), where('id', '==', predId)));
-      if (!predSnap.empty) {
-        batch.update(predSnap.docs[0].ref, {
-          isVoided: true,
-          pointsEarned: 0
-        });
-      }
-    }
-    return;
-  }
+async function applyBan(bannedIds: string[], count: number, userId: string, batch: any, currentMatchId: string) {
+  const matchesSnap = await getDocs(collection(db, 'matches'));
+  const allMatches = matchesSnap.docs.map(d => ({ ...d.data(), id: d.id } as Match));
+  
+  // Sort all matches chronologically
+  allMatches.sort((a, b) => {
+    const timeA = a.startTime?.seconds || 0;
+    const timeB = b.startTime?.seconds || 0;
+    if (timeA !== timeB) return timeA - timeB;
+    return a.id.localeCompare(b.id);
+  });
 
-  // Find next upcoming matches for other cards (e.g. red card)
-  const now = Timestamp.now();
-  const matchesQuery = query(
-    collection(db, 'matches'),
-    where('startTime', '>', now),
-    where('status', '==', 'scheduled')
-  );
-  const matchesSnap = await getDocs(matchesQuery);
-  const upcomingMatches = matchesSnap.docs
-    .map(d => ({ ...d.data(), id: d.id } as Match))
-    .sort((a, b) => a.startTime.seconds - b.startTime.seconds)
-    .slice(0, count);
+  const idx = allMatches.findIndex(m => m.id === currentMatchId);
+  if (idx === -1) return;
+
+  const upcomingMatches = allMatches.slice(idx + 1, idx + 1 + count);
 
   for (const m of upcomingMatches) {
     if (!bannedIds.includes(m.id)) {
