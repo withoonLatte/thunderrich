@@ -96,7 +96,18 @@ const Leaderboard: React.FC = () => {
           
           const processed = [];
 
-          finishedMatches.forEach(match => {
+          // Include finished matches AND any scheduled matches that are currently banned for this user
+          const userMatches = [
+            ...finishedMatches,
+            ...Object.keys(matchesMap)
+              .map(id => ({ id, ...matchesMap[id] }))
+              .filter(m => m.status === 'scheduled' && u?.bannedMatchIds?.includes(m.id))
+          ];
+          
+          // Sort chronologically
+          userMatches.sort((a, b) => (a.startTime?.seconds || 0) - (b.startTime?.seconds || 0));
+
+          userMatches.forEach(match => {
             const p = userPreds.find(pred => pred.matchId === match.id);
             const isBanned = u?.bannedMatchIds?.includes(match.id);
             const isMissed = !isBanned && (!p || p.choice === null || p.choice === undefined);
@@ -224,9 +235,23 @@ const Leaderboard: React.FC = () => {
 
               {/* Name and point details */}
               <div className="flex-1 min-w-0 space-y-3">
-                <h3 className="text-2xl md:text-3xl font-black text-white tracking-tight truncate leading-none drop-shadow-sm">
-                  {u.displayName}
-                </h3>
+                <div className="flex items-center gap-3">
+                  <h3 className="text-2xl md:text-3xl font-black text-white tracking-tight truncate leading-none drop-shadow-sm">
+                    {u.displayName}
+                  </h3>
+                  {u.yellow_cards > 0 && (
+                    <div 
+                      title={`ได้รับใบเหลือง`} 
+                      className="w-3.5 h-5 bg-yellow-450 border border-yellow-300 rounded-[2px] shadow-[0_0_8px_rgba(250,204,21,0.6)] transform rotate-[6deg] flex-shrink-0" 
+                    />
+                  )}
+                  {u.red_cards > 0 && (
+                    <div 
+                      title={`ได้รับใบแดง`} 
+                      className="w-3.5 h-5 bg-red-600 border border-red-500 rounded-[2px] shadow-[0_0_8px_rgba(220,38,38,0.6)] transform -rotate-[6deg] flex-shrink-0" 
+                    />
+                  )}
+                </div>
                 
                 <div className="flex items-center flex-wrap gap-4">
                   {/* Point Red Circle */}
