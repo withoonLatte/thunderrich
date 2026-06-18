@@ -265,7 +265,7 @@ const Leaderboard: React.FC = () => {
             {/* Full prediction history with row-by-row pagination */}
             {history && history.length > 0 && (() => {
               const rows = [];
-              const ITEMS_PER_ROW = 9;
+              const ITEMS_PER_ROW = 8;
               for (let i = 0; i < historyItems.length; i += ITEMS_PER_ROW) {
                 rows.push(historyItems.slice(i, i + ITEMS_PER_ROW));
               }
