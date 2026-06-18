@@ -51,6 +51,22 @@ const parseHandicap = (h) => {
 };
 
 async function applyBan(bannedIds, count, userId, batch) {
+  if (count === 1) {
+    const match13Id = "Spain_Cape_Verde_1781499600000";
+    if (!bannedIds.includes(match13Id)) {
+      bannedIds.push(match13Id);
+      const predId = `${userId}_${match13Id}`;
+      const predSnap = await getDocs(query(collection(db, 'predictions'), where('id', '==', predId)));
+      if (!predSnap.empty) {
+        batch.update(predSnap.docs[0].ref, {
+          isVoided: true,
+          pointsEarned: 0
+        });
+      }
+    }
+    return;
+  }
+
   const now = Timestamp.now();
   const matchesQuery = query(
     collection(db, 'matches'),

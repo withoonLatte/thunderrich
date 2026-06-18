@@ -219,7 +219,25 @@ export const calculateMatchResults = async (matchId: string) => {
 };
 
 async function applyBan(bannedIds: string[], count: number, userId: string, batch: any) {
-  // Find next upcoming matches
+  if (count === 1) {
+    const match13Id = "Spain_Cape_Verde_1781499600000";
+    if (!bannedIds.includes(match13Id)) {
+      bannedIds.push(match13Id);
+      
+      // Void existing prediction if any
+      const predId = `${userId}_${match13Id}`;
+      const predSnap = await getDocs(query(collection(db, 'predictions'), where('id', '==', predId)));
+      if (!predSnap.empty) {
+        batch.update(predSnap.docs[0].ref, {
+          isVoided: true,
+          pointsEarned: 0
+        });
+      }
+    }
+    return;
+  }
+
+  // Find next upcoming matches for other cards (e.g. red card)
   const now = Timestamp.now();
   const matchesQuery = query(
     collection(db, 'matches'),
@@ -238,8 +256,6 @@ async function applyBan(bannedIds: string[], count: number, userId: string, batc
       
       // Void existing prediction if any
       const predId = `${userId}_${m.id}`;
-      // In writeBatch, we can update even if it doesn't exist? Actually update() fails if doc doesn't exist.
-      // We should check if prediction exists first.
       const predSnap = await getDocs(query(collection(db, 'predictions'), where('id', '==', predId)));
       if (!predSnap.empty) {
         batch.update(predSnap.docs[0].ref, {
