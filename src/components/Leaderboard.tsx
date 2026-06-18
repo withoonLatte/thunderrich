@@ -283,7 +283,7 @@ const Leaderboard: React.FC = () => {
                   
                   <div className="flex flex-col gap-2">
                     {visibleRows.map((row, rowIdx) => (
-                      <div key={rowIdx} className="flex flex-wrap gap-2 items-center">
+                      <div key={rowIdx} className="grid grid-cols-8 gap-1.5 sm:gap-2 justify-items-center items-center">
                         {row.map((item, itemIdx) => {
                           if (item.type === 'yellow') {
                             return (
