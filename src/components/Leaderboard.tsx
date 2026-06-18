@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { collection, onSnapshot, query, orderBy, limit, where, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { User, Prediction } from '../types';
-import { Trophy, Award, Medal } from 'lucide-react';
+import { Trophy, Award, Medal, ChevronUp, ChevronDown } from 'lucide-react';
 import { motion } from 'motion/react';
 
 const NO_PRED_PENALTY: Record<string, number> = {
@@ -18,6 +18,27 @@ const NO_PRED_PENALTY: Record<string, number> = {
 const Leaderboard: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [userHistories, setUserHistories] = useState<Record<string, { points: number; cardType: 'yellow' | 'red' | null; isResultCorrect?: boolean; isBanned?: boolean }[]>>({});
+  const [rowOffsets, setRowOffsets] = useState<Record<string, number>>({});
+
+  const handleScrollUp = (uid: string, numRows: number) => {
+    setRowOffsets(prev => {
+      const current = prev[uid] !== undefined ? prev[uid] : Math.max(0, numRows - 3);
+      return {
+        ...prev,
+        [uid]: Math.max(0, current - 1)
+      };
+    });
+  };
+
+  const handleScrollDown = (uid: string, numRows: number) => {
+    setRowOffsets(prev => {
+      const current = prev[uid] !== undefined ? prev[uid] : Math.max(0, numRows - 3);
+      return {
+        ...prev,
+        [uid]: Math.min(numRows - 3, current + 1)
+      };
+    });
+  };
 
   useEffect(() => {
     const q = query(collection(db, 'users'), orderBy('points', 'desc'));
@@ -239,75 +260,124 @@ const Leaderboard: React.FC = () => {
               </div>
             </div>
 
-            {/* 20-Match inline history */}
-            {history && history.length > 0 && (
-              <div className="space-y-2.5 pt-3 border-t border-white/5">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-black uppercase tracking-wider text-slate-400">
-                    20 นัดล่าสุด :
-                  </span>
-                </div>
-                
-                <div className="flex flex-wrap gap-2 items-center">
-                  {historyItems.slice(-20).map((item, itemIdx) => {
-                    if (item.type === 'yellow') {
-                      return (
-                        <div 
-                          key={itemIdx}
-                          title="ได้รับใบเหลืองจากการผิด 12 นัด" 
-                          className="w-5 h-7 bg-yellow-400 border border-yellow-250 rounded-[4px] shadow-md transform rotate-[6deg] flex-shrink-0 animate-pulse"
-                        />
-                      );
-                    }
-                    if (item.type === 'red') {
-                      return (
-                        <div 
-                          key={itemIdx}
-                          title="ได้รับใบแดงจากการผิด 24 นัด" 
-                          className="w-5 h-7 bg-red-500 border border-red-300 rounded-[4px] shadow-md transform -rotate-[6deg] flex-shrink-0 animate-pulse"
-                        />
-                      );
-                    }
+            {/* Full prediction history with row-by-row pagination */}
+            {history && history.length > 0 && (() => {
+              const rows = [];
+              const ITEMS_PER_ROW = 9;
+              for (let i = 0; i < historyItems.length; i += ITEMS_PER_ROW) {
+                rows.push(historyItems.slice(i, i + ITEMS_PER_ROW));
+              }
+              const numRows = rows.length;
+              const currentOffset = rowOffsets[u.uid] !== undefined ? rowOffsets[u.uid] : Math.max(0, numRows - 3);
+              const visibleRows = rows.slice(currentOffset, currentOffset + 3);
 
-                    if (item.type === 'prediction' && item.isBanned) {
-                      return (
-                        <div 
-                          key={itemIdx}
-                          title="ถูกแบนจากการทายผลนัดนี้" 
-                          className="w-8 h-8 rounded-lg bg-yellow-450 border border-yellow-350 shadow-[0_0_8px_rgba(250,204,21,0.4)] flex items-center justify-center flex-shrink-0"
-                        >
-                          <div className="w-3.5 h-5 bg-yellow-400 border border-yellow-250 rounded-[2px] shadow-sm transform rotate-[6deg]" />
-                        </div>
-                      );
-                    }
+              return (
+                <div className="space-y-2.5 pt-3 border-t border-white/5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-black uppercase tracking-wider text-slate-400">
+                      ประวัติการทายผลทั้งหมด :
+                    </span>
+                  </div>
+                  
+                  <div className="flex flex-col gap-2">
+                    {visibleRows.map((row, rowIdx) => (
+                      <div key={rowIdx} className="flex flex-wrap gap-2 items-center">
+                        {row.map((item, itemIdx) => {
+                          if (item.type === 'yellow') {
+                            return (
+                              <div 
+                                key={itemIdx}
+                                title="ได้รับใบเหลืองจากการผิด 12 นัด" 
+                                className="w-5 h-7 bg-yellow-400 border border-yellow-250 rounded-[4px] shadow-md transform rotate-[6deg] flex-shrink-0 animate-pulse"
+                              />
+                            );
+                          }
+                          if (item.type === 'red') {
+                            return (
+                              <div 
+                                key={itemIdx}
+                                title="ได้รับใบแดงจากการผิด 24 นัด" 
+                                className="w-5 h-7 bg-red-500 border border-red-300 rounded-[4px] shadow-md transform -rotate-[6deg] flex-shrink-0 animate-pulse"
+                              />
+                            );
+                          }
 
-                    const earns = item.points;
-                    const isPositive = earns > 0;
-                    const isNegative = earns < 0;
-                    
-                    let bgClass = '';
-                    if (isPositive) {
-                      bgClass = 'bg-emerald-500 text-slate-950 font-black shadow-[0_0_6px_rgba(16,185,129,0.3)] border border-emerald-400/20';
-                    } else if (isNegative) {
-                      bgClass = 'bg-blue-600 text-white font-black shadow-[0_0_6px_rgba(37,99,235,0.3)] border border-blue-500/20';
-                    } else {
-                      bgClass = 'bg-slate-800 text-slate-450 border border-slate-700/50';
-                    }
+                          if (item.type === 'prediction' && item.isBanned) {
+                            return (
+                              <div 
+                                key={itemIdx}
+                                title="ถูกแบนจากการทายผลนัดนี้" 
+                                className="w-8 h-8 rounded-lg bg-yellow-450 border border-yellow-350 shadow-[0_0_8px_rgba(250,204,21,0.4)] flex items-center justify-center flex-shrink-0"
+                              >
+                                <div className="w-3.5 h-5 bg-yellow-400 border border-yellow-250 rounded-[2px] shadow-sm transform rotate-[6deg]" />
+                              </div>
+                            );
+                          }
 
-                    const valText = earns > 0 ? `+${earns}` : `${earns}`;
+                          const earns = item.points;
+                          const isPositive = earns > 0;
+                          const isNegative = earns < 0;
+                          
+                          let bgClass = '';
+                          if (isPositive) {
+                            bgClass = 'bg-emerald-500 text-slate-950 font-black shadow-[0_0_6px_rgba(16,185,129,0.3)] border border-emerald-400/20';
+                          } else if (isNegative) {
+                            bgClass = 'bg-blue-600 text-white font-black shadow-[0_0_6px_rgba(37,99,235,0.3)] border border-blue-500/20';
+                          } else {
+                            bgClass = 'bg-slate-800 text-slate-450 border border-slate-700/50';
+                          }
 
-                    return (
-                      <div 
-                        key={itemIdx} 
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black leading-none flex-shrink-0 ${bgClass}`}
-                      >
-                        {valText}
+                          const valText = earns > 0 ? `+${earns}` : `${earns}`;
+
+                          return (
+                            <div 
+                              key={itemIdx} 
+                              className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black leading-none flex-shrink-0 ${bgClass}`}
+                            >
+                              {valText}
+                            </div>
+                          );
+                        })}
                       </div>
-                    );
-                  })}
+                    ))}
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                      แถวที่ {currentOffset + 1} - {Math.min(numRows, currentOffset + 3)} จาก {numRows}
+                    </span>
+                    {numRows > 3 && (
+                      <div className="flex gap-2">
+                        <button 
+                          type="button"
+                          onClick={() => handleScrollUp(u.uid, numRows)}
+                          disabled={currentOffset === 0}
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-all ${
+                            currentOffset === 0
+                              ? 'bg-slate-850/40 border-slate-700/30 text-slate-600 cursor-not-allowed'
+                              : 'bg-slate-800 border-slate-700 text-slate-350 hover:bg-slate-700 hover:text-white cursor-pointer active:scale-95'
+                          }`}
+                        >
+                          <ChevronUp className="w-4.5 h-4.5" />
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={() => handleScrollDown(u.uid, numRows)}
+                          disabled={currentOffset >= numRows - 3}
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-all ${
+                            currentOffset >= numRows - 3
+                              ? 'bg-slate-855/40 border-slate-700/30 text-slate-600 cursor-not-allowed'
+                              : 'bg-slate-800 border-slate-700 text-slate-350 hover:bg-slate-700 hover:text-white cursor-pointer active:scale-95'
+                          }`}
+                        >
+                          <ChevronDown className="w-4.5 h-4.5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </motion.div>
         );
       })}
