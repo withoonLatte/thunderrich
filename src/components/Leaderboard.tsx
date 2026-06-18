@@ -157,15 +157,15 @@ const Leaderboard: React.FC = () => {
         const Icon = isGold ? Trophy : isSilver ? Award : isBronze ? Medal : null;
         const history = userHistories[u.uid] || [];
 
-        // Build inline items list with predictions and cards
-        const historyItems: ({ type: 'prediction'; points: number; isBanned?: boolean; isMissed?: boolean } | { type: 'yellow' } | { type: 'red' })[] = [];
+        // Build inline items list with predictions and card overlays
+        const historyItems: { points: number; isBanned?: boolean; isMissed?: boolean; cardType?: 'yellow' | 'red' | null }[] = [];
         history.forEach(item => {
-          historyItems.push({ type: 'prediction', points: item.points, isBanned: item.isBanned, isMissed: item.isMissed });
-          if (item.cardType === 'yellow') {
-            historyItems.push({ type: 'yellow' });
-          } else if (item.cardType === 'red') {
-            historyItems.push({ type: 'red' });
-          }
+          historyItems.push({ 
+            points: item.points, 
+            isBanned: item.isBanned, 
+            isMissed: item.isMissed,
+            cardType: item.cardType
+          });
         });
 
         let borderGradient = '';
@@ -285,26 +285,12 @@ const Leaderboard: React.FC = () => {
                     {visibleRows.map((row, rowIdx) => (
                       <div key={rowIdx} className="grid grid-cols-8 gap-1.5 sm:gap-2 justify-items-center items-center">
                         {row.map((item, itemIdx) => {
-                          if (item.type === 'yellow') {
-                            return (
-                              <div 
-                                key={itemIdx}
-                                title="ได้รับใบเหลืองจากการผิด 12 นัด" 
-                                className="w-5 h-7 bg-yellow-400 border border-yellow-250 rounded-[4px] shadow-md transform rotate-[6deg] flex-shrink-0 animate-pulse"
-                              />
-                            );
-                          }
-                          if (item.type === 'red') {
-                            return (
-                              <div 
-                                key={itemIdx}
-                                title="ได้รับใบแดงจากการผิด 24 นัด" 
-                                className="w-5 h-7 bg-red-500 border border-red-300 rounded-[4px] shadow-md transform -rotate-[6deg] flex-shrink-0 animate-pulse"
-                              />
-                            );
-                          }
+                          const earns = item.points;
+                          const isPositive = earns > 0;
+                          const isMissed = item.isMissed;
+                          const cardType = item.cardType;
 
-                          if (item.type === 'prediction' && item.isBanned) {
+                          if (item.isBanned) {
                             return (
                               <div 
                                 key={itemIdx}
@@ -316,10 +302,30 @@ const Leaderboard: React.FC = () => {
                             );
                           }
 
-                          const earns = item.points;
-                          const isPositive = earns > 0;
-                          const isMissed = item.isMissed;
-                          
+                          if (cardType === 'yellow') {
+                            return (
+                              <div 
+                                key={itemIdx}
+                                title="ได้รับใบเหลืองจากการผิด 12 นัด" 
+                                className="w-8 h-8 rounded-lg bg-yellow-400 text-yellow-950 font-black border border-yellow-300 shadow-[0_0_8px_rgba(250,204,21,0.5)] transform rotate-[6deg] flex items-center justify-center flex-shrink-0 animate-pulse text-xs"
+                              >
+                                {earns}
+                              </div>
+                            );
+                          }
+
+                          if (cardType === 'red') {
+                            return (
+                              <div 
+                                key={itemIdx}
+                                title="ได้รับใบแดงจากการผิด 24 นัด" 
+                                className="w-8 h-8 rounded-lg bg-red-500 text-white font-black border border-red-400 shadow-[0_0_8px_rgba(239,68,68,0.5)] transform -rotate-[6deg] flex items-center justify-center flex-shrink-0 animate-pulse text-xs"
+                              >
+                                {earns}
+                              </div>
+                            );
+                          }
+
                           let bgClass = '';
                           if (isPositive) {
                             bgClass = 'bg-emerald-500 text-slate-950 font-black shadow-[0_0_6px_rgba(16,185,129,0.3)] border border-emerald-400/20';
