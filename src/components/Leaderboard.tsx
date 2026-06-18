@@ -356,8 +356,8 @@ const Leaderboard: React.FC = () => {
                           disabled={currentOffset === 0}
                           className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-all ${
                             currentOffset === 0
-                              ? 'bg-slate-850/40 border-slate-700/30 text-slate-600 cursor-not-allowed'
-                              : 'bg-slate-800 border-slate-700 text-slate-350 hover:bg-slate-700 hover:text-white cursor-pointer active:scale-95'
+                              ? 'bg-pink-950/20 border-pink-900/10 text-pink-900/40 cursor-not-allowed'
+                              : 'bg-pink-500 border-pink-400 text-white hover:bg-pink-400 shadow-md shadow-pink-500/20 cursor-pointer active:scale-95'
                           }`}
                         >
                           <ChevronUp className="w-4.5 h-4.5" />
@@ -368,8 +368,8 @@ const Leaderboard: React.FC = () => {
                           disabled={currentOffset >= numRows - 3}
                           className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-all ${
                             currentOffset >= numRows - 3
-                              ? 'bg-slate-855/40 border-slate-700/30 text-slate-600 cursor-not-allowed'
-                              : 'bg-slate-800 border-slate-700 text-slate-350 hover:bg-slate-700 hover:text-white cursor-pointer active:scale-95'
+                              ? 'bg-pink-950/20 border-pink-900/10 text-pink-900/40 cursor-not-allowed'
+                              : 'bg-pink-500 border-pink-400 text-white hover:bg-pink-400 shadow-md shadow-pink-500/20 cursor-pointer active:scale-95'
                           }`}
                         >
                           <ChevronDown className="w-4.5 h-4.5" />
