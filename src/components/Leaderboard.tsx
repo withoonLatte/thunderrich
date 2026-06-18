@@ -88,13 +88,12 @@ const Leaderboard: React.FC = () => {
         
         finishedMatches.sort((a, b) => (a.startTime?.seconds || 0) - (b.startTime?.seconds || 0));
 
-        const newHistories: Record<string, { points: number; cardType: 'yellow' | 'red' | null; isResultCorrect?: boolean; isBanned?: boolean; isMissed?: boolean }[]> = {};
+        const newHistories: Record<string, { points: number; isResultCorrect?: boolean; isBanned?: boolean; isMissed?: boolean }[]> = {};
         
         userIds.forEach(uid => {
           const userPreds = allPreds.filter(p => p.userId === uid);
           const u = topUsers.find(user => user.uid === uid);
           
-          let wrongCount = 0;
           const processed = [];
 
           finishedMatches.forEach(match => {
@@ -104,7 +103,6 @@ const Leaderboard: React.FC = () => {
             
             let earns = 0;
             let isCorrect = false;
-            let isWrong = false;
 
             if (isBanned) {
               earns = 0;
@@ -112,26 +110,14 @@ const Leaderboard: React.FC = () => {
             } else if (p) {
               earns = p.pointsEarned ?? 0;
               isCorrect = p.isResultCorrect ?? false;
-              isWrong = !isCorrect && p.choice !== null && p.choice !== undefined;
             } else {
               const roundPenalty = NO_PRED_PENALTY[match.round] ?? -1;
               earns = roundPenalty;
               isCorrect = false;
             }
 
-            let cardType: 'yellow' | 'red' | null = null;
-            if (match.round === 'group' && isWrong && !isBanned) {
-              wrongCount++;
-              if (wrongCount === 12) {
-                cardType = 'yellow';
-              } else if (wrongCount === 24) {
-                cardType = 'red';
-              }
-            }
-
             processed.push({
               points: earns,
-              cardType,
               isResultCorrect: isCorrect,
               isBanned: !!isBanned,
               isMissed
@@ -157,14 +143,13 @@ const Leaderboard: React.FC = () => {
         const Icon = isGold ? Trophy : isSilver ? Award : isBronze ? Medal : null;
         const history = userHistories[u.uid] || [];
 
-        // Build inline items list with predictions and card overlays
-        const historyItems: { points: number; isBanned?: boolean; isMissed?: boolean; cardType?: 'yellow' | 'red' | null }[] = [];
+        // Build inline items list with predictions
+        const historyItems: { points: number; isBanned?: boolean; isMissed?: boolean }[] = [];
         history.forEach(item => {
           historyItems.push({ 
             points: item.points, 
             isBanned: item.isBanned, 
-            isMissed: item.isMissed,
-            cardType: item.cardType
+            isMissed: item.isMissed
           });
         });
 
@@ -288,40 +273,15 @@ const Leaderboard: React.FC = () => {
                           const earns = item.points;
                           const isPositive = earns > 0;
                           const isMissed = item.isMissed;
-                          const cardType = item.cardType;
 
                           if (item.isBanned) {
                             return (
                               <div 
                                 key={itemIdx}
                                 title="ถูกแบนจากการทายผลนัดนี้" 
-                                className="w-8 h-8 rounded-lg bg-yellow-450 border border-yellow-350 shadow-[0_0_8px_rgba(250,204,21,0.4)] flex items-center justify-center flex-shrink-0"
-                              >
-                                <div className="w-3.5 h-5 bg-yellow-400 border border-yellow-250 rounded-[2px] shadow-sm transform rotate-[6deg]" />
-                              </div>
-                            );
-                          }
-
-                          if (cardType === 'yellow') {
-                            return (
-                              <div 
-                                key={itemIdx}
-                                title="ได้รับใบเหลืองจากการผิด 12 นัด" 
                                 className="w-8 h-8 rounded-lg bg-yellow-400 text-yellow-950 font-black border border-yellow-300 shadow-[0_0_8px_rgba(250,204,21,0.5)] transform rotate-[6deg] flex items-center justify-center flex-shrink-0 animate-pulse text-xs"
                               >
-                                {earns}
-                              </div>
-                            );
-                          }
-
-                          if (cardType === 'red') {
-                            return (
-                              <div 
-                                key={itemIdx}
-                                title="ได้รับใบแดงจากการผิด 24 นัด" 
-                                className="w-8 h-8 rounded-lg bg-red-500 text-white font-black border border-red-400 shadow-[0_0_8px_rgba(239,68,68,0.5)] transform -rotate-[6deg] flex items-center justify-center flex-shrink-0 animate-pulse text-xs"
-                              >
-                                {earns}
+                                0
                               </div>
                             );
                           }
