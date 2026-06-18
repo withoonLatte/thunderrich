@@ -182,7 +182,8 @@ async function main() {
 
     const oldPointsEarned = (prediction && prediction.pointsEarned !== undefined) ? prediction.pointsEarned : 0;
     const newPoints = userData.points - oldPointsEarned + pointsChange;
-    const newWrongCount = (userData.round1_wrong_count || 0) + wrongCountIncrement;
+    const oldWrongIncrement = (prediction && prediction.isResultCorrect === false && prediction.choice !== null && prediction.choice !== undefined) ? 1 : 0;
+    const newWrongCount = (userData.round1_wrong_count || 0) - oldWrongIncrement + wrongCountIncrement;
     let newYellowCards = userData.yellow_cards || 0;
     let newRedCards = userData.red_cards || 0;
     const newBannedMatchIds = [...(userData.bannedMatchIds || [])];

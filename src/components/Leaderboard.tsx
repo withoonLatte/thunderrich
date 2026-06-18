@@ -17,7 +17,7 @@ const NO_PRED_PENALTY: Record<string, number> = {
 
 const Leaderboard: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
-  const [userHistories, setUserHistories] = useState<Record<string, { points: number; cardType: 'yellow' | 'red' | null; isResultCorrect?: boolean; isBanned?: boolean }[]>>({});
+  const [userHistories, setUserHistories] = useState<Record<string, { points: number; cardType: 'yellow' | 'red' | null; isResultCorrect?: boolean; isBanned?: boolean; isMissed?: boolean }[]>>({});
   const [rowOffsets, setRowOffsets] = useState<Record<string, number>>({});
 
   const handleScrollUp = (uid: string, numRows: number) => {
@@ -88,7 +88,7 @@ const Leaderboard: React.FC = () => {
         
         finishedMatches.sort((a, b) => (a.startTime?.seconds || 0) - (b.startTime?.seconds || 0));
 
-        const newHistories: Record<string, { points: number; cardType: 'yellow' | 'red' | null; isResultCorrect?: boolean; isBanned?: boolean }[]> = {};
+        const newHistories: Record<string, { points: number; cardType: 'yellow' | 'red' | null; isResultCorrect?: boolean; isBanned?: boolean; isMissed?: boolean }[]> = {};
         
         userIds.forEach(uid => {
           const userPreds = allPreds.filter(p => p.userId === uid);
@@ -100,6 +100,7 @@ const Leaderboard: React.FC = () => {
           finishedMatches.forEach(match => {
             const p = userPreds.find(pred => pred.matchId === match.id);
             const isBanned = u?.bannedMatchIds?.includes(match.id);
+            const isMissed = !isBanned && (!p || p.choice === null || p.choice === undefined);
             
             let earns = 0;
             let isCorrect = false;
@@ -132,7 +133,8 @@ const Leaderboard: React.FC = () => {
               points: earns,
               cardType,
               isResultCorrect: isCorrect,
-              isBanned: !!isBanned
+              isBanned: !!isBanned,
+              isMissed
             });
           });
 
@@ -156,9 +158,9 @@ const Leaderboard: React.FC = () => {
         const history = userHistories[u.uid] || [];
 
         // Build inline items list with predictions and cards
-        const historyItems: ({ type: 'prediction'; points: number; isBanned?: boolean } | { type: 'yellow' } | { type: 'red' })[] = [];
+        const historyItems: ({ type: 'prediction'; points: number; isBanned?: boolean; isMissed?: boolean } | { type: 'yellow' } | { type: 'red' })[] = [];
         history.forEach(item => {
-          historyItems.push({ type: 'prediction', points: item.points, isBanned: item.isBanned });
+          historyItems.push({ type: 'prediction', points: item.points, isBanned: item.isBanned, isMissed: item.isMissed });
           if (item.cardType === 'yellow') {
             historyItems.push({ type: 'yellow' });
           } else if (item.cardType === 'red') {
@@ -316,12 +318,12 @@ const Leaderboard: React.FC = () => {
 
                           const earns = item.points;
                           const isPositive = earns > 0;
-                          const isNegative = earns < 0;
+                          const isMissed = item.isMissed;
                           
                           let bgClass = '';
                           if (isPositive) {
                             bgClass = 'bg-emerald-500 text-slate-950 font-black shadow-[0_0_6px_rgba(16,185,129,0.3)] border border-emerald-400/20';
-                          } else if (isNegative) {
+                          } else if (isMissed) {
                             bgClass = 'bg-blue-600 text-white font-black shadow-[0_0_6px_rgba(37,99,235,0.3)] border border-blue-500/20';
                           } else {
                             bgClass = 'bg-slate-800 text-slate-450 border border-slate-700/50';
