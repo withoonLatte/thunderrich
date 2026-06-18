@@ -279,9 +279,9 @@ const Leaderboard: React.FC = () => {
                               <div 
                                 key={itemIdx}
                                 title="ถูกแบนจากการทายผลนัดนี้" 
-                                className="w-8 h-8 rounded-lg bg-yellow-400 text-yellow-950 font-black border border-yellow-300 shadow-[0_0_8px_rgba(250,204,21,0.5)] transform rotate-[6deg] flex items-center justify-center flex-shrink-0 animate-pulse text-xs"
+                                className="w-8 h-8 rounded-lg bg-slate-800 border border-slate-600 flex items-center justify-center flex-shrink-0"
                               >
-                                0
+                                <div className="w-3.5 h-5 bg-yellow-400 border border-yellow-250 rounded-[2px] shadow-sm transform rotate-[6deg]" />
                               </div>
                             );
                           }
