@@ -13,6 +13,19 @@ const ScoreGraph: React.FC = () => {
       const data = snap.docs
         .map(d => d.data() as User)
         .filter(u => u.role !== 'admin');
+
+      data.sort((a, b) => {
+        if (b.points !== a.points) {
+          return b.points - a.points;
+        }
+        const wrongA = a.round1_wrong_count || 0;
+        const wrongB = b.round1_wrong_count || 0;
+        if (wrongA !== wrongB) {
+          return wrongA - wrongB; // Fewer wrongs first
+        }
+        return a.displayName.localeCompare(b.displayName, 'th');
+      });
+
       setUsers(data);
     });
 
