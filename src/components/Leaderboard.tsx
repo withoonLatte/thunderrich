@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { collection, onSnapshot, query, orderBy, limit, where, getDocs } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, limit, where, getDocs, doc, Timestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { User, Prediction } from '../types';
-import { Trophy, Award, Medal, ChevronUp, ChevronDown } from 'lucide-react';
-import { motion } from 'motion/react';
+import { Trophy, Award, Medal, ChevronUp, ChevronDown, Star } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 const NO_PRED_PENALTY: Record<string, number> = {
   'group': -1,
@@ -15,10 +15,160 @@ const NO_PRED_PENALTY: Record<string, number> = {
   'final': -3,
 };
 
+const OrnateCorner: React.FC<{ position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' }> = ({ position }) => {
+  const posClasses = {
+    'top-left': 'top-3 left-3',
+    'top-right': 'top-3 right-3 rotate-90',
+    'bottom-left': 'bottom-3 left-3 -rotate-90',
+    'bottom-right': 'bottom-3 right-3 rotate-180',
+  }[position];
+  
+  return (
+    <svg 
+      className={`absolute w-12 h-12 text-yellow-500/70 fill-none stroke-current ${posClasses} pointer-events-none`} 
+      viewBox="0 0 100 100"
+    >
+      <path d="M 10 10 L 90 10" strokeWidth="3" />
+      <path d="M 10 10 L 10 90" strokeWidth="3" />
+      <path d="M 18 18 L 65 18" strokeWidth="1.5" strokeDasharray="3,3" />
+      <path d="M 18 18 L 18 65" strokeWidth="1.5" strokeDasharray="3,3" />
+      <path d="M 10 30 C 20 30, 30 20, 30 10" strokeWidth="3" />
+      <circle cx="30" cy="30" r="4" fill="currentColor" />
+    </svg>
+  );
+};
+
+const GoldConfetti: React.FC = () => {
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    let animationFrameId: number;
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+
+    const handleResize = () => {
+      if (canvas) {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+      }
+    };
+    window.addEventListener('resize', handleResize);
+
+    class Particle {
+      x = Math.random() * width;
+      y = Math.random() * -height - 20;
+      rotation = Math.random() * 360;
+      rotationSpeed = Math.random() * 2 - 1;
+      diameter = Math.random() * 8 + 5;
+      color = '';
+      speedX = Math.random() * 3 - 1.5;
+      speedY = Math.random() * 4 + 2;
+      opacity = Math.random() * 0.6 + 0.4;
+      type: 'circle' | 'square' | 'star' = 'square';
+
+      constructor() {
+        const colors = [
+          '#facc15', // yellow-400
+          '#eab308', // yellow-500
+          '#fef08a', // yellow-200
+          '#fbbf24', // amber-400
+          '#f59e0b', // amber-500
+          '#ffffff', // white sparkle
+        ];
+        this.color = colors[Math.floor(Math.random() * colors.length)];
+        const types: ('circle' | 'square' | 'star')[] = ['circle', 'square', 'star'];
+        this.type = types[Math.floor(Math.random() * types.length)];
+      }
+
+      update() {
+        this.y += this.speedY;
+        this.x += this.speedX;
+        this.rotation += this.rotationSpeed;
+        if (this.y > height) {
+          this.y = Math.random() * -50 - 20;
+          this.x = Math.random() * width;
+        }
+      }
+
+      draw() {
+        if (!ctx) return;
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate((this.rotation * Math.PI) / 180);
+        ctx.globalAlpha = this.opacity;
+        
+        if (this.type === 'circle') {
+          ctx.beginPath();
+          ctx.arc(0, 0, this.diameter / 2, 0, Math.PI * 2);
+          ctx.fillStyle = this.color;
+          ctx.fill();
+        } else if (this.type === 'star') {
+          let rot = (Math.PI / 2) * 3;
+          let x = 0;
+          let y = 0;
+          const step = Math.PI / 5;
+          const outer = this.diameter;
+          const inner = this.diameter / 2;
+
+          ctx.beginPath();
+          ctx.moveTo(0, -outer);
+          for (let i = 0; i < 5; i++) {
+            x = Math.cos(rot) * outer;
+            y = Math.sin(rot) * outer;
+            ctx.lineTo(x, y);
+            rot += step;
+
+            x = Math.cos(rot) * inner;
+            y = Math.sin(rot) * inner;
+            ctx.lineTo(x, y);
+            rot += step;
+          }
+          ctx.lineTo(0, -outer);
+          ctx.closePath();
+          ctx.fillStyle = this.color;
+          ctx.fill();
+        } else {
+          ctx.fillStyle = this.color;
+          ctx.beginPath();
+          ctx.fillRect(-this.diameter / 2, -this.diameter / 2, this.diameter, this.diameter);
+        }
+        ctx.restore();
+      }
+    }
+
+    const particles: Particle[] = [];
+    for (let i = 0; i < 100; i++) {
+      particles.push(new Particle());
+    }
+
+    const render = () => {
+      ctx.clearRect(0, 0, width, height);
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+      animationFrameId = requestAnimationFrame(render);
+    };
+    render();
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} className="fixed inset-0 w-full h-full pointer-events-none z-10" />;
+};
+
 const Leaderboard: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [userHistories, setUserHistories] = useState<Record<string, { points: number; cardType: 'yellow' | 'red' | null; isResultCorrect?: boolean; isBanned?: boolean; isMissed?: boolean }[]>>({});
   const [rowOffsets, setRowOffsets] = useState<Record<string, number>>({});
+  const [manOfTheNight, setManOfTheNight] = useState<{ userId: string; updatedAt: any } | null>(null);
+  const [showPopup, setShowPopup] = useState(false);
 
   const handleScrollUp = (uid: string, numRows: number) => {
     setRowOffsets(prev => {
@@ -39,6 +189,26 @@ const Leaderboard: React.FC = () => {
       };
     });
   };
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'settings', 'manOfTheNight'), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data() as { userId: string; updatedAt: any };
+        setManOfTheNight(data);
+        
+        // Trigger popup only if the update happened recently (within last 15 seconds)
+        const nowServer = Timestamp.now().seconds;
+        const updateTime = data.updatedAt?.seconds || 0;
+        if (Math.abs(nowServer - updateTime) < 15) {
+          setShowPopup(true);
+        }
+      } else {
+        setManOfTheNight(null);
+        setShowPopup(false);
+      }
+    });
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     const q = query(collection(db, 'users'), orderBy('points', 'desc'));
@@ -158,236 +328,364 @@ const Leaderboard: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  const winnerUser = users.find(u => u.uid === manOfTheNight?.userId);
+
   return (
-    <div className="space-y-4">
-      {users.map((u, index) => {
-        const isGold = index === 0;
-        const isSilver = index === 1;
-        const isBronze = index === 2;
-        const Icon = isGold ? Trophy : isSilver ? Award : isBronze ? Medal : null;
-        const history = userHistories[u.uid] || [];
+    <>
+      <div className="space-y-4">
+        {users.map((u, index) => {
+          const isManOfTheNight = manOfTheNight?.userId === u.uid;
+          const isGold = index === 0;
+          const isSilver = index === 1;
+          const isBronze = index === 2;
+          const Icon = isGold ? Trophy : isSilver ? Award : isBronze ? Medal : null;
+          const history = userHistories[u.uid] || [];
 
-        // Build inline items list with predictions
-        const historyItems: { points: number; isBanned?: boolean; isMissed?: boolean }[] = [];
-        history.forEach(item => {
-          historyItems.push({ 
-            points: item.points, 
-            isBanned: item.isBanned, 
-            isMissed: item.isMissed
+          // Build inline items list with predictions
+          const historyItems: { points: number; isBanned?: boolean; isMissed?: boolean }[] = [];
+          history.forEach(item => {
+            historyItems.push({ 
+              points: item.points, 
+              isBanned: item.isBanned, 
+              isMissed: item.isMissed
+            });
           });
-        });
 
-        let borderGradient = '';
-        let bgGradient = '';
-        let topBarColor = '';
-        let rankLabel = '';
-        let avatarBorder = '';
+          let borderGradient = '';
+          let bgGradient = '';
+          let topBarColor = '';
+          let rankLabel = '';
+          let avatarBorder = '';
 
-        if (index >= 0 && index <= 2) {
-          borderGradient = 'linear-gradient(135deg, #facc15, #d97706)'; // Gold
-          bgGradient = 'linear-gradient(135deg, rgba(250, 204, 21, 0.50) 0%, rgba(234, 179, 8, 0.50) 100%)';
-          topBarColor = 'from-yellow-400 via-amber-400 to-yellow-600';
-          rankLabel = 'หัวแถว';
-          avatarBorder = 'border-yellow-400 shadow-[0_0_12px_rgba(250,204,21,0.45)]';
-        } else if (index >= 3 && index <= 11) {
-          borderGradient = 'linear-gradient(135deg, #94a3b8, #475569)'; // Grey
-          bgGradient = 'linear-gradient(135deg, rgba(15, 23, 42, 0.50) 0%, rgba(15, 23, 42, 0.50) 100%)';
-          topBarColor = 'from-slate-400 via-slate-500 to-slate-600';
-          rankLabel = 'player';
-          avatarBorder = 'border-slate-400 shadow-[0_0_10px_rgba(148,163,184,0.3)]';
-        } else {
-          borderGradient = 'linear-gradient(135deg, #ef4444, #b91c1c)'; // Red
-          bgGradient = 'linear-gradient(135deg, rgba(239, 68, 68, 0.50) 0%, rgba(153, 27, 27, 0.50) 100%)';
-          topBarColor = 'from-red-500 via-rose-600 to-red-700';
-          rankLabel = 'อ่อน';
-          avatarBorder = 'border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.3)]';
-        }
+          if (isManOfTheNight) {
+            borderGradient = 'linear-gradient(135deg, #facc15, #fef08a, #ca8a04, #facc15)'; // Super bright gold gradient
+            bgGradient = 'linear-gradient(135deg, rgba(10, 8, 2, 0.95) 0%, rgba(35, 25, 5, 0.95) 100%)'; // Glowing dark gold obsidian
+            topBarColor = 'from-yellow-400 via-amber-500 to-yellow-600 animate-pulse';
+            rankLabel = 'MOTN';
+            avatarBorder = 'border-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.85)]';
+          } else if (index >= 0 && index <= 2) {
+            borderGradient = 'linear-gradient(135deg, #facc15, #d97706)'; // Gold
+            bgGradient = 'linear-gradient(135deg, rgba(250, 204, 21, 0.50) 0%, rgba(234, 179, 8, 0.50) 100%)';
+            topBarColor = 'from-yellow-400 via-amber-400 to-yellow-600';
+            rankLabel = 'หัวแถว';
+            avatarBorder = 'border-yellow-400 shadow-[0_0_12px_rgba(250,204,21,0.45)]';
+          } else if (index >= 3 && index <= 11) {
+            borderGradient = 'linear-gradient(135deg, #94a3b8, #475569)'; // Grey
+            bgGradient = 'linear-gradient(135deg, rgba(15, 23, 42, 0.50) 0%, rgba(15, 23, 42, 0.50) 100%)';
+            topBarColor = 'from-slate-400 via-slate-500 to-slate-600';
+            rankLabel = 'player';
+            avatarBorder = 'border-slate-400 shadow-[0_0_10px_rgba(148,163,184,0.3)]';
+          } else {
+            borderGradient = 'linear-gradient(135deg, #ef4444, #b91c1c)'; // Red
+            bgGradient = 'linear-gradient(135deg, rgba(239, 68, 68, 0.50) 0%, rgba(153, 27, 27, 0.50) 100%)';
+            topBarColor = 'from-red-500 via-rose-600 to-red-700';
+            rankLabel = 'อ่อน';
+            avatarBorder = 'border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.3)]';
+          }
 
-        return (
-          <motion.div 
-            key={u.uid}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.05 }}
-            style={{
-              background: `${bgGradient} padding-box, ${borderGradient} border-box`,
-              border: '3px solid transparent'
-            }}
-            className="flex flex-col gap-6 p-6 pt-10 rounded-[2.5rem] transition-all relative overflow-hidden backdrop-blur-md shadow-2xl"
-          >
-            {/* Top Color Bar */}
-            <div className={`absolute top-0 left-0 right-0 h-3.5 bg-gradient-to-r ${topBarColor}`} />
+          return (
+            <motion.div 
+              key={u.uid}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+              style={{
+                background: `${bgGradient} padding-box, ${borderGradient} border-box`,
+                border: '3px solid transparent'
+              }}
+              className={`flex flex-col gap-6 p-6 pt-10 rounded-[2.5rem] transition-all relative overflow-hidden backdrop-blur-md shadow-2xl ${
+                isManOfTheNight ? 'shadow-[0_0_25px_rgba(250,204,21,0.25)] ring-1 ring-yellow-400/10' : ''
+              }`}
+            >
+              {/* Top Color Bar */}
+              <div className={`absolute top-0 left-0 right-0 h-3.5 bg-gradient-to-r ${topBarColor}`} />
 
-            {/* Info Section */}
-            <div className="flex flex-wrap sm:flex-nowrap items-center gap-6">
-              {/* Circular Rank Badge */}
-              <div className="flex-shrink-0 w-24 h-24 rounded-full border-4 border-white flex flex-col items-center justify-center bg-black/35 shadow-inner">
-                <span className="text-[10px] font-black uppercase tracking-widest text-white/80 leading-none mb-1">
-                  {rankLabel}
-                </span>
-                <span className="text-4xl font-black italic text-white leading-none">
-                  {index + 1}
-                </span>
-              </div>
-
-              {/* Avatar Box */}
-              <div className="relative flex-shrink-0">
-                <div className={`w-20 h-20 rounded-[1.8rem] overflow-hidden p-0.5 border-4 ${avatarBorder} bg-slate-900`}>
-                  <img 
-                    src={u.photoURL || `https://ui-avatars.com/api/?name=${u.displayName}&background=0F172A&color=E2E8F0&bold=true`} 
-                    alt={u.displayName} 
-                    className="w-full h-full rounded-[1.5rem] object-cover"
-                  />
+              {isManOfTheNight && (
+                <div className="absolute top-4 right-6 bg-gradient-to-r from-yellow-400 via-amber-500 to-yellow-500 text-black text-[10px] font-extrabold px-3 py-1 rounded-full shadow-[0_0_12px_rgba(250,204,21,0.5)] tracking-widest flex items-center gap-1 select-none animate-pulse">
+                  🌌 MAN OF THE NIGHT
                 </div>
-                {Icon && (
-                  <div className="absolute -top-3 -right-3 w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center shadow-lg border border-white/10">
-                    <Icon className="w-5 h-5 text-yellow-450 fill-current" />
+              )}
+
+              {/* Info Section */}
+              <div className="flex flex-wrap sm:flex-nowrap items-center gap-6">
+                {/* Circular Rank Badge */}
+                <div className={`flex-shrink-0 w-24 h-24 rounded-full border-4 flex flex-col items-center justify-center bg-black/35 shadow-inner ${
+                  isManOfTheNight ? 'border-yellow-450 shadow-[0_0_15px_rgba(250,204,21,0.4)]' : 'border-white'
+                }`}>
+                  <span className={`text-[10px] font-black uppercase tracking-widest leading-none mb-1 ${
+                    isManOfTheNight ? 'text-yellow-400' : 'text-white/80'
+                  }`}>
+                    {rankLabel}
+                  </span>
+                  <span className={`text-4xl font-black italic leading-none ${
+                    isManOfTheNight ? 'text-yellow-450' : 'text-white'
+                  }`}>
+                    {index + 1}
+                  </span>
+                </div>
+
+                {/* Avatar Box */}
+                <div className="relative flex-shrink-0">
+                  <div className={`w-20 h-20 rounded-[1.8rem] overflow-hidden p-0.5 border-4 ${avatarBorder} bg-slate-900`}>
+                    <img 
+                      src={u.photoURL || `https://ui-avatars.com/api/?name=${u.displayName}&background=0F172A&color=E2E8F0&bold=true`} 
+                      alt={u.displayName} 
+                      className="w-full h-full rounded-[1.5rem] object-cover"
+                    />
                   </div>
-                )}
-              </div>
-
-              {/* Name and point details */}
-              <div className="flex-1 min-w-0 space-y-3">
-                <div className="flex items-center gap-3">
-                  <h3 className="text-2xl md:text-3xl font-black text-white tracking-tight truncate leading-none drop-shadow-sm">
-                    {u.displayName}
-                  </h3>
-                  {u.yellow_cards > 0 && (
-                    <div 
-                      title={`ได้รับใบเหลือง`} 
-                      className="w-3.5 h-5 bg-yellow-450 border border-yellow-300 rounded-[2px] shadow-[0_0_8px_rgba(250,204,21,0.6)] transform rotate-[6deg] flex-shrink-0" 
-                    />
-                  )}
-                  {u.red_cards > 0 && (
-                    <div 
-                      title={`ได้รับใบแดง`} 
-                      className="w-3.5 h-5 bg-red-600 border border-red-500 rounded-[2px] shadow-[0_0_8px_rgba(220,38,38,0.6)] transform -rotate-[6deg] flex-shrink-0" 
-                    />
-                  )}
-                </div>
-                
-                <div className="flex items-center flex-wrap gap-4">
-                  {/* Point Red Circle */}
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center text-white text-3xl font-black shadow-lg shadow-red-600/35 border-[5px] border-red-500/45">
-                      {u.points}
+                  {Icon && !isManOfTheNight && (
+                    <div className="absolute -top-3 -right-3 w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center shadow-lg border border-white/10">
+                      <Icon className="w-5 h-5 text-yellow-450 fill-current" />
                     </div>
-                    <span className="text-sm font-black uppercase tracking-wider text-slate-350">
-                      point
-                    </span>
-                  </div>
-
-                  {/* Yellow pill badge: เฟอะฟะ */}
-                  <div className="rounded-full bg-yellow-400 text-black px-5 py-2 text-base font-black shadow-md border border-yellow-350 tracking-wider">
-                    เฟอะฟะ {u.round1_wrong_count}
-                  </div>
+                  )}
+                  {isManOfTheNight && (
+                    <div className="absolute -top-3 -right-3 w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center shadow-lg border border-yellow-400/50">
+                      <Star className="w-5 h-5 text-yellow-400 fill-current animate-spin-slow" />
+                    </div>
+                  )}
                 </div>
-              </div>
-            </div>
 
-            {/* Full prediction history with row-by-row pagination */}
-            {history && history.length > 0 && (() => {
-              const rows = [];
-              const ITEMS_PER_ROW = 8;
-              for (let i = 0; i < historyItems.length; i += ITEMS_PER_ROW) {
-                rows.push(historyItems.slice(i, i + ITEMS_PER_ROW));
-              }
-              const numRows = rows.length;
-              const currentOffset = rowOffsets[u.uid] !== undefined ? rowOffsets[u.uid] : Math.max(0, numRows - 3);
-              const visibleRows = rows.slice(currentOffset, currentOffset + 3);
-
-              return (
-                <div className="space-y-2.5 pt-3 border-t border-white/5">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-black uppercase tracking-wider text-slate-400">
-                      ประวัติการทายผลทั้งหมด :
-                    </span>
-                  </div>
-                  
-                  <div className="flex flex-col gap-2">
-                    {visibleRows.map((row, rowIdx) => (
-                      <div key={rowIdx} className="grid grid-cols-8 gap-1.5 sm:gap-2 justify-items-center items-center">
-                        {row.map((item, itemIdx) => {
-                          const earns = item.points;
-                          const isPositive = earns > 0;
-                          const isMissed = item.isMissed;
-
-                          if (item.isBanned) {
-                            return (
-                              <div 
-                                key={itemIdx}
-                                title="ถูกแบนจากการทายผลนัดนี้" 
-                                className="w-8 h-8 rounded-lg bg-slate-800 border border-slate-600 flex items-center justify-center flex-shrink-0"
-                              >
-                                <div className="w-3.5 h-5 bg-yellow-400 border border-yellow-250 rounded-[2px] shadow-sm transform rotate-[6deg]" />
-                              </div>
-                            );
-                          }
-
-                          let bgClass = '';
-                          if (isPositive) {
-                            bgClass = 'bg-emerald-500 text-slate-950 font-black shadow-[0_0_6px_rgba(16,185,129,0.3)] border border-emerald-400/20';
-                          } else if (isMissed) {
-                            bgClass = 'bg-blue-600 text-white font-black shadow-[0_0_6px_rgba(37,99,235,0.3)] border border-blue-500/20';
-                          } else {
-                            bgClass = 'bg-slate-800 text-slate-450 border border-slate-700/50';
-                          }
-
-                          const valText = earns > 0 ? `+${earns}` : `${earns}`;
-
-                          return (
-                            <div 
-                              key={itemIdx} 
-                              className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black leading-none flex-shrink-0 ${bgClass}`}
-                            >
-                              {valText}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="flex items-center justify-between pt-1">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
-                      แถวที่ {currentOffset + 1} - {Math.min(numRows, currentOffset + 3)} จาก {numRows}
-                    </span>
-                    {numRows > 3 && (
-                      <div className="flex gap-2">
-                        <button 
-                          type="button"
-                          onClick={() => handleScrollUp(u.uid, numRows)}
-                          disabled={currentOffset === 0}
-                          className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-all ${
-                            currentOffset === 0
-                              ? 'bg-pink-950/20 border-pink-900/10 text-pink-900/40 cursor-not-allowed'
-                              : 'bg-pink-500 border-pink-400 text-white hover:bg-pink-400 shadow-md shadow-pink-500/20 cursor-pointer active:scale-95'
-                          }`}
-                        >
-                          <ChevronUp className="w-4.5 h-4.5" />
-                        </button>
-                        <button 
-                          type="button"
-                          onClick={() => handleScrollDown(u.uid, numRows)}
-                          disabled={currentOffset >= numRows - 3}
-                          className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-all ${
-                            currentOffset >= numRows - 3
-                              ? 'bg-pink-950/20 border-pink-900/10 text-pink-900/40 cursor-not-allowed'
-                              : 'bg-pink-500 border-pink-400 text-white hover:bg-pink-400 shadow-md shadow-pink-500/20 cursor-pointer active:scale-95'
-                          }`}
-                        >
-                          <ChevronDown className="w-4.5 h-4.5" />
-                        </button>
-                      </div>
+                {/* Name and point details */}
+                <div className="flex-1 min-w-0 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <h3 className={`text-2xl md:text-3xl font-black tracking-tight truncate leading-none drop-shadow-sm ${
+                      isManOfTheNight 
+                        ? 'text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-yellow-400 to-amber-400 font-extrabold' 
+                        : 'text-white'
+                    }`}>
+                      {u.displayName}
+                    </h3>
+                    {u.yellow_cards > 0 && (
+                      <div 
+                        title={`ได้รับใบเหลือง`} 
+                        className="w-3.5 h-5 bg-yellow-450 border border-yellow-300 rounded-[2px] shadow-[0_0_8px_rgba(250,204,21,0.6)] transform rotate-[6deg] flex-shrink-0" 
+                      />
+                    )}
+                    {u.red_cards > 0 && (
+                      <div 
+                        title={`ได้รับใบแดง`} 
+                        className="w-3.5 h-5 bg-red-600 border border-red-500 rounded-[2px] shadow-[0_0_8px_rgba(220,38,38,0.6)] transform -rotate-[6deg] flex-shrink-0" 
+                      />
                     )}
                   </div>
+                  
+                  <div className="flex items-center flex-wrap gap-4">
+                    {/* Point Circle */}
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl font-black shadow-lg border-[5px] ${
+                        isManOfTheNight 
+                          ? 'bg-yellow-500 text-black shadow-yellow-500/35 border-yellow-450' 
+                          : 'bg-red-600 text-white shadow-red-600/35 border-red-500/45'
+                      }`}>
+                        {u.points}
+                      </div>
+                      <span className={`text-sm font-black uppercase tracking-wider ${
+                        isManOfTheNight ? 'text-yellow-450' : 'text-slate-350'
+                      }`}>
+                        point
+                      </span>
+                    </div>
+
+                    {/* Yellow pill badge: เฟอะฟะ */}
+                    <div className="rounded-full bg-yellow-400 text-black px-5 py-2 text-base font-black shadow-md border border-yellow-350 tracking-wider">
+                      เฟอะฟะ {u.round1_wrong_count}
+                    </div>
+                  </div>
                 </div>
-              );
-            })()}
+              </div>
+
+              {/* Full prediction history with row-by-row pagination */}
+              {history && history.length > 0 && (() => {
+                const rows = [];
+                const ITEMS_PER_ROW = 8;
+                for (let i = 0; i < historyItems.length; i += ITEMS_PER_ROW) {
+                  rows.push(historyItems.slice(i, i + ITEMS_PER_ROW));
+                }
+                const numRows = rows.length;
+                const currentOffset = rowOffsets[u.uid] !== undefined ? rowOffsets[u.uid] : Math.max(0, numRows - 3);
+                const visibleRows = rows.slice(currentOffset, currentOffset + 3);
+
+                return (
+                  <div className="space-y-2.5 pt-3 border-t border-white/5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-black uppercase tracking-wider text-slate-400">
+                        ประวัติการทายผลทั้งหมด :
+                      </span>
+                    </div>
+                    
+                    <div className="flex flex-col gap-2">
+                      {visibleRows.map((row, rowIdx) => (
+                        <div key={rowIdx} className="grid grid-cols-8 gap-1.5 sm:gap-2 justify-items-center items-center">
+                          {row.map((item, itemIdx) => {
+                            const earns = item.points;
+                            const isPositive = earns > 0;
+                            const isMissed = item.isMissed;
+
+                            if (item.isBanned) {
+                              return (
+                                <div 
+                                  key={itemIdx}
+                                  title="ถูกแบนจากการทายผลนัดนี้" 
+                                  className="w-8 h-8 rounded-lg bg-slate-800 border border-slate-600 flex items-center justify-center flex-shrink-0"
+                                >
+                                  <div className="w-3.5 h-5 bg-yellow-400 border border-yellow-250 rounded-[2px] shadow-sm transform rotate-[6deg]" />
+                                </div>
+                              );
+                            }
+
+                            let bgClass = '';
+                            if (isPositive) {
+                              bgClass = 'bg-emerald-500 text-slate-950 font-black shadow-[0_0_6px_rgba(16,185,129,0.3)] border border-emerald-400/20';
+                            } else if (isMissed) {
+                              bgClass = 'bg-blue-600 text-white font-black shadow-[0_0_6px_rgba(37,99,235,0.3)] border border-blue-500/20';
+                            } else {
+                              bgClass = 'bg-slate-800 text-slate-450 border border-slate-700/50';
+                            }
+
+                            const valText = earns > 0 ? `+${earns}` : `${earns}`;
+
+                            return (
+                              <div 
+                                key={itemIdx} 
+                                className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black leading-none flex-shrink-0 ${bgClass}`}
+                              >
+                                {valText}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                        แถวที่ {currentOffset + 1} - {Math.min(numRows, currentOffset + 3)} จาก {numRows}
+                      </span>
+                      {numRows > 3 && (
+                        <div className="flex gap-2">
+                          <button 
+                            type="button"
+                            onClick={() => handleScrollUp(u.uid, numRows)}
+                            disabled={currentOffset === 0}
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-all ${
+                              currentOffset === 0
+                                ? 'bg-pink-950/20 border-pink-900/10 text-pink-900/40 cursor-not-allowed'
+                                : 'bg-pink-500 border-pink-400 text-white hover:bg-pink-400 shadow-md shadow-pink-500/20 cursor-pointer active:scale-95'
+                            }`}
+                          >
+                            <ChevronUp className="w-4.5 h-4.5" />
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={() => handleScrollDown(u.uid, numRows)}
+                            disabled={currentOffset >= numRows - 3}
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-all ${
+                              currentOffset >= numRows - 3
+                                ? 'bg-pink-950/20 border-pink-900/10 text-pink-900/40 cursor-not-allowed'
+                                : 'bg-pink-500 border-pink-400 text-white hover:bg-pink-400 shadow-md shadow-pink-500/20 cursor-pointer active:scale-95'
+                            }`}
+                          >
+                            <ChevronDown className="w-4.5 h-4.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+            </motion.div>
+          );
+        })}
+      </div>
+
+      <AnimatePresence>
+        {showPopup && winnerUser && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4"
+            onClick={() => setShowPopup(false)}
+          >
+            <GoldConfetti />
+
+            <motion.div
+              initial={{ scale: 0.8, y: 50, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.8, y: 50, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="relative w-full max-w-lg bg-gradient-to-b from-[#4a0305] to-[#1a0002] rounded-[2.5rem] border-[6px] border-[#d97706] shadow-[0_0_60px_rgba(234,179,8,0.5)] flex flex-col items-center justify-center p-8 text-center select-none overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Ornate Inner borders */}
+              <div className="absolute inset-3 border-2 border-yellow-500/50 rounded-[2rem] pointer-events-none" />
+              <div className="absolute inset-[18px] border border-dashed border-yellow-400/30 rounded-[1.8rem] pointer-events-none" />
+
+              {/* Ornate Corners */}
+              <OrnateCorner position="top-left" />
+              <OrnateCorner position="top-right" />
+              <OrnateCorner position="bottom-left" />
+              <OrnateCorner position="bottom-right" />
+
+              {/* Rays backdrop */}
+              <div className="absolute top-[25%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[radial-gradient(circle,rgba(250,204,21,0.08)_0%,transparent_70%)] animate-spin-slow pointer-events-none" />
+              <div className="absolute top-[25%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-radial from-yellow-500/20 to-transparent blur-2xl pointer-events-none" />
+
+              {/* Close Button */}
+              <button 
+                onClick={() => setShowPopup(false)}
+                className="absolute top-6 right-6 z-25 w-8 h-8 rounded-full bg-black/40 hover:bg-black/80 border border-yellow-500/50 text-yellow-400 hover:text-yellow-300 flex items-center justify-center transition-all cursor-pointer hover:scale-110 active:scale-95"
+              >
+                <span className="text-xl font-bold font-sans">×</span>
+              </button>
+
+              <div className="z-10 w-full flex flex-col items-center gap-6 my-4">
+                {/* Gold Avatar Ring */}
+                <div className="relative w-44 h-44 sm:w-48 sm:h-48 rounded-full flex items-center justify-center p-2 bg-gradient-to-b from-yellow-300 via-amber-500 to-yellow-600 shadow-[0_0_30px_rgba(234,179,8,0.7)]">
+                  <div className="absolute inset-0 rounded-full border-4 border-dashed border-white/60 animate-spin-slow" />
+                  <div className="w-full h-full rounded-full overflow-hidden border-[5px] border-slate-950 bg-slate-900">
+                    <img 
+                      src={winnerUser.photoURL || `https://ui-avatars.com/api/?name=${winnerUser.displayName}&background=0F172A&color=E2E8F0&bold=true`} 
+                      alt={winnerUser.displayName} 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+
+                {/* Banner / Ribbon */}
+                <div className="relative -mt-10 bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-600 text-black px-6 py-2 rounded-md shadow-[0_4px_12px_rgba(0,0,0,0.5)] border-y-2 border-yellow-200">
+                  <div className="text-[10px] sm:text-xs tracking-[0.25em] font-black uppercase text-center" style={{ fontWeight: 900 }}>
+                    MAN OF THE NIGHT
+                  </div>
+                </div>
+
+                {/* User Name */}
+                <h2 
+                  className="text-3xl sm:text-4xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-b from-white via-yellow-250 to-amber-400 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] uppercase font-serif" 
+                  style={{ fontFamily: 'Georgia, serif', fontWeight: 900 }}
+                >
+                  {winnerUser.displayName}
+                </h2>
+
+                {/* Points Circle */}
+                <div className="relative w-36 h-36 rounded-full bg-gradient-to-b from-slate-950 to-black border-[5px] border-yellow-500 flex flex-col items-center justify-center shadow-[0_0_25px_rgba(234,179,8,0.4)]">
+                  <div className="absolute inset-1.5 rounded-full border border-yellow-400/30" />
+                  <span 
+                    className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 to-amber-500 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]" 
+                    style={{ fontWeight: 900 }}
+                  >
+                    {winnerUser.points.toLocaleString('th-TH')}
+                  </span>
+                  <span className="text-[9px] font-black text-yellow-400 tracking-[0.2em] uppercase mt-0.5">
+                    POINTS
+                  </span>
+                </div>
+              </div>
+            </motion.div>
           </motion.div>
-        );
-      })}
-    </div>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 

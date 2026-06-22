@@ -15,6 +15,7 @@ const AdminDashboard: React.FC = () => {
   const [matches, setMatches] = useState<Match[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [activeAdminTab, setActiveAdminTab] = useState<'matches' | 'history' | 'players' | 'custom'>('matches');
+  const [manOfTheNight, setManOfTheNight] = useState<{ userId: string; updatedAt: any } | null>(null);
   const deferredAdminTab = useDeferredValue(activeAdminTab);
   const [showAdd, setShowAdd] = useState(false);
   
@@ -73,13 +74,41 @@ const AdminDashboard: React.FC = () => {
       setAllPredictions(preds);
     });
 
+    const unsubMan = onSnapshot(doc(db, 'settings', 'manOfTheNight'), (snap) => {
+      if (snap.exists()) {
+        setManOfTheNight(snap.data() as any);
+      } else {
+        setManOfTheNight(null);
+      }
+    });
+
     return () => {
       unsubMatches();
       unsubUsers();
       unsubConfig();
       unsubAllPreds();
+      unsubMan();
     };
   }, []);
+
+  const handleSelectManOfTheNight = async (userId: string) => {
+    try {
+      await setDoc(doc(db, 'settings', 'manOfTheNight'), {
+        userId,
+        updatedAt: Timestamp.now()
+      });
+    } catch (err) {
+      console.error('Error setting Man of the Night:', err);
+    }
+  };
+
+  const handleClearManOfTheNight = async () => {
+    try {
+      await deleteDoc(doc(db, 'settings', 'manOfTheNight'));
+    } catch (err) {
+      console.error('Error clearing Man of the Night:', err);
+    }
+  };
 
   const handleBulkImportText = async () => {
     if (!bulkText.trim()) return;
@@ -1341,9 +1370,44 @@ const AdminDashboard: React.FC = () => {
                       <p className="text-xs text-black font-bold">{u.role === 'admin' ? 'แอดมิน' : 'ผู้เล่น'}</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-huge text-world-cup-gold font-black">{u.points}</p>
-                    <p className="text-[10px] text-black uppercase font-black tracking-widest">POINTS</p>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <p className="text-huge text-world-cup-gold font-black">{u.points}</p>
+                      <p className="text-[10px] text-black uppercase font-black tracking-widest">POINTS</p>
+                    </div>
+                    {u.role !== 'admin' && (
+                      <div className="flex flex-col gap-1.5 shrink-0 ml-2">
+                        {manOfTheNight?.userId === u.uid ? (
+                          <>
+                            <span className="text-[9px] bg-yellow-400 text-black px-2.5 py-1 rounded-lg font-black text-center animate-pulse border border-yellow-350 shadow-[0_0_8px_rgba(250,204,21,0.5)] flex items-center justify-center gap-1">
+                              <Star className="w-2.5 h-2.5 fill-current text-black" />
+                              MAN OF THE NIGHT
+                            </span>
+                            <div className="flex gap-1.5 justify-end">
+                              <button
+                                onClick={() => handleSelectManOfTheNight(u.uid)}
+                                className="bg-slate-900 hover:bg-black text-white px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all"
+                              >
+                                ยิงซ้ำ
+                              </button>
+                              <button
+                                onClick={handleClearManOfTheNight}
+                                className="bg-red-650 hover:bg-red-700 text-white px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all"
+                              >
+                                ปลด
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => handleSelectManOfTheNight(u.uid)}
+                            className="bg-world-cup-gold hover:bg-yellow-600 text-black px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all"
+                          >
+                            ตั้งเป็น Man of the Night
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
