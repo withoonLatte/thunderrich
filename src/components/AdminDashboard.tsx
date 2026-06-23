@@ -110,6 +110,104 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const handleExportExcel = () => {
+    try {
+      // 1. Filter and sort Group stage matches
+      const groupMatches = matches.filter(m => m.round === 'group');
+      groupMatches.sort((a, b) => (a.startTime?.seconds || 0) - (b.startTime?.seconds || 0));
+
+      // 2. Prepare CSV Header
+      const headers = [
+        'อันดับ',
+        'ชื่อผู้เล่น',
+        'คะแนนสะสมรวม',
+        'ทายผิดสะสม (เฟอะฟะ)'
+      ];
+
+      groupMatches.forEach((m, idx) => {
+        const matchTitle = `${m.homeTeam} vs ${m.awayTeam}`;
+        headers.push(`คู่ที่ ${idx + 1}: ${matchTitle} (ทายผล)`, `คู่ที่ ${idx + 1}: ${matchTitle} (เวลาทาย)`);
+      });
+
+      // 3. Filter and sort players
+      const playersOnly = users.filter(u => u.role !== 'admin');
+      playersOnly.sort((a, b) => {
+        if (b.points !== a.points) {
+          return b.points - a.points;
+        }
+        const wrongA = a.round1_wrong_count || 0;
+        const wrongB = b.round1_wrong_count || 0;
+        if (wrongA !== wrongB) {
+          return wrongA - wrongB;
+        }
+        return a.displayName.localeCompare(b.displayName, 'th');
+      });
+
+      const escapeCSV = (val: any) => {
+        if (val === null || val === undefined) return '';
+        let str = String(val);
+        str = str.replace(/"/g, '""');
+        if (str.includes(',') || str.includes('\n') || str.includes('"')) {
+          str = `"${str}"`;
+        }
+        return str;
+      };
+
+      // 4. Build Rows
+      const rows = [headers.map(escapeCSV).join(',')];
+
+      playersOnly.forEach((u, idx) => {
+        const rowData = [
+          String(idx + 1),
+          u.displayName,
+          String(u.points),
+          String(u.round1_wrong_count)
+        ];
+
+        groupMatches.forEach(m => {
+          const p = allPredictions.find(pred => pred.userId === u.uid && pred.matchId === m.id);
+          const isBanned = u.bannedMatchIds?.includes(m.id);
+          
+          let predictionStr = '';
+          let timeStr = '-';
+
+          if (isBanned) {
+            predictionStr = 'โดนแบน (0)';
+          } else if (p) {
+            const teamChoice = p.choice === 'home' ? m.homeTeam : m.awayTeam;
+            predictionStr = `${teamChoice} (${p.pointsEarned ?? 0})`;
+            if (p.createdAt) {
+              const date = p.createdAt.toDate ? p.createdAt.toDate() : new Date(p.createdAt.seconds * 1000);
+              timeStr = date.toLocaleString('th-TH');
+            }
+          } else if (m.status === 'finished') {
+            predictionStr = 'ไม่ได้ทาย (-1)';
+          } else {
+            predictionStr = 'ยังไม่ได้ทาย';
+          }
+
+          rowData.push(predictionStr, timeStr);
+        });
+
+        rows.push(rowData.map(escapeCSV).join(','));
+      });
+
+      // 5. Trigger download with UTF-8 BOM
+      const csvContent = '\uFEFF' + rows.join('\r\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `thunderrich_group_predictions_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error('Error exporting predictions:', err);
+      alert('เกิดข้อผิดพลาดในการส่งออกข้อมูล');
+    }
+  };
+
   const handleBulkImportText = async () => {
     if (!bulkText.trim()) return;
 
@@ -1349,7 +1447,17 @@ const AdminDashboard: React.FC = () => {
         <div className="space-y-6">
           <div className="wc-glass p-6 rounded-3xl border-t-2 border-world-cup-green/20">
             <h3 className="text-sm text-black italic uppercase tracking-wider mb-2 text-center underline underline-offset-4 font-black">สรุปรายชื่อเพื่อนซี้</h3>
-            <p className="text-[10px] text-center text-black mb-6 font-black">ผู้เล่นสมัครสมาชิกเองผ่านหน้าลงทะเบียน</p>
+            <p className="text-[10px] text-center text-black mb-4 font-black">ผู้เล่นสมัครสมาชิกเองผ่านหน้าลงทะเบียน</p>
+            
+            <div className="flex justify-center mb-6">
+              <button 
+                type="button"
+                onClick={handleExportExcel}
+                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-2xl text-xs font-black shadow-md shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer border border-emerald-500/30"
+              >
+                📥 Export สถิติการทายรอบแรก (Excel / CSV)
+              </button>
+            </div>
             
             <div className="space-y-3">
               {users.map((u, idx) => (
