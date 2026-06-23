@@ -548,7 +548,7 @@ const Leaderboard: React.FC = () => {
                   </div>
 
                   {/* Name + Subtitle (change text & wrongs) */}
-                  <div className="flex flex-col min-w-0 gap-0.5">
+                  <div className="flex flex-col min-w-0 gap-1.5">
                     <div className="flex items-center gap-2">
                       {/* Up/Down Arrow Indicator (Inline before Name) */}
                       {(() => {
@@ -616,7 +616,7 @@ const Leaderboard: React.FC = () => {
                     </div>
                     {/* Subtitle details */}
                     <div 
-                      className="flex items-center gap-1.5 text-[10px] text-slate-400 select-none"
+                      className="flex items-center gap-2 text-[20px] text-slate-400 select-none"
                       style={{ fontWeight: 700 }}
                     >
                       <span>
