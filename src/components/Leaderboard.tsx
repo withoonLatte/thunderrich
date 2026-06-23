@@ -623,7 +623,7 @@ const Leaderboard: React.FC = () => {
                       className="flex items-center gap-2 text-[20px] text-slate-400 select-none"
                       style={{ fontWeight: 700 }}
                     >
-                      <span>
+                      <span className="whitespace-nowrap">
                         {(() => {
                           const currentRank = index + 1;
                           const previousRank = previousRanks[u.uid];
@@ -632,8 +632,6 @@ const Leaderboard: React.FC = () => {
                           return isUp ? `ขึ้นจากอันดับ ${previousRank}` : isDown ? `ลงจากอันดับ ${previousRank}` : 'คงที่';
                         })()}
                       </span>
-                      <span>•</span>
-                      <span className="text-yellow-450">เฟอะฟะ {u.round1_wrong_count}</span>
                     </div>
                   </div>
                 </div>
@@ -722,9 +720,13 @@ const Leaderboard: React.FC = () => {
                     </div>
 
                     <div className="flex items-center justify-between pt-1">
-                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
-                        แถวที่ {currentOffset + 1} - {Math.min(numRows, currentOffset + 3)} จาก {numRows}
-                      </span>
+                      <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-wider select-none">
+                        <span className="text-slate-500">
+                          แถวที่ {currentOffset + 1} - {Math.min(numRows, currentOffset + 3)} จาก {numRows}
+                        </span>
+                        <span className="text-slate-600">•</span>
+                        <span className="text-yellow-450">เฟอะฟะ {u.round1_wrong_count}</span>
+                      </div>
                       {numRows > 3 && (
                         <div className="flex gap-2">
                           <button 
