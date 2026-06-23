@@ -290,37 +290,6 @@ const Leaderboard: React.FC = () => {
         return a.displayName.localeCompare(b.displayName, 'th');
       });
 
-      // Calculate ranks and compare with localStorage
-      const localRanksKey = 'thunderrich_leaderboard_ranks';
-      let savedRanks: Record<string, number> = {};
-      try {
-        const raw = localStorage.getItem(localRanksKey);
-        if (raw) {
-          savedRanks = JSON.parse(raw);
-        }
-      } catch (e) {
-        console.error('Error reading saved ranks:', e);
-      }
-
-      const newPrevRanks: Record<string, number> = {};
-      topUsers.forEach((u, idx) => {
-        const currentRank = idx + 1;
-        const prevRank = savedRanks[u.uid];
-        if (prevRank !== undefined) {
-          newPrevRanks[u.uid] = prevRank;
-        } else {
-          newPrevRanks[u.uid] = currentRank;
-        }
-      });
-      setPreviousRanks(newPrevRanks);
-
-      // Now save the current ranks to localStorage for the next change
-      const currentRanksMap: Record<string, number> = {};
-      topUsers.forEach((u, idx) => {
-        currentRanksMap[u.uid] = idx + 1;
-      });
-      localStorage.setItem(localRanksKey, JSON.stringify(currentRanksMap));
-
       setUsers(topUsers);
 
       // Fetch histories for top users
@@ -362,6 +331,75 @@ const Leaderboard: React.FC = () => {
           .filter(m => m.status === 'finished');
         
         finishedMatches.sort((a, b) => (a.startTime?.seconds || 0) - (b.startTime?.seconds || 0));
+
+        // Persistent Rank tracking based on finished matches count
+        const finishedMatchIdsStr = finishedMatches.map(m => m.id).sort().join(',');
+        
+        const localRanksKey = 'thunderrich_leaderboard_ranks';
+        const localPrevRanksKey = 'thunderrich_leaderboard_prev_ranks';
+        const localMatchesKey = 'thunderrich_leaderboard_finished_matches';
+
+        let lastFinishedMatches = localStorage.getItem(localMatchesKey) || '';
+        let savedRanks: Record<string, number> = {};
+        let prevRanks: Record<string, number> = {};
+
+        try {
+          const rawSaved = localStorage.getItem(localRanksKey);
+          if (rawSaved) savedRanks = JSON.parse(rawSaved);
+        } catch(e) {}
+
+        try {
+          const rawPrev = localStorage.getItem(localPrevRanksKey);
+          if (rawPrev) prevRanks = JSON.parse(rawPrev);
+        } catch(e) {}
+
+        const currentRanksMap: Record<string, number> = {};
+        topUsers.forEach((u, idx) => {
+          currentRanksMap[u.uid] = idx + 1;
+        });
+
+        if (finishedMatchIdsStr !== lastFinishedMatches) {
+          // A new match has finished!
+          // We shift the old savedRanks to be the new prevRanks
+          prevRanks = { ...savedRanks };
+          
+          // For any user who didn't have a saved rank, default to their current rank
+          topUsers.forEach((u, idx) => {
+            if (prevRanks[u.uid] === undefined) {
+              prevRanks[u.uid] = idx + 1;
+            }
+          });
+
+          // Save new states
+          localStorage.setItem(localPrevRanksKey, JSON.stringify(prevRanks));
+          localStorage.setItem(localRanksKey, JSON.stringify(currentRanksMap));
+          localStorage.setItem(localMatchesKey, finishedMatchIdsStr);
+        } else {
+          // No new matches finished (refreshing or just database listener triggered for other reasons)
+          // If prevRanks or savedRanks is empty (e.g. first time user), initialize them
+          let needsSave = false;
+          if (Object.keys(savedRanks).length === 0) {
+            savedRanks = { ...currentRanksMap };
+            localStorage.setItem(localRanksKey, JSON.stringify(savedRanks));
+            needsSave = true;
+          }
+          if (Object.keys(prevRanks).length === 0) {
+            prevRanks = { ...currentRanksMap };
+            localStorage.setItem(localPrevRanksKey, JSON.stringify(prevRanks));
+            needsSave = true;
+          }
+          if (!lastFinishedMatches) {
+            localStorage.setItem(localMatchesKey, finishedMatchIdsStr);
+            needsSave = true;
+          }
+        }
+
+        // Set previous ranks state for rendering
+        const newPrevRanks: Record<string, number> = {};
+        topUsers.forEach((u, idx) => {
+          newPrevRanks[u.uid] = prevRanks[u.uid] !== undefined ? prevRanks[u.uid] : idx + 1;
+        });
+        setPreviousRanks(newPrevRanks);
 
         const newHistories: Record<string, { points: number; isResultCorrect?: boolean; isBanned?: boolean; isMissed?: boolean }[]> = {};
         
