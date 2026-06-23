@@ -734,7 +734,7 @@ const Leaderboard: React.FC = () => {
                 <span className="text-xl font-bold font-sans">×</span>
               </button>
 
-              <div className="z-10 w-full flex flex-col items-center gap-6 my-4">
+              <div className="z-10 w-full flex flex-col items-center gap-5 my-2">
                 {/* Gold Avatar Ring */}
                 <div className="relative w-44 h-44 sm:w-48 sm:h-48 rounded-full flex items-center justify-center p-2 bg-gradient-to-b from-yellow-300 via-amber-500 to-yellow-600 shadow-[0_0_30px_rgba(234,179,8,0.7)]">
                   <div className="absolute inset-0 rounded-full border-4 border-dashed border-white/60 animate-spin-slow" />
@@ -748,7 +748,7 @@ const Leaderboard: React.FC = () => {
                 </div>
 
                 {/* Banner / Ribbon */}
-                <div className="relative -mt-10 bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-600 text-black px-6 py-2 rounded-md shadow-[0_4px_12px_rgba(0,0,0,0.5)] border-y-2 border-yellow-200">
+                <div className="relative -mt-9 bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-600 text-black px-6 py-2 rounded-md shadow-[0_4px_12px_rgba(0,0,0,0.5)] border-y-2 border-yellow-200">
                   <div className="text-[10px] sm:text-xs tracking-[0.25em] font-black uppercase text-center" style={{ fontWeight: 900 }}>
                     MAN OF THE NIGHT
                   </div>
@@ -756,8 +756,8 @@ const Leaderboard: React.FC = () => {
 
                 {/* User Name */}
                 <h2 
-                  className="text-3xl sm:text-4xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-b from-white via-yellow-250 to-amber-400 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] uppercase font-serif" 
-                  style={{ fontFamily: 'Georgia, serif', fontWeight: 900 }}
+                  className="text-[36px] font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-b from-red-600 via-orange-500 to-yellow-400 drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)] uppercase jackpot-name-text text-center px-4" 
+                  style={{ fontWeight: 900 }}
                 >
                   {winnerUser.displayName}
                 </h2>
@@ -765,7 +765,7 @@ const Leaderboard: React.FC = () => {
                 {/* Points Circle */}
                 <div className="relative w-40 h-40 rounded-full bg-gradient-to-b from-slate-950 to-black border-[5px] border-yellow-500 flex flex-col items-center justify-center shadow-[0_0_25px_rgba(234,179,8,0.4)]">
                   <style>{`
-                    .jackpot-points-text {
+                    .jackpot-points-text, .jackpot-name-text {
                       font-weight: 900 !important;
                     }
                   `}</style>
