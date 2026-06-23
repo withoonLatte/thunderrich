@@ -166,8 +166,8 @@ const GoldConfetti: React.FC = () => {
 const RankChange: React.FC<{ currentRank: number; previousRank: number }> = ({ currentRank, previousRank }) => {
   if (!previousRank || currentRank === previousRank) {
     return (
-      <div className="flex items-center gap-1 text-slate-400/80 bg-slate-950/40 px-2 py-0.5 rounded-full border border-slate-800/40 text-[10px] font-black tracking-wider select-none">
-        <span className="w-1.5 h-1.5 rounded-full bg-slate-500 animate-pulse" />
+      <div className="flex items-center gap-2 text-slate-200 bg-black/60 px-4 py-1.5 rounded-full border border-slate-700/60 text-xs font-black tracking-wider select-none shadow-md">
+        <span className="w-2.5 h-2.5 rounded-full bg-slate-400 animate-pulse" />
         <span>คงที่</span>
       </div>
     );
@@ -180,12 +180,12 @@ const RankChange: React.FC<{ currentRank: number; previousRank: number }> = ({ c
       <motion.div 
         initial={{ y: 2, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="flex items-center gap-1 text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-900/40 text-[10px] font-black tracking-wider shadow-[0_0_8px_rgba(52,211,153,0.15)] select-none"
+        className="flex items-center gap-2 text-emerald-400 bg-black/60 px-4 py-1.5 rounded-full border border-emerald-500/30 text-xs font-black tracking-wider shadow-[0_0_12px_rgba(52,211,153,0.25)] select-none"
       >
         <motion.span
           animate={{ y: [-1, 1, -1] }}
           transition={{ repeat: Infinity, duration: 1.5 }}
-          className="text-xs font-bold"
+          className="text-sm font-black"
         >
           ▲
         </motion.span>
@@ -197,12 +197,12 @@ const RankChange: React.FC<{ currentRank: number; previousRank: number }> = ({ c
       <motion.div 
         initial={{ y: -2, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="flex items-center gap-1 text-rose-400 bg-rose-950/40 px-2.5 py-0.5 rounded-full border border-rose-900/40 text-[10px] font-black tracking-wider shadow-[0_0_8px_rgba(251,113,133,0.15)] select-none"
+        className="flex items-center gap-2 text-rose-400 bg-black/60 px-4 py-1.5 rounded-full border border-rose-500/30 text-xs font-black tracking-wider shadow-[0_0_12px_rgba(251,113,133,0.25)] select-none"
       >
         <motion.span
           animate={{ y: [1, -1, 1] }}
           transition={{ repeat: Infinity, duration: 1.5 }}
-          className="text-xs font-bold"
+          className="text-sm font-black"
         >
           ▼
         </motion.span>
