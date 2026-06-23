@@ -166,8 +166,8 @@ const GoldConfetti: React.FC = () => {
 const RankChange: React.FC<{ currentRank: number; previousRank: number }> = ({ currentRank, previousRank }) => {
   if (!previousRank || currentRank === previousRank) {
     return (
-      <div className="flex items-center gap-2 text-slate-200 bg-black/60 px-4 py-1.5 rounded-full border border-slate-700/60 text-xs font-black tracking-wider select-none shadow-md">
-        <span className="w-2.5 h-2.5 rounded-full bg-slate-400 animate-pulse" />
+      <div className="flex items-center gap-2 text-slate-300 bg-black/60 px-4 py-1.5 rounded-full border border-slate-700/60 text-xs font-black tracking-wider select-none shadow-md">
+        <span className="text-sm font-black text-slate-400 select-none">-</span>
         <span>คงที่</span>
       </div>
     );
