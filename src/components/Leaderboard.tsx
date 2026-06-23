@@ -455,24 +455,24 @@ const Leaderboard: React.FC = () => {
             topBarColor = 'from-yellow-400 via-amber-500 to-yellow-600 animate-pulse';
             rankLabel = 'MOTN';
             avatarBorder = 'border-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.85)]';
-          } else if (index >= 0 && index <= 2) {
-            borderGradient = 'linear-gradient(135deg, #facc15, #d97706)'; // Gold
-            bgGradient = 'linear-gradient(135deg, rgba(250, 204, 21, 0.50) 0%, rgba(234, 179, 8, 0.50) 100%)';
-            topBarColor = 'from-yellow-400 via-amber-400 to-yellow-600';
-            rankLabel = 'หัวแถว';
-            avatarBorder = 'border-yellow-400 shadow-[0_0_12px_rgba(250,204,21,0.45)]';
+          } else if (index === 0) {
+            borderGradient = 'linear-gradient(135deg, #22c55e, #a855f7, #3b82f6, #ef4444)'; // Rainbow border
+            bgGradient = 'linear-gradient(135deg, rgba(5, 5, 5, 0.95) 0%, rgba(15, 15, 15, 0.95) 100%)'; // Deep black background
+            topBarColor = 'from-green-400 via-purple-500 via-blue-500 to-red-500';
+            rankLabel = 'อันดับ 1';
+            avatarBorder = 'border-white/40 shadow-[0_0_12px_rgba(255,255,255,0.2)]';
           } else if (index >= users.length - 3) {
             borderGradient = 'linear-gradient(135deg, #ef4444, #b91c1c)'; // Red (Last 3 ranks)
-            bgGradient = 'linear-gradient(135deg, rgba(239, 68, 68, 0.50) 0%, rgba(153, 27, 27, 0.50) 100%)';
+            bgGradient = 'linear-gradient(135deg, rgba(15, 23, 42, 0.70) 0%, rgba(15, 23, 42, 0.70) 100%)'; // Dark background
             topBarColor = 'from-red-500 via-rose-600 to-red-700';
             rankLabel = 'อ่อน';
             avatarBorder = 'border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.3)]';
           } else {
-            borderGradient = 'linear-gradient(135deg, #94a3b8, #475569)'; // Grey (All middle ranks)
-            bgGradient = 'linear-gradient(135deg, rgba(15, 23, 42, 0.50) 0%, rgba(15, 23, 42, 0.50) 100%)';
-            topBarColor = 'from-slate-400 via-slate-500 to-slate-600';
+            borderGradient = 'linear-gradient(135deg, #475569, #334155)'; // Sleek slate border
+            bgGradient = 'linear-gradient(135deg, rgba(15, 23, 42, 0.70) 0%, rgba(15, 23, 42, 0.70) 100%)'; // Solid dark grey/slate
+            topBarColor = 'from-slate-500 to-slate-600';
             rankLabel = 'player';
-            avatarBorder = 'border-slate-400 shadow-[0_0_10px_rgba(148,163,184,0.3)]';
+            avatarBorder = 'border-slate-500/50 shadow-none';
           }
 
           return (
@@ -485,8 +485,12 @@ const Leaderboard: React.FC = () => {
                 background: `${bgGradient} padding-box, ${borderGradient} border-box`,
                 border: '3px solid transparent'
               }}
-              className={`flex flex-col gap-6 p-6 pt-10 rounded-[2.5rem] transition-all relative overflow-hidden backdrop-blur-md shadow-2xl ${
-                isManOfTheNight ? 'shadow-[0_0_25px_rgba(250,204,21,0.25)] ring-1 ring-yellow-400/10' : ''
+              className={`flex flex-col gap-4 p-4 sm:p-5 pt-6 sm:pt-7 rounded-[1.75rem] transition-all relative overflow-hidden backdrop-blur-md shadow-2xl ${
+                isManOfTheNight 
+                  ? 'shadow-[0_0_25px_rgba(250,204,21,0.25)] ring-1 ring-yellow-400/10' 
+                  : index === 0 
+                    ? 'shadow-[0_0_30px_rgba(168,85,247,0.2)] ring-1 ring-purple-500/10' 
+                    : ''
               }`}
             >
               {/* Top Color Bar */}
@@ -499,93 +503,154 @@ const Leaderboard: React.FC = () => {
               )}
 
               {/* Info Section */}
-              <div className="flex flex-wrap sm:flex-nowrap items-center gap-6">
-                {/* Circular Rank Badge Column */}
-                <div className="flex flex-col items-center gap-2 flex-shrink-0">
-                  <div className={`w-24 h-24 rounded-full border-4 flex flex-col items-center justify-center bg-black/35 shadow-inner ${
-                    isManOfTheNight ? 'border-yellow-450 shadow-[0_0_15px_rgba(250,204,21,0.4)]' : 'border-white'
-                  }`}>
-                    <span className={`text-[10px] font-black uppercase tracking-widest leading-none mb-1 ${
-                      isManOfTheNight ? 'text-yellow-400' : 'text-white/80'
-                    }`}>
-                      {rankLabel}
-                    </span>
-                    <span className={`text-4xl font-black italic leading-none ${
-                      isManOfTheNight ? 'text-yellow-450' : 'text-white'
-                    }`}>
-                      {index + 1}
-                    </span>
-                  </div>
-                  <RankChange currentRank={index + 1} previousRank={previousRanks[u.uid]} />
-                </div>
+              <div className="flex items-center justify-between gap-4 w-full select-none">
+                {/* Left side: Rank + Avatar Capsule + Arrow + Name details */}
+                <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                  {/* Rank number (with '=' prefix if tied) */}
+                  {(() => {
+                    const firstTieIndex = users.findIndex(other => other.points === u.points);
+                    const rankNumber = firstTieIndex + 1;
+                    const isTied = users.some(other => other.uid !== u.uid && other.points === u.points);
+                    const rankText = isTied ? `=${rankNumber}` : `${rankNumber}`;
+                    
+                    return (
+                      <span 
+                        className={`italic text-center select-none ${
+                          index === 0 
+                            ? 'text-3xl sm:text-4xl text-white min-w-[32px]' 
+                            : 'text-xl sm:text-2xl text-slate-300 min-w-[32px]'
+                        }`}
+                        style={{ fontWeight: 955 }}
+                      >
+                        {rankText}
+                      </span>
+                    );
+                  })()}
 
-                {/* Avatar Box */}
-                <div className="relative flex-shrink-0">
-                  <div className={`w-20 h-20 rounded-[1.8rem] overflow-hidden p-0.5 border-4 ${avatarBorder} bg-slate-900`}>
+                  {/* Avatar Capsule Flag Shape */}
+                  <div className={`relative flex-shrink-0 w-16 h-10 sm:w-20 sm:h-12 rounded-tl-[1.1rem] rounded-br-[1.1rem] rounded-tr-[4px] rounded-bl-[4px] border-2 overflow-hidden bg-slate-955 ${
+                    isManOfTheNight 
+                      ? 'border-yellow-400 shadow-[0_0_12px_rgba(250,204,21,0.5)]' 
+                      : index === 0 
+                        ? 'border-white/50 shadow-[0_0_10px_rgba(255,255,255,0.15)]' 
+                        : 'border-white/10'
+                  }`}>
                     <img 
                       src={u.photoURL || `https://ui-avatars.com/api/?name=${u.displayName}&background=0F172A&color=E2E8F0&bold=true`} 
                       alt={u.displayName} 
-                      className="w-full h-full rounded-[1.5rem] object-cover"
+                      className="w-full h-full object-cover"
                     />
+                    {isManOfTheNight && (
+                      <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-slate-950 flex items-center justify-center border border-yellow-400/50">
+                        <Star className="w-3.5 h-3.5 text-yellow-400 fill-current animate-spin-slow" />
+                      </div>
+                    )}
                   </div>
-                  {Icon && !isManOfTheNight && (
-                    <div className="absolute -top-3 -right-3 w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center shadow-lg border border-white/10">
-                      <Icon className="w-5 h-5 text-yellow-450 fill-current" />
+
+                  {/* Name + Subtitle (change text & wrongs) */}
+                  <div className="flex flex-col min-w-0 gap-0.5">
+                    <div className="flex items-center gap-2">
+                      {/* Up/Down Arrow Indicator (Inline before Name) */}
+                      {(() => {
+                        const currentRank = index + 1;
+                        const previousRank = previousRanks[u.uid];
+                        const isUp = previousRank && currentRank < previousRank;
+                        const isDown = previousRank && currentRank > previousRank;
+                        
+                        if (isUp) {
+                          return (
+                            <motion.span 
+                              animate={{ y: [-1, 1, -1] }}
+                              transition={{ repeat: Infinity, duration: 1.5 }}
+                              className="text-emerald-400 text-sm font-black flex-shrink-0 select-none"
+                              style={{ fontWeight: 955 }}
+                            >
+                              ▲
+                            </motion.span>
+                          );
+                        } else if (isDown) {
+                          return (
+                            <motion.span 
+                              animate={{ y: [1, -1, 1] }}
+                              transition={{ repeat: Infinity, duration: 1.5 }}
+                              className="text-rose-500 text-sm font-black flex-shrink-0 select-none"
+                              style={{ fontWeight: 955 }}
+                            >
+                              ▼
+                            </motion.span>
+                          );
+                        } else {
+                          return (
+                            <span 
+                              className="text-slate-500 text-sm font-black flex-shrink-0 select-none"
+                              style={{ fontWeight: 955 }}
+                            >
+                              -
+                            </span>
+                          );
+                        }
+                      })()}
+
+                      <h3 
+                        className={`text-base sm:text-lg tracking-wider truncate leading-tight uppercase ${
+                          isManOfTheNight 
+                            ? 'text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-yellow-400 to-amber-400' 
+                            : 'text-white'
+                        }`}
+                        style={{ fontWeight: 950 }}
+                      >
+                        {u.displayName ? u.displayName.toUpperCase() : ''}
+                      </h3>
+                      {u.yellow_cards > 0 && (
+                        <div 
+                          title="ได้รับใบเหลือง" 
+                          className="w-2.5 h-3.5 bg-yellow-450 border border-yellow-300 rounded-[1.5px] shadow-sm transform rotate-[6deg] flex-shrink-0" 
+                        />
+                      )}
+                      {u.red_cards > 0 && (
+                        <div 
+                          title="ได้รับใบแดง" 
+                          className="w-2.5 h-3.5 bg-red-600 border border-red-500 rounded-[1.5px] shadow-sm transform -rotate-[6deg] flex-shrink-0" 
+                        />
+                      )}
                     </div>
-                  )}
-                  {isManOfTheNight && (
-                    <div className="absolute -top-3 -right-3 w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center shadow-lg border border-yellow-400/50">
-                      <Star className="w-5 h-5 text-yellow-400 fill-current animate-spin-slow" />
+                    {/* Subtitle details */}
+                    <div 
+                      className="flex items-center gap-1.5 text-[10px] text-slate-400 select-none"
+                      style={{ fontWeight: 700 }}
+                    >
+                      <span>
+                        {(() => {
+                          const currentRank = index + 1;
+                          const previousRank = previousRanks[u.uid];
+                          const isUp = previousRank && currentRank < previousRank;
+                          const isDown = previousRank && currentRank > previousRank;
+                          return isUp ? `ขึ้นจากอันดับ ${previousRank}` : isDown ? `ลงจากอันดับ ${previousRank}` : 'คงที่';
+                        })()}
+                      </span>
+                      <span>•</span>
+                      <span className="text-yellow-450">เฟอะฟะ {u.round1_wrong_count}</span>
                     </div>
-                  )}
+                  </div>
                 </div>
 
-                {/* Name and point details */}
-                <div className="flex-1 min-w-0 space-y-3">
-                  <div className="flex items-center gap-3">
-                    <h3 className={`text-2xl md:text-3xl font-black tracking-tight truncate leading-none drop-shadow-sm ${
-                      isManOfTheNight 
-                        ? 'text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-yellow-400 to-amber-400 font-extrabold' 
-                        : 'text-white'
-                    }`}>
-                      {u.displayName}
-                    </h3>
-                    {u.yellow_cards > 0 && (
-                      <div 
-                        title={`ได้รับใบเหลือง`} 
-                        className="w-3.5 h-5 bg-yellow-450 border border-yellow-300 rounded-[2px] shadow-[0_0_8px_rgba(250,204,21,0.6)] transform rotate-[6deg] flex-shrink-0" 
-                      />
-                    )}
-                    {u.red_cards > 0 && (
-                      <div 
-                        title={`ได้รับใบแดง`} 
-                        className="w-3.5 h-5 bg-red-600 border border-red-500 rounded-[2px] shadow-[0_0_8px_rgba(220,38,38,0.6)] transform -rotate-[6deg] flex-shrink-0" 
-                      />
-                    )}
-                  </div>
-                  
-                  <div className="flex items-center flex-wrap gap-4">
-                    {/* Point Circle */}
-                    <div className="flex items-center gap-2.5">
-                      <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl font-black shadow-lg border-[5px] ${
-                        isManOfTheNight 
-                          ? 'bg-yellow-500 text-black shadow-yellow-500/35 border-yellow-450' 
-                          : 'bg-red-600 text-white shadow-red-600/35 border-red-500/45'
-                      }`}>
-                        {u.points}
-                      </div>
-                      <span className={`text-sm font-black uppercase tracking-wider ${
-                        isManOfTheNight ? 'text-yellow-450' : 'text-slate-350'
-                      }`}>
-                        point
-                      </span>
-                    </div>
-
-                    {/* Yellow pill badge: เฟอะฟะ */}
-                    <div className="rounded-full bg-yellow-400 text-black px-5 py-2 text-base font-black shadow-md border border-yellow-350 tracking-wider">
-                      เฟอะฟะ {u.round1_wrong_count}
-                    </div>
-                  </div>
+                {/* Right side: Points Box */}
+                <div 
+                  className={`w-14 h-11 sm:w-16 sm:h-12 flex-shrink-0 rounded-xl flex items-center justify-center text-lg sm:text-xl shadow-md border ${
+                    isManOfTheNight 
+                      ? 'bg-gradient-to-b from-yellow-300 to-amber-500 text-black border-yellow-300 shadow-[0_0_12px_rgba(250,204,21,0.45)]' 
+                      : index === 0 
+                        ? 'bg-[#2dd4bf] text-black border-cyan-300 shadow-[0_0_12px_rgba(45,212,191,0.45)]' 
+                        : 'bg-white text-black border-gray-200'
+                  }`}
+                  style={{ fontWeight: 950 }}
+                >
+                  <style>{`
+                    .jackpot-row-points {
+                      font-weight: 900 !important;
+                    }
+                  `}</style>
+                  <span className="jackpot-row-points">{u.points}</span>
                 </div>
               </div>
 
