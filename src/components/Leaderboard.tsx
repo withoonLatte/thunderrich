@@ -163,12 +163,62 @@ const GoldConfetti: React.FC = () => {
   return <canvas ref={canvasRef} className="fixed inset-0 w-full h-full pointer-events-none z-10" />;
 };
 
+const RankChange: React.FC<{ currentRank: number; previousRank: number }> = ({ currentRank, previousRank }) => {
+  if (!previousRank || currentRank === previousRank) {
+    return (
+      <div className="flex items-center gap-1 text-slate-400/80 bg-slate-950/40 px-2 py-0.5 rounded-full border border-slate-800/40 text-[10px] font-black tracking-wider select-none">
+        <span className="w-1.5 h-1.5 rounded-full bg-slate-500 animate-pulse" />
+        <span>คงที่</span>
+      </div>
+    );
+  }
+
+  const isUp = currentRank < previousRank; // Lower rank number means higher rank
+  
+  if (isUp) {
+    return (
+      <motion.div 
+        initial={{ y: 2, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="flex items-center gap-1 text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-900/40 text-[10px] font-black tracking-wider shadow-[0_0_8px_rgba(52,211,153,0.15)] select-none"
+      >
+        <motion.span
+          animate={{ y: [-1, 1, -1] }}
+          transition={{ repeat: Infinity, duration: 1.5 }}
+          className="text-xs font-bold"
+        >
+          ▲
+        </motion.span>
+        <span>ขึ้นจากอันดับ {previousRank}</span>
+      </motion.div>
+    );
+  } else {
+    return (
+      <motion.div 
+        initial={{ y: -2, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="flex items-center gap-1 text-rose-400 bg-rose-950/40 px-2.5 py-0.5 rounded-full border border-rose-900/40 text-[10px] font-black tracking-wider shadow-[0_0_8px_rgba(251,113,133,0.15)] select-none"
+      >
+        <motion.span
+          animate={{ y: [1, -1, 1] }}
+          transition={{ repeat: Infinity, duration: 1.5 }}
+          className="text-xs font-bold"
+        >
+          ▼
+        </motion.span>
+        <span>ลงจากอันดับ {previousRank}</span>
+      </motion.div>
+    );
+  }
+};
+
 const Leaderboard: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [userHistories, setUserHistories] = useState<Record<string, { points: number; cardType: 'yellow' | 'red' | null; isResultCorrect?: boolean; isBanned?: boolean; isMissed?: boolean }[]>>({});
   const [rowOffsets, setRowOffsets] = useState<Record<string, number>>({});
   const [manOfTheNight, setManOfTheNight] = useState<{ userId: string; updatedAt: any } | null>(null);
   const [showPopup, setShowPopup] = useState(false);
+  const [previousRanks, setPreviousRanks] = useState<Record<string, number>>({});
 
   const handleScrollUp = (uid: string, numRows: number) => {
     setRowOffsets(prev => {
@@ -228,6 +278,37 @@ const Leaderboard: React.FC = () => {
         }
         return a.displayName.localeCompare(b.displayName, 'th');
       });
+
+      // Calculate ranks and compare with localStorage
+      const localRanksKey = 'thunderrich_leaderboard_ranks';
+      let savedRanks: Record<string, number> = {};
+      try {
+        const raw = localStorage.getItem(localRanksKey);
+        if (raw) {
+          savedRanks = JSON.parse(raw);
+        }
+      } catch (e) {
+        console.error('Error reading saved ranks:', e);
+      }
+
+      const newPrevRanks: Record<string, number> = {};
+      topUsers.forEach((u, idx) => {
+        const currentRank = idx + 1;
+        const prevRank = savedRanks[u.uid];
+        if (prevRank !== undefined) {
+          newPrevRanks[u.uid] = prevRank;
+        } else {
+          newPrevRanks[u.uid] = currentRank;
+        }
+      });
+      setPreviousRanks(newPrevRanks);
+
+      // Now save the current ranks to localStorage for the next change
+      const currentRanksMap: Record<string, number> = {};
+      topUsers.forEach((u, idx) => {
+        currentRanksMap[u.uid] = idx + 1;
+      });
+      localStorage.setItem(localRanksKey, JSON.stringify(currentRanksMap));
 
       setUsers(topUsers);
 
@@ -408,20 +489,23 @@ const Leaderboard: React.FC = () => {
 
               {/* Info Section */}
               <div className="flex flex-wrap sm:flex-nowrap items-center gap-6">
-                {/* Circular Rank Badge */}
-                <div className={`flex-shrink-0 w-24 h-24 rounded-full border-4 flex flex-col items-center justify-center bg-black/35 shadow-inner ${
-                  isManOfTheNight ? 'border-yellow-450 shadow-[0_0_15px_rgba(250,204,21,0.4)]' : 'border-white'
-                }`}>
-                  <span className={`text-[10px] font-black uppercase tracking-widest leading-none mb-1 ${
-                    isManOfTheNight ? 'text-yellow-400' : 'text-white/80'
+                {/* Circular Rank Badge Column */}
+                <div className="flex flex-col items-center gap-2 flex-shrink-0">
+                  <div className={`w-24 h-24 rounded-full border-4 flex flex-col items-center justify-center bg-black/35 shadow-inner ${
+                    isManOfTheNight ? 'border-yellow-450 shadow-[0_0_15px_rgba(250,204,21,0.4)]' : 'border-white'
                   }`}>
-                    {rankLabel}
-                  </span>
-                  <span className={`text-4xl font-black italic leading-none ${
-                    isManOfTheNight ? 'text-yellow-450' : 'text-white'
-                  }`}>
-                    {index + 1}
-                  </span>
+                    <span className={`text-[10px] font-black uppercase tracking-widest leading-none mb-1 ${
+                      isManOfTheNight ? 'text-yellow-400' : 'text-white/80'
+                    }`}>
+                      {rankLabel}
+                    </span>
+                    <span className={`text-4xl font-black italic leading-none ${
+                      isManOfTheNight ? 'text-yellow-450' : 'text-white'
+                    }`}>
+                      {index + 1}
+                    </span>
+                  </div>
+                  <RankChange currentRank={index + 1} previousRank={previousRanks[u.uid]} />
                 </div>
 
                 {/* Avatar Box */}
