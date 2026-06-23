@@ -332,74 +332,6 @@ const Leaderboard: React.FC = () => {
         
         finishedMatches.sort((a, b) => (a.startTime?.seconds || 0) - (b.startTime?.seconds || 0));
 
-        // Persistent Rank tracking based on finished matches count
-        const finishedMatchIdsStr = finishedMatches.map(m => m.id).sort().join(',');
-        
-        const localRanksKey = 'thunderrich_leaderboard_ranks';
-        const localPrevRanksKey = 'thunderrich_leaderboard_prev_ranks';
-        const localMatchesKey = 'thunderrich_leaderboard_finished_matches';
-
-        let lastFinishedMatches = localStorage.getItem(localMatchesKey) || '';
-        let savedRanks: Record<string, number> = {};
-        let prevRanks: Record<string, number> = {};
-
-        try {
-          const rawSaved = localStorage.getItem(localRanksKey);
-          if (rawSaved) savedRanks = JSON.parse(rawSaved);
-        } catch(e) {}
-
-        try {
-          const rawPrev = localStorage.getItem(localPrevRanksKey);
-          if (rawPrev) prevRanks = JSON.parse(rawPrev);
-        } catch(e) {}
-
-        const currentRanksMap: Record<string, number> = {};
-        topUsers.forEach((u, idx) => {
-          currentRanksMap[u.uid] = idx + 1;
-        });
-
-        if (finishedMatchIdsStr !== lastFinishedMatches) {
-          // A new match has finished!
-          // We shift the old savedRanks to be the new prevRanks
-          prevRanks = { ...savedRanks };
-          
-          // For any user who didn't have a saved rank, default to their current rank
-          topUsers.forEach((u, idx) => {
-            if (prevRanks[u.uid] === undefined) {
-              prevRanks[u.uid] = idx + 1;
-            }
-          });
-
-          // Save new states
-          localStorage.setItem(localPrevRanksKey, JSON.stringify(prevRanks));
-          localStorage.setItem(localRanksKey, JSON.stringify(currentRanksMap));
-          localStorage.setItem(localMatchesKey, finishedMatchIdsStr);
-        } else {
-          // No new matches finished (refreshing or just database listener triggered for other reasons)
-          // If prevRanks or savedRanks is empty (e.g. first time user), initialize them
-          let needsSave = false;
-          if (Object.keys(savedRanks).length === 0) {
-            savedRanks = { ...currentRanksMap };
-            localStorage.setItem(localRanksKey, JSON.stringify(savedRanks));
-            needsSave = true;
-          }
-          if (Object.keys(prevRanks).length === 0) {
-            prevRanks = { ...currentRanksMap };
-            localStorage.setItem(localPrevRanksKey, JSON.stringify(prevRanks));
-            needsSave = true;
-          }
-          if (!lastFinishedMatches) {
-            localStorage.setItem(localMatchesKey, finishedMatchIdsStr);
-            needsSave = true;
-          }
-        }
-
-        // Set previous ranks state for rendering
-        const newPrevRanks: Record<string, number> = {};
-        topUsers.forEach((u, idx) => {
-          newPrevRanks[u.uid] = prevRanks[u.uid] !== undefined ? prevRanks[u.uid] : idx + 1;
-        });
-        setPreviousRanks(newPrevRanks);
 
         const newHistories: Record<string, { points: number; isResultCorrect?: boolean; isBanned?: boolean; isMissed?: boolean }[]> = {};
         
@@ -451,6 +383,40 @@ const Leaderboard: React.FC = () => {
           newHistories[uid] = processed;
         });
 
+        // Calculate previous ranks dynamically based on histories (excluding the last finished match)
+        const usersWithPrevPoints = topUsers.map(u => {
+          const history = newHistories[u.uid] || [];
+          const lastEarns = history.length > 0 ? history[history.length - 1].points : 0;
+          
+          // Determine if the last match prediction was incorrect
+          const lastMatch = history.length > 0 ? history[history.length - 1] : null;
+          const wasWrong = lastMatch ? (!lastMatch.isResultCorrect && !lastMatch.isBanned) : false;
+          const prevWrongCount = (u.round1_wrong_count || 0) - (wasWrong ? 1 : 0);
+
+          return {
+            uid: u.uid,
+            displayName: u.displayName,
+            prevPoints: u.points - lastEarns,
+            prevWrongCount: Math.max(0, prevWrongCount)
+          };
+        });
+
+        const prevSorted = [...usersWithPrevPoints].sort((a, b) => {
+          if (b.prevPoints !== a.prevPoints) {
+            return b.prevPoints - a.prevPoints;
+          }
+          if (a.prevWrongCount !== b.prevWrongCount) {
+            return a.prevWrongCount - b.prevWrongCount; // Fewer wrongs first
+          }
+          return a.displayName.localeCompare(b.displayName, 'th');
+        });
+
+        const newPrevRanks: Record<string, number> = {};
+        prevSorted.forEach((u, idx) => {
+          newPrevRanks[u.uid] = idx + 1;
+        });
+
+        setPreviousRanks(newPrevRanks);
         setUserHistories(newHistories);
       }
     });
