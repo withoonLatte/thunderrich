@@ -246,11 +246,22 @@ const Leaderboard: React.FC = () => {
         const data = snap.data() as { userId: string; updatedAt: any };
         setManOfTheNight(data);
         
-        // Trigger popup only if the update happened recently (within last 15 seconds)
+        // Trigger popup only if the update happened recently (within last 12 hours)
+        // and the user has seen this specific announcement less than 5 times
         const nowServer = Timestamp.now().seconds;
         const updateTime = data.updatedAt?.seconds || 0;
-        if (Math.abs(nowServer - updateTime) < 15) {
-          setShowPopup(true);
+        if (nowServer - updateTime < 43200) {
+          const announcementId = `${data.userId}_${updateTime}`;
+          const localKey = `motn_seen_${announcementId}`;
+          const seenCount = Number(localStorage.getItem(localKey) || 0);
+          if (seenCount < 5) {
+            setShowPopup(true);
+            localStorage.setItem(localKey, String(seenCount + 1));
+          } else {
+            setShowPopup(false);
+          }
+        } else {
+          setShowPopup(false);
         }
       } else {
         setManOfTheNight(null);
