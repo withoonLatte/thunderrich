@@ -725,7 +725,11 @@ const Leaderboard: React.FC = () => {
                           แถวที่ {currentOffset + 1} - {Math.min(numRows, currentOffset + 3)} จาก {numRows}
                         </span>
                         <span className="text-slate-600">•</span>
-                        <span className="text-yellow-450">เฟอะฟะ {u.round1_wrong_count}</span>
+                        <span 
+                          style={{ fontSize: '25px', color: '#ef4444', fontWeight: 950 }}
+                        >
+                          เฟอะฟะ {u.round1_wrong_count}
+                        </span>
                       </div>
                       {numRows > 3 && (
                         <div className="flex gap-2">
