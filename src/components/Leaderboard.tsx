@@ -450,18 +450,18 @@ const Leaderboard: React.FC = () => {
             topBarColor = 'from-yellow-400 via-amber-400 to-yellow-600';
             rankLabel = 'หัวแถว';
             avatarBorder = 'border-yellow-400 shadow-[0_0_12px_rgba(250,204,21,0.45)]';
-          } else if (index >= 3 && index <= 11) {
-            borderGradient = 'linear-gradient(135deg, #94a3b8, #475569)'; // Grey
-            bgGradient = 'linear-gradient(135deg, rgba(15, 23, 42, 0.50) 0%, rgba(15, 23, 42, 0.50) 100%)';
-            topBarColor = 'from-slate-400 via-slate-500 to-slate-600';
-            rankLabel = 'player';
-            avatarBorder = 'border-slate-400 shadow-[0_0_10px_rgba(148,163,184,0.3)]';
-          } else {
-            borderGradient = 'linear-gradient(135deg, #ef4444, #b91c1c)'; // Red
+          } else if (index >= users.length - 3) {
+            borderGradient = 'linear-gradient(135deg, #ef4444, #b91c1c)'; // Red (Last 3 ranks)
             bgGradient = 'linear-gradient(135deg, rgba(239, 68, 68, 0.50) 0%, rgba(153, 27, 27, 0.50) 100%)';
             topBarColor = 'from-red-500 via-rose-600 to-red-700';
             rankLabel = 'อ่อน';
             avatarBorder = 'border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.3)]';
+          } else {
+            borderGradient = 'linear-gradient(135deg, #94a3b8, #475569)'; // Grey (All middle ranks)
+            bgGradient = 'linear-gradient(135deg, rgba(15, 23, 42, 0.50) 0%, rgba(15, 23, 42, 0.50) 100%)';
+            topBarColor = 'from-slate-400 via-slate-500 to-slate-600';
+            rankLabel = 'player';
+            avatarBorder = 'border-slate-400 shadow-[0_0_10px_rgba(148,163,184,0.3)]';
           }
 
           return (
