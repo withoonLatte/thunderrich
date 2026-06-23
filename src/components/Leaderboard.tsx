@@ -763,15 +763,20 @@ const Leaderboard: React.FC = () => {
                 </h2>
 
                 {/* Points Circle */}
-                <div className="relative w-36 h-36 rounded-full bg-gradient-to-b from-slate-950 to-black border-[5px] border-yellow-500 flex flex-col items-center justify-center shadow-[0_0_25px_rgba(234,179,8,0.4)]">
+                <div className="relative w-40 h-40 rounded-full bg-gradient-to-b from-slate-950 to-black border-[5px] border-yellow-500 flex flex-col items-center justify-center shadow-[0_0_25px_rgba(234,179,8,0.4)]">
+                  <style>{`
+                    .jackpot-points-text {
+                      font-weight: 900 !important;
+                    }
+                  `}</style>
                   <div className="absolute inset-1.5 rounded-full border border-yellow-400/30" />
                   <span 
-                    className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 to-amber-500 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]" 
+                    className="text-[36px] font-black text-transparent bg-clip-text bg-gradient-to-b from-red-600 via-orange-500 to-yellow-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] jackpot-points-text" 
                     style={{ fontWeight: 900 }}
                   >
                     {winnerUser.points.toLocaleString('th-TH')}
                   </span>
-                  <span className="text-[9px] font-black text-yellow-400 tracking-[0.2em] uppercase mt-0.5">
+                  <span className="text-[10px] font-black text-yellow-400 tracking-[0.2em] uppercase mt-1">
                     POINTS
                   </span>
                 </div>
