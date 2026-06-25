@@ -1332,7 +1332,7 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {filteredMatches.length > 0 ? (
-          <div className="space-y-4 max-h-[480px] overflow-y-auto pr-1 no-scrollbar">
+          <div className="divide-y divide-slate-800/80">
             {filteredMatches.map(m => {
               const matchPreds = allPredictions.filter(p => p.matchId === m.id);
               const homeCount = matchPreds.filter(p => p.choice === PredictionChoice.HOME).length;
@@ -1354,10 +1354,10 @@ const AdminDashboard: React.FC = () => {
               const roundThai = roundNames[m.round] || m.round;
 
               return (
-                <div key={m.id} className="bg-slate-900/60 p-4.5 rounded-2xl border border-slate-850/80 space-y-3.5">
+                <div key={m.id} className="py-4 first:pt-0 last:pb-0 space-y-2.5">
                   {/* Match Title & Status */}
-                  <div className="flex justify-between items-center text-xs font-bold border-b border-slate-850/60 pb-2">
-                    <span className="text-slate-300 tracking-wider text-xs uppercase font-black">
+                  <div className="flex justify-between items-center text-xs font-bold">
+                    <span className="text-slate-400 tracking-wider text-xs uppercase font-black">
                       {roundThai}
                     </span>
                     <span className={`text-[10px] sm:text-xs font-black uppercase px-2 py-0.5 rounded border ${
@@ -1406,7 +1406,7 @@ const AdminDashboard: React.FC = () => {
                     </div>
 
                     {/* Visual Vote Progress Bar */}
-                    <div className="w-full h-3.5 bg-slate-950 rounded-full overflow-hidden flex border border-slate-800">
+                    <div className="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden flex border border-slate-900">
                       <div 
                         style={{ width: `${homePercent}%` }} 
                         className="h-full bg-gradient-to-r from-emerald-650 to-emerald-400 transition-all duration-500"
