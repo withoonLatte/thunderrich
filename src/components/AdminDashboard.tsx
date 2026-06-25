@@ -15,6 +15,7 @@ const AdminDashboard: React.FC = () => {
   const [matches, setMatches] = useState<Match[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [activeAdminTab, setActiveAdminTab] = useState<'matches' | 'history' | 'players' | 'custom'>('matches');
+  const [selectedMatchDate, setSelectedMatchDate] = useState<string>('');
   const [manOfTheNight, setManOfTheNight] = useState<{ userId: string; updatedAt: any } | null>(null);
   const deferredAdminTab = useDeferredValue(activeAdminTab);
   const [showAdd, setShowAdd] = useState(false);
@@ -90,6 +91,44 @@ const AdminDashboard: React.FC = () => {
       unsubMan();
     };
   }, []);
+
+  useEffect(() => {
+    if (matches.length > 0) {
+      const todayStr = (() => {
+        try {
+          const formatter = new Intl.DateTimeFormat('sv-SE', {
+            timeZone: 'Asia/Bangkok',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+          });
+          const parts = formatter.format(new Date()).split('-');
+          return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        } catch(e) {
+          return '';
+        }
+      })();
+
+      const matchDates = Array.from(new Set(matches.map(m => {
+        const formatted = formatInThailandTime(m.startTime, 'dd/MM/yyyy HH:mm');
+        return formatted ? formatted.slice(0, 10) : '';
+      }).filter(d => d !== '')));
+
+      if (matchDates.includes(todayStr)) {
+        setSelectedMatchDate(todayStr);
+      } else if (matchDates.length > 0 && (!selectedMatchDate || !matchDates.includes(selectedMatchDate))) {
+        // Sort chronologically
+        matchDates.sort((a, b) => {
+          const [dayA, monthA, yearA] = a.split('/');
+          const [dayB, monthB, yearB] = b.split('/');
+          const dateA = new Date(Number(yearA), Number(monthA) - 1, Number(dayA));
+          const dateB = new Date(Number(yearB), Number(monthB) - 1, Number(dayB));
+          return dateA.getTime() - dateB.getTime();
+        });
+        setSelectedMatchDate(matchDates[0]);
+      }
+    }
+  }, [matches]);
 
   const handleSelectManOfTheNight = async (userId: string) => {
     try {
@@ -205,6 +244,140 @@ const AdminDashboard: React.FC = () => {
     } catch (err) {
       console.error('Error exporting predictions:', err);
       alert('เกิดข้อผิดพลาดในการส่งออกข้อมูล');
+    }
+  };
+
+  const handleExportDailyVotesSummary = (selectedDateStr: string) => {
+    if (!selectedDateStr) {
+      alert('โปรดเลือกวันที่ต้องการส่งออกรายงาน');
+      return;
+    }
+
+    try {
+      // 1. Filter matches for the selected date
+      const dayMatches = matches.filter(m => {
+        const formatted = formatInThailandTime(m.startTime, 'dd/MM/yyyy HH:mm');
+        return formatted && formatted.slice(0, 10) === selectedDateStr;
+      });
+
+      if (dayMatches.length === 0) {
+        alert(`ไม่พบแมตช์การแข่งขันสำหรับวันที่ ${selectedDateStr}`);
+        return;
+      }
+
+      // Sort matches by start time chronologically
+      dayMatches.sort((a, b) => (a.startTime?.seconds || 0) - (b.startTime?.seconds || 0));
+
+      // Get all players (excluding admin)
+      const playersOnly = users.filter(u => u.role !== 'admin');
+      // Sort players
+      playersOnly.sort((a, b) => {
+        if (b.points !== a.points) {
+          return b.points - a.points;
+        }
+        const wrongA = a.round1_wrong_count || 0;
+        const wrongB = b.round1_wrong_count || 0;
+        if (wrongA !== wrongB) {
+          return wrongA - wrongB;
+        }
+        return a.displayName.localeCompare(b.displayName, 'th');
+      });
+
+      const escapeCSV = (val: any) => {
+        if (val === null || val === undefined) return '';
+        let str = String(val);
+        str = str.replace(/"/g, '""');
+        if (str.includes(',') || str.includes('\n') || str.includes('"')) {
+          str = `"${str}"`;
+        }
+        return str;
+      };
+
+      const rows: string[] = [];
+
+      // 2. Loop through each match of the day and build vertical sections
+      dayMatches.forEach((m, matchIdx) => {
+        const matchPreds = allPredictions.filter(p => p.matchId === m.id);
+        const homeCount = matchPreds.filter(p => p.choice === 'home').length;
+        const awayCount = matchPreds.filter(p => p.choice === 'away').length;
+        const totalVotes = homeCount + awayCount;
+        const homePercent = totalVotes > 0 ? Math.round((homeCount / totalVotes) * 100) : 0;
+        const awayPercent = totalVotes > 0 ? Math.round((awayCount / totalVotes) * 100) : 0;
+
+        const roundNames: Record<string, string> = {
+          'group': 'รอบแบ่งกลุ่ม',
+          'top32': 'รอบ 32 ทีม',
+          'top16': 'รอบ 16 ทีม',
+          'top8': 'รอบ 8 ทีม',
+          'top4': 'รอบรองชนะเลิศ',
+          'third_place': 'ชิงอันดับ 3',
+          'final': 'รอบชิงชนะเลิศ'
+        };
+        const roundThai = roundNames[m.round] || m.round;
+        const matchTime = formatInThailandTime(m.startTime, 'HH:mm');
+
+        // Section Title
+        rows.push(escapeCSV(`คู่ที่ ${matchIdx + 1}: ${roundThai} | ${m.homeTeam} vs ${m.awayTeam} (เวลาแข่ง ${matchTime} น.)`));
+        
+        // Consensus Summary row
+        rows.push(escapeCSV(`สรุปผลโหวต -> โหวตรวมทั้งหมด: ${totalVotes} คน | โหวต ${m.homeTeam}: ${homeCount} คน (${homePercent}%) | โหวต ${m.awayTeam}: ${awayCount} คน (${awayPercent}%)`));
+        rows.push('');
+
+        // Table Header
+        const headers = ['ลำดับ', 'ชื่อผู้เล่น', 'ทีมที่ทาย', 'เวลาที่ทายผล'];
+        rows.push(headers.map(escapeCSV).join(','));
+
+        // Player Predictions
+        playersOnly.forEach((u, playerIdx) => {
+          const p = matchPreds.find(pred => pred.userId === u.uid);
+          const isBanned = u.bannedMatchIds?.includes(m.id);
+
+          let predictionStr = '';
+          let timeStr = '-';
+
+          if (isBanned) {
+            predictionStr = 'โดนแบน (0)';
+          } else if (p) {
+            const teamChoice = p.choice === 'home' ? m.homeTeam : m.awayTeam;
+            predictionStr = teamChoice;
+            if (p.createdAt) {
+              const date = p.createdAt.toDate ? p.createdAt.toDate() : new Date(p.createdAt.seconds * 1000);
+              timeStr = date.toLocaleString('th-TH');
+            }
+          } else if (m.status === 'finished') {
+            predictionStr = 'ไม่ได้ทาย (-1)';
+          } else {
+            predictionStr = 'ยังไม่ได้ทาย';
+          }
+
+          const rowData = [
+            String(playerIdx + 1),
+            u.displayName,
+            predictionStr,
+            timeStr
+          ];
+          rows.push(rowData.map(escapeCSV).join(','));
+        });
+
+        // Separators
+        rows.push('');
+        rows.push('');
+      });
+
+      // 3. Trigger download with UTF-8 BOM
+      const csvContent = '\uFEFF' + rows.join('\r\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `thunderrich_votes_${selectedDateStr.replace(/\//g, '-')}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+    } catch (err) {
+      console.error('Error exporting daily vote summary:', err);
+      alert('เกิดข้อผิดพลาดในการส่งออกข้อมูลโหวตประจำวัน');
     }
   };
 
@@ -1449,14 +1622,55 @@ const AdminDashboard: React.FC = () => {
             <h3 className="text-sm text-black italic uppercase tracking-wider mb-2 text-center underline underline-offset-4 font-black">สรุปรายชื่อเพื่อนซี้</h3>
             <p className="text-[10px] text-center text-black mb-4 font-black">ผู้เล่นสมัครสมาชิกเองผ่านหน้าลงทะเบียน</p>
             
-            <div className="flex justify-center mb-6">
+            <div className="flex flex-col md:flex-row justify-center items-center gap-6 mb-6">
               <button 
                 type="button"
                 onClick={handleExportExcel}
-                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-2xl text-xs font-black shadow-md shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer border border-emerald-500/30"
+                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-2xl text-xs font-black shadow-md shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer border border-emerald-500/30 w-full md:w-auto justify-center"
               >
                 📥 Export สถิติการทายรอบแรก (Excel / CSV)
               </button>
+
+              <div className="flex items-center gap-2.5 p-3 bg-slate-950/20 rounded-2xl border border-white/5 w-full md:w-auto justify-center">
+                <span className="text-xs font-black text-black whitespace-nowrap">ผลโหวตรายวัน:</span>
+                <select
+                  value={selectedMatchDate}
+                  onChange={(e) => setSelectedMatchDate(e.target.value)}
+                  className="bg-white border border-gray-250 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-800 outline-none focus:ring-1 focus:ring-world-cup-green/50 cursor-pointer min-w-[110px]"
+                >
+                  {(() => {
+                    const matchDates = Array.from(new Set(matches.map(m => {
+                      const formatted = formatInThailandTime(m.startTime, 'dd/MM/yyyy HH:mm');
+                      return formatted ? formatted.slice(0, 10) : '';
+                    }).filter(d => d !== '')));
+                    
+                    matchDates.sort((a, b) => {
+                      const [dayA, monthA, yearA] = a.split('/');
+                      const [dayB, monthB, yearB] = b.split('/');
+                      const dateA = new Date(Number(yearA), Number(monthA) - 1, Number(dayA));
+                      const dateB = new Date(Number(yearB), Number(monthB) - 1, Number(dayB));
+                      return dateA.getTime() - dateB.getTime();
+                    });
+
+                    if (matchDates.length === 0) {
+                      return <option value="">ไม่มีข้อมูลวันแข่ง</option>;
+                    }
+
+                    return matchDates.map(dateStr => (
+                      <option key={dateStr} value={dateStr}>
+                        วันที่ {dateStr}
+                      </option>
+                    ));
+                  })()}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => handleExportDailyVotesSummary(selectedMatchDate)}
+                  className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-black shadow-md shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer border border-emerald-500/30 whitespace-nowrap"
+                >
+                  📥 โหลดผลโหวตในวัน
+                </button>
+              </div>
             </div>
             
             <div className="space-y-3">
