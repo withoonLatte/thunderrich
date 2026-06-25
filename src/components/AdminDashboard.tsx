@@ -316,48 +316,27 @@ const AdminDashboard: React.FC = () => {
         const roundThai = roundNames[m.round] || m.round;
         const matchTime = formatInThailandTime(m.startTime, 'HH:mm');
 
-        // Section Title
-        rows.push(escapeCSV(`คู่ที่ ${matchIdx + 1}: ${roundThai} | ${m.homeTeam} vs ${m.awayTeam} (เวลาแข่ง ${matchTime} น.)`));
+        // Determine majority voted team (or equal)
+        let majorityStr = '';
+        if (totalVotes > 0) {
+          if (homeCount > awayCount) {
+            majorityStr = `โหวต ${m.homeTeam}`;
+          } else if (awayCount > homeCount) {
+            majorityStr = `โหวต ${m.awayTeam}`;
+          } else {
+            majorityStr = 'โหวตเท่ากัน';
+          }
+        }
+
+        // Match Info + Majority Choice
+        rows.push([
+          escapeCSV(`คู่ที่ ${matchIdx + 1}: ${roundThai} | ${m.homeTeam} vs ${m.awayTeam} (เวลาแข่ง ${matchTime} น.)`),
+          escapeCSV(majorityStr)
+        ].join(','));
         
         // Consensus Summary row
         rows.push(escapeCSV(`สรุปผลโหวต -> โหวตรวมทั้งหมด: ${totalVotes} คน | โหวต ${m.homeTeam}: ${homeCount} คน (${homePercent}%) | โหวต ${m.awayTeam}: ${awayCount} คน (${awayPercent}%)`));
-        rows.push('');
-
-        // Table Header: Side-by-side teams
-        const headers = [
-          `${m.homeTeam} (${homeCount} คน)`,
-          `${m.awayTeam} (${awayCount} คน)`
-        ];
-        rows.push(headers.map(escapeCSV).join(','));
-
-        // Group player names by their prediction choice
-        const homeVoters: string[] = [];
-        const awayVoters: string[] = [];
-
-        playersOnly.forEach((u) => {
-          const isBanned = u.bannedMatchIds?.includes(m.id);
-          if (isBanned) return;
-
-          const p = matchPreds.find(pred => pred.userId === u.uid);
-          if (p) {
-            if (p.choice === 'home') {
-              homeVoters.push(u.displayName);
-            } else if (p.choice === 'away') {
-              awayVoters.push(u.displayName);
-            }
-          }
-        });
-
-        // Push player rows side-by-side
-        const maxLen = Math.max(homeVoters.length, awayVoters.length);
-        for (let i = 0; i < maxLen; i++) {
-          const rowData = [
-            homeVoters[i] || '',
-            awayVoters[i] || ''
-          ];
-          rows.push(rowData.map(escapeCSV).join(','));
-        }
-
+        
         // Separators
         rows.push('');
         rows.push('');
