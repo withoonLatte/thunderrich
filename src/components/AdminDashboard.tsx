@@ -323,41 +323,40 @@ const AdminDashboard: React.FC = () => {
         rows.push(escapeCSV(`สรุปผลโหวต -> โหวตรวมทั้งหมด: ${totalVotes} คน | โหวต ${m.homeTeam}: ${homeCount} คน (${homePercent}%) | โหวต ${m.awayTeam}: ${awayCount} คน (${awayPercent}%)`));
         rows.push('');
 
-        // Table Header
-        const headers = ['ลำดับ', 'ชื่อผู้เล่น', 'ทีมที่ทาย', 'เวลาที่ทายผล'];
+        // Table Header: Side-by-side teams
+        const headers = [
+          `${m.homeTeam} (${homeCount} คน)`,
+          `${m.awayTeam} (${awayCount} คน)`
+        ];
         rows.push(headers.map(escapeCSV).join(','));
 
-        // Player Predictions
-        playersOnly.forEach((u, playerIdx) => {
-          const p = matchPreds.find(pred => pred.userId === u.uid);
+        // Group player names by their prediction choice
+        const homeVoters: string[] = [];
+        const awayVoters: string[] = [];
+
+        playersOnly.forEach((u) => {
           const isBanned = u.bannedMatchIds?.includes(m.id);
+          if (isBanned) return;
 
-          let predictionStr = '';
-          let timeStr = '-';
-
-          if (isBanned) {
-            predictionStr = 'โดนแบน (0)';
-          } else if (p) {
-            const teamChoice = p.choice === 'home' ? m.homeTeam : m.awayTeam;
-            predictionStr = teamChoice;
-            if (p.createdAt) {
-              const date = p.createdAt.toDate ? p.createdAt.toDate() : new Date(p.createdAt.seconds * 1000);
-              timeStr = date.toLocaleString('th-TH');
+          const p = matchPreds.find(pred => pred.userId === u.uid);
+          if (p) {
+            if (p.choice === 'home') {
+              homeVoters.push(u.displayName);
+            } else if (p.choice === 'away') {
+              awayVoters.push(u.displayName);
             }
-          } else if (m.status === 'finished') {
-            predictionStr = 'ไม่ได้ทาย (-1)';
-          } else {
-            predictionStr = 'ยังไม่ได้ทาย';
           }
+        });
 
+        // Push player rows side-by-side
+        const maxLen = Math.max(homeVoters.length, awayVoters.length);
+        for (let i = 0; i < maxLen; i++) {
           const rowData = [
-            String(playerIdx + 1),
-            u.displayName,
-            predictionStr,
-            timeStr
+            homeVoters[i] || '',
+            awayVoters[i] || ''
           ];
           rows.push(rowData.map(escapeCSV).join(','));
-        });
+        }
 
         // Separators
         rows.push('');
