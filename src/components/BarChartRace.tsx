@@ -10,16 +10,16 @@ interface BarChartRaceProps {
 }
 
 const GRADIENTS = [
-  'from-rose-500 to-red-600',
+  'from-rose-500 to-red-650',
   'from-sky-400 to-blue-600',
-  'from-emerald-400 to-teal-600',
+  'from-emerald-400 to-teal-650',
   'from-fuchsia-400 to-purple-600',
-  'from-amber-400 to-orange-600',
-  'from-cyan-400 to-indigo-500',
-  'from-pink-500 to-rose-600',
-  'from-violet-400 to-purple-600',
-  'from-lime-400 to-green-600',
-  'from-orange-400 to-red-600'
+  'from-amber-400 to-orange-650',
+  'from-cyan-400 to-indigo-650',
+  'from-pink-500 to-rose-650',
+  'from-violet-400 to-purple-650',
+  'from-lime-400 to-green-650',
+  'from-orange-400 to-red-650'
 ];
 
 const formatDateTH = (seconds: number) => {
@@ -153,7 +153,7 @@ const BarChartRace: React.FC<BarChartRaceProps> = ({ users, userHistories }) => 
 
   const activeDate = dates[dateIndex];
 
-  // Map users to their points on this active day
+  // Map users to their points on this active day (keep final leaderboard sorted positions static)
   const activeScores = users.map((u, userIdx) => {
     const points = timelineData[u.uid]?.[activeDate] ?? 0;
     return {
@@ -165,11 +165,8 @@ const BarChartRace: React.FC<BarChartRaceProps> = ({ users, userHistories }) => 
     };
   });
 
-  // Sort descending by points, and alphabetical TH for ties
-  activeScores.sort((a, b) => b.points - a.points || a.displayName.localeCompare(b.displayName, 'th'));
-
-  // Calculate dynamic dimensions
-  const maxPoints = Math.max(...activeScores.map(s => s.points), 10);
+  // Calculate dynamic dimensions relative to overall final leaderboard max points
+  const maxPoints = Math.max(...users.map(u => u.points), 10);
 
   const handlePlayPause = () => {
     if (dateIndex === dates.length - 1) {
@@ -206,9 +203,9 @@ const BarChartRace: React.FC<BarChartRaceProps> = ({ users, userHistories }) => 
         <div className="flex justify-between items-center border-b border-slate-800/60 pb-3">
           <div>
             <h3 className="text-sm sm:text-base font-black text-emerald-400 uppercase tracking-widest flex items-center gap-2">
-              📊 BAR CHART RACE
+              📊 BAR PROGRESS RACE
             </h3>
-            <p className="text-[10px] text-slate-400 font-bold mt-0.5">อนิเมชันจำลองคะแนนสะสมย้อนหลังแบบสด</p>
+            <p className="text-[10px] text-slate-400 font-bold mt-0.5">อนิเมชันกราฟยืดหดระบายคะแนนรายวันตามตำแหน่งเดิม</p>
           </div>
           
           <button
@@ -220,50 +217,46 @@ const BarChartRace: React.FC<BarChartRaceProps> = ({ users, userHistories }) => 
           </button>
         </div>
 
-        {/* Chart Area */}
-        <div className="relative flex-1 min-h-[550px] mt-4">
+        {/* Chart Area: Standard vertical listing with fixed positions */}
+        <div className="flex-1 mt-4 space-y-2.5 overflow-y-auto pr-1 no-scrollbar max-h-[600px]">
           {activeScores.map((s, idx) => {
-            // Find current rank (index in sorted list)
-            const rank = activeScores.findIndex(other => other.uid === s.uid);
             const score = Math.max(0, s.points);
             const widthPercent = maxPoints > 0 ? (score / maxPoints) * 78 + 14 : 14; // min width 14%, max width 92%
 
             return (
-              <div
-                key={s.uid}
-                className="absolute left-0 right-0 h-10 flex items-center transition-all duration-1000"
-                style={{
-                  transform: `translateY(${rank * 54}px)`,
-                  opacity: rank < 10 ? 1 : 0,
-                  pointerEvents: rank < 10 ? 'auto' : 'none'
-                }}
-              >
-                {/* Bar Pill */}
-                <div
-                  className={`h-10 rounded-full bg-gradient-to-r ${GRADIENTS[s.colorIndex % GRADIENTS.length]} flex items-center justify-between px-4.5 relative shadow-lg transition-all duration-1000`}
-                  style={{ width: `${widthPercent}%` }}
-                >
-                  <span className="font-sans font-black text-xs sm:text-sm text-white truncate pr-9 select-none">
-                    {s.displayName}
-                  </span>
-                  
-                  {/* Circular Avatar on Right End */}
-                  <div className="absolute right-1 w-8 h-8 rounded-full border-2 border-white/90 overflow-hidden bg-slate-955 shadow-md">
-                    <img 
-                      src={s.photoURL || `https://ui-avatars.com/api/?name=${s.displayName}&background=0F172A&color=E2E8F0&bold=true`} 
-                      alt={s.displayName}
-                      className="w-full h-full object-cover" 
-                    />
-                  </div>
-                </div>
-                
-                {/* Score Label Outside */}
-                <span
-                  className="absolute text-xs sm:text-sm font-black text-emerald-400 font-mono transition-all duration-1000 pl-3.5 select-none"
-                  style={{ left: `${widthPercent}%` }}
-                >
-                  {s.points} แต้ม
+              <div key={s.uid} className="flex items-center w-full h-8">
+                {/* Fixed Rank Label */}
+                <span className="w-6 text-right text-xs font-black text-slate-400 mr-2.5 font-mono select-none">
+                  {idx + 1}
                 </span>
+
+                {/* Name Label */}
+                <span className="w-20 text-xs font-black text-slate-200 select-none mr-3 truncate text-left" title={s.displayName}>
+                  {s.displayName}
+                </span>
+
+                {/* Bar Area */}
+                <div className="flex-1 flex items-center relative h-8">
+                  {/* Bar Pill Container */}
+                  <div
+                    className={`h-7 rounded-full bg-gradient-to-r ${GRADIENTS[s.colorIndex % GRADIENTS.length]} flex items-center justify-end pr-1.5 relative shadow-md transition-all duration-1000`}
+                    style={{ width: `${widthPercent}%` }}
+                  >
+                    {/* Circular Avatar on Right End */}
+                    <div className="w-5.5 h-5.5 rounded-full border border-white/90 overflow-hidden bg-slate-955 shadow">
+                      <img 
+                        src={s.photoURL || `https://ui-avatars.com/api/?name=${s.displayName}&background=0F172A&color=E2E8F0&bold=true`} 
+                        alt={s.displayName}
+                        className="w-full h-full object-cover" 
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Score Label Outside */}
+                  <span className="text-[10px] sm:text-xs font-black text-emerald-400 font-mono pl-2.5 select-none shrink-0">
+                    {s.points} แต้ม
+                  </span>
+                </div>
               </div>
             );
           })}
