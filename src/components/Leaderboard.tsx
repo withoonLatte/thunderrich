@@ -4,6 +4,7 @@ import { db } from '../lib/firebase';
 import { User, Prediction } from '../types';
 import { Trophy, Award, Medal, ChevronUp, ChevronDown, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import BarChartRace from './BarChartRace';
 
 const NO_PRED_PENALTY: Record<string, number> = {
   'group': -1,
@@ -219,6 +220,7 @@ const Leaderboard: React.FC = () => {
   const [manOfTheNight, setManOfTheNight] = useState<{ userId: string; updatedAt: any } | null>(null);
   const [showPopup, setShowPopup] = useState(false);
   const [previousRanks, setPreviousRanks] = useState<Record<string, number>>({});
+  const [leaderboardTab, setLeaderboardTab] = useState<'standings' | 'barRace'>('standings');
 
   const handleScrollUp = (uid: string, numRows: number) => {
     setRowOffsets(prev => {
@@ -428,7 +430,32 @@ const Leaderboard: React.FC = () => {
 
   return (
     <>
-      <div className="space-y-4">
+      {/* Sub Tab Selector */}
+      <div className="flex bg-[#0f172a]/70 backdrop-blur-md rounded-2xl p-1 border border-slate-800/80 mb-6 mx-3">
+        <button
+          onClick={() => setLeaderboardTab('standings')}
+          className={`flex-1 text-center py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all ${
+            leaderboardTab === 'standings'
+              ? 'bg-gradient-to-r from-emerald-500 to-green-400 text-white shadow-md'
+              : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          🏆 ตารางคะแนน
+        </button>
+        <button
+          onClick={() => setLeaderboardTab('barRace')}
+          className={`flex-1 text-center py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all ${
+            leaderboardTab === 'barRace'
+              ? 'bg-gradient-to-r from-emerald-500 to-green-400 text-white shadow-md'
+              : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          🎬 อนิเมชันวิ่งแซง (Bar Race)
+        </button>
+      </div>
+
+      {leaderboardTab === 'standings' ? (
+        <div className="space-y-4">
         {users.map((u, index) => {
           const isManOfTheNight = manOfTheNight?.userId === u.uid;
           const isGold = index === 0;
@@ -767,6 +794,11 @@ const Leaderboard: React.FC = () => {
           );
         })}
       </div>
+      ) : (
+        <div className="px-3">
+          <BarChartRace users={users} />
+        </div>
+      )}
 
       <AnimatePresence>
         {showPopup && winnerUser && (
