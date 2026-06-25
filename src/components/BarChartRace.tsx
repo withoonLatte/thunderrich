@@ -1,22 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { User, Prediction, Match, MatchStatus } from '../types';
+import { User, Match, MatchStatus } from '../types';
 import { Play, Pause, RotateCcw, Maximize2, Minimize2, Loader2 } from 'lucide-react';
 
 interface BarChartRaceProps {
   users: User[];
+  userHistories: Record<string, { points: number; isResultCorrect?: boolean; isBanned?: boolean; isMissed?: boolean }[]>;
 }
-
-const NO_PRED_PENALTY: Record<string, number> = {
-  'group': -1,
-  'top32': -1,
-  'top16': -2,
-  'top8': -2,
-  'top4': -3,
-  'third_place': -3,
-  'final': -3,
-};
 
 const GRADIENTS = [
   'from-rose-500 to-red-600',
@@ -39,7 +30,7 @@ const formatDateTH = (seconds: number) => {
   return `${day} ${month}`;
 };
 
-const BarChartRace: React.FC<BarChartRaceProps> = ({ users }) => {
+const BarChartRace: React.FC<BarChartRaceProps> = ({ users, userHistories }) => {
   const [loading, setLoading] = useState(true);
   const [dates, setDates] = useState<string[]>([]);
   const [timelineData, setTimelineData] = useState<Record<string, Record<string, number>>>({});
@@ -48,16 +39,13 @@ const BarChartRace: React.FC<BarChartRaceProps> = ({ users }) => {
   const [speed, setSpeed] = useState(1200); // ms per day
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Load matches and predictions once on mount to construct data
+  // Load matches once on mount and compute score timeline from preloaded histories
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         const matchesSnap = await getDocs(collection(db, 'matches'));
-        const predictionsSnap = await getDocs(collection(db, 'predictions'));
-
         const matches: Match[] = matchesSnap.docs.map(d => ({ id: d.id, ...d.data() } as Match));
-        const predictions: Prediction[] = predictionsSnap.docs.map(d => ({ id: d.id, ...d.data() } as Prediction));
 
         // 1. Filter and sort finished matches chronologically
         const sortedFinished = matches
@@ -88,7 +76,7 @@ const BarChartRace: React.FC<BarChartRaceProps> = ({ users }) => {
         const fullDates = ['เริ่มต้น', ...uniqueDates];
         setDates(fullDates);
 
-        // 3. Compute cumulative timeline scores for each user
+        // 3. Compute cumulative timeline scores for each user using preloaded histories
         const computedTimeline: Record<string, Record<string, number>> = {};
 
         users.forEach(u => {
@@ -96,22 +84,18 @@ const BarChartRace: React.FC<BarChartRaceProps> = ({ users }) => {
             'เริ่มต้น': 0
           };
 
+          const history = userHistories[u.uid] || [];
           let runningScore = 0;
+
           uniqueDates.forEach(dStr => {
             const matchesOnDate = matchesByDate[dStr] || [];
             matchesOnDate.forEach(m => {
-              const p = predictions.find(pred => pred.userId === u.uid && pred.matchId === m.id);
-              const isBanned = u.bannedMatchIds?.includes(m.id) ?? false;
-
-              let earns = 0;
-              if (isBanned) {
-                earns = 0;
-              } else if (p) {
-                earns = p.pointsEarned ?? 0;
-              } else {
-                earns = NO_PRED_PENALTY[m.round] ?? -1;
+              // Find the index of this match in the chronological finished list
+              const matchIdx = sortedFinished.findIndex(finished => finished.id === m.id);
+              if (matchIdx !== -1) {
+                const earns = history[matchIdx]?.points || 0;
+                runningScore += earns;
               }
-              runningScore += earns;
             });
             computedTimeline[u.uid][dStr] = runningScore;
           });
@@ -126,8 +110,10 @@ const BarChartRace: React.FC<BarChartRaceProps> = ({ users }) => {
       }
     };
 
-    fetchData();
-  }, [users]);
+    if (users.length > 0 && Object.keys(userHistories).length > 0) {
+      fetchData();
+    }
+  }, [users, userHistories]);
 
   // Autoplay handler
   useEffect(() => {
@@ -147,7 +133,7 @@ const BarChartRace: React.FC<BarChartRaceProps> = ({ users }) => {
     return () => clearInterval(timer);
   }, [isPlaying, dates, speed]);
 
-  if (loading) {
+  if (loading || Object.keys(userHistories).length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[300px] text-slate-400 gap-3">
         <Loader2 className="w-8 h-8 animate-spin text-emerald-400" />
@@ -262,7 +248,7 @@ const BarChartRace: React.FC<BarChartRaceProps> = ({ users }) => {
                   </span>
                   
                   {/* Circular Avatar on Right End */}
-                  <div className="absolute right-1 w-8 h-8 rounded-full border-2 border-white/90 overflow-hidden bg-slate-950 shadow-md">
+                  <div className="absolute right-1 w-8 h-8 rounded-full border-2 border-white/90 overflow-hidden bg-slate-955 shadow-md">
                     <img 
                       src={s.photoURL || `https://ui-avatars.com/api/?name=${s.displayName}&background=0F172A&color=E2E8F0&bold=true`} 
                       alt={s.displayName}

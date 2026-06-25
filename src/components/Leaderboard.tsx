@@ -796,7 +796,7 @@ const Leaderboard: React.FC = () => {
       </div>
       ) : (
         <div className="px-3">
-          <BarChartRace users={users} />
+          <BarChartRace users={users} userHistories={userHistories} />
         </div>
       )}
 
