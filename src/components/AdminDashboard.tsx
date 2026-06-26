@@ -1568,7 +1568,9 @@ const AdminDashboard: React.FC = () => {
               }
               return true;
             });
-            const sortedClosedMatches = [...closedMatches].sort((a, b) => b.startTime.seconds - a.startTime.seconds);
+            const sortedClosedMatches = [...closedMatches]
+              .sort((a, b) => b.startTime.seconds - a.startTime.seconds)
+              .slice(0, 6);
 
             return renderConsensusSummary(sortedClosedMatches, 'สรุปกราฟผลโหวตล่าสุด (Consensus Summary)');
           })()}
