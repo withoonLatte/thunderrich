@@ -88,6 +88,8 @@ async function main() {
     let yellowCards = 0;
     let redCards = 0;
     const bannedMatchIds = [];
+    let hasResetForTop32 = false;
+    let hasResetForTop16 = false;
 
     const userPreds = predsByUser[user.uid] || [];
 
@@ -95,6 +97,21 @@ async function main() {
     for (let i = 0; i < allMatches.length; i++) {
       const match = allMatches[i];
       if (match.status !== 'finished') continue;
+
+      if (match.round === 'top32' && !hasResetForTop32) {
+        hasResetForTop32 = true;
+        wrongCount = 0;
+        yellowCards = 0;
+        redCards = 0;
+        bannedMatchIds.length = 0;
+      }
+      if (match.round === 'top16' && !hasResetForTop16) {
+        hasResetForTop16 = true;
+        wrongCount = 0;
+        yellowCards = 0;
+        redCards = 0;
+        bannedMatchIds.length = 0;
+      }
 
       const isBanned = bannedMatchIds.includes(match.id);
       let earns = 0;
@@ -157,7 +174,7 @@ async function main() {
           } else {
             earns = match.customLossScore ?? roundScores.wrong;
             isCorrect = false;
-            if (match.round === 'group') {
+            if (match.round === 'group' || match.round === 'top32') {
               wrongCountIncrement = 1;
             }
           }
@@ -193,7 +210,7 @@ async function main() {
       wrongCount += wrongCountIncrement;
 
       // Card Trigger Logic
-      if (match.round === 'group' && wrongCountIncrement > 0) {
+      if ((match.round === 'group' || match.round === 'top32') && wrongCountIncrement > 0) {
         if (wrongCount === 12) {
           yellowCards += 1;
           // Ban the next chronological match

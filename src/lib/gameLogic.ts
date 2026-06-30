@@ -139,7 +139,7 @@ export const calculateMatchResults = async (matchId: string) => {
           } else {
             pointsChange = (match.customLossScore !== undefined && match.customLossScore !== null) ? match.customLossScore : roundScores.wrong;
             isCorrect = false;
-            if (match.round === TournamentRound.GROUP) {
+            if (match.round === TournamentRound.GROUP || match.round === TournamentRound.TOP32) {
               wrongCountIncrement = 1;
             }
           }
@@ -189,8 +189,8 @@ export const calculateMatchResults = async (matchId: string) => {
     let newRedCards = userData.red_cards || 0;
     const newBannedMatchIds = [...(userData.bannedMatchIds || [])];
 
-    // Card Logic (Group Stage Only)
-    if (match.round === TournamentRound.GROUP && wrongCountIncrement > 0) {
+    // Card Logic (Group Stage & Round of 32 Only)
+    if ((match.round === TournamentRound.GROUP || match.round === TournamentRound.TOP32) && wrongCountIncrement > 0) {
       // Check for Yellow Card (12 wrong)
       if (newWrongCount === 12) {
         newYellowCards += 1;

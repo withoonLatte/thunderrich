@@ -150,7 +150,7 @@ async function main() {
           } else {
             pointsChange = roundScores.wrong;
             isCorrect = false;
-            if (match.round === 'group') wrongCountIncrement = 1;
+            if (match.round === 'group' || match.round === 'top32') wrongCountIncrement = 1;
           }
         }
       }
@@ -192,7 +192,7 @@ async function main() {
     let newRedCards = userData.red_cards || 0;
     const newBannedMatchIds = [...(userData.bannedMatchIds || [])];
 
-    if (match.round === 'group' && wrongCountIncrement > 0) {
+    if ((match.round === 'group' || match.round === 'top32') && wrongCountIncrement > 0) {
       if (newWrongCount === 12) {
         newYellowCards += 1;
         await applyBan(newBannedMatchIds, 1, userData.uid, batch, match.id);

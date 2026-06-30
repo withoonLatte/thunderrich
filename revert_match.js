@@ -61,7 +61,7 @@ async function main() {
       }
       
       // Check if prediction was wrong and round is group, decrement wrong count
-      if (match.round === 'group') {
+      if (match.round === 'group' || match.round === 'top32') {
         if (prediction.isResultCorrect === false && prediction.choice !== null) {
           wrongCountToSubtract = 1;
         }
@@ -77,7 +77,7 @@ async function main() {
     let bannedMatchIds = [...(userData.bannedMatchIds || [])];
     
     // Cards & Bans reversion logic:
-    if (match.round === 'group' && wrongCountToSubtract > 0) {
+    if ((match.round === 'group' || match.round === 'top32') && wrongCountToSubtract > 0) {
       if (currentWrongCount === 12 && newWrongCount === 11) {
         yellowCards = Math.max(0, yellowCards - 1);
         if (bannedMatchIds.length > 0) {

@@ -363,7 +363,7 @@ const AdminDashboard: React.FC = () => {
     if (!bulkText.trim()) return;
 
     const lines = bulkText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-    let processedLines: [string, string, string, string][] = []; // [homeTeam, awayTeam, handicap, startTimeStr]
+    let processedLines: [string, string, string, string, string][] = []; // [homeTeam, awayTeam, handicap, startTimeStr, round]
 
     // Check if there are delimiters in the input
     const hasDelimiters = lines.some(line => line.includes('|') || line.includes('\t'));
@@ -388,12 +388,17 @@ const AdminDashboard: React.FC = () => {
                }
              }
           }
-          return [team1, team2, "0.0", cleanDateStr] as [string, string, string, string];
+          return [team1, team2, "0.0", cleanDateStr, "group"] as [string, string, string, string, string];
         }
         
-        if (cols.length >= 4) return [cols[0], cols[1], cols[2], cols[3]] as [string, string, string, string];
+        if (cols.length >= 4) {
+          const rawRound = cols[4]?.trim().toLowerCase();
+          const allowedRounds = ['group', 'top32', 'top16', 'top8', 'top4', 'third_place', 'final'];
+          const rd = allowedRounds.includes(rawRound) ? rawRound : 'group';
+          return [cols[0], cols[1], cols[2], cols[3], rd] as [string, string, string, string, string];
+        }
         return null;
-      }).filter((l): l is [string, string, string, string] => l !== null);
+      }).filter((l): l is [string, string, string, string, string] => l !== null);
     } else {
       // 3-line format:
       // Loop through lines by step of 3
@@ -413,12 +418,12 @@ const AdminDashboard: React.FC = () => {
              }
            }
         }
-        processedLines.push([team1, team2, "0.0", cleanDateStr]);
+        processedLines.push([team1, team2, "0.0", cleanDateStr, "group"]);
       }
     }
 
     if (processedLines.length === 0) {
-      alert('ไม่พบข้อมูลที่ถูกต้อง (รูปแบบ: ทีมเหย้า | ทีมเยือน | ราคา | เวลา หรือ สลับ 3 บรรทัด: วันเวลา\\nทีม1\\nทีม2)');
+      alert('ไม่พบข้อมูลที่ถูกต้อง (รูปแบบ: ทีมเหย้า | ทีมเยือน | ราคา | เวลา | รอบการแข่งขัน(ไม่ระบุเป็น group) หรือ สลับ 3 บรรทัด)');
       return;
     }
 
@@ -433,10 +438,21 @@ const AdminDashboard: React.FC = () => {
         let addedCount = 0;
 
         processedLines.forEach((cols) => {
-          const [h, a, hc, st] = cols;
+          const [h, a, hc, st, rd] = cols;
           if (h && a && hc && st) {
             const startDate = parseThailandDate(st);
             if (isNaN(startDate.getTime())) return;
+            
+            // Calculate prediction deadline: day before at 20:00 in Thailand Time
+            const dayBefore = new Date(startDate.getTime() - 24 * 60 * 60 * 1000);
+            const formatter = new Intl.DateTimeFormat('sv-SE', {
+              timeZone: 'Asia/Bangkok',
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit'
+            });
+            const formattedDate = formatter.format(dayBefore);
+            const deadlineDate = parseThailandDate(`${formattedDate} 20:00:00`);
             
             const existing = existingMatches.find(m => 
               m.homeTeam.trim().toLowerCase() === h.trim().toLowerCase() && 
@@ -448,7 +464,8 @@ const AdminDashboard: React.FC = () => {
               batch.update(matchRef, {
                 handicap: hc,
                 startTime: Timestamp.fromDate(startDate),
-                predictionDeadline: Timestamp.fromDate(startDate),
+                predictionDeadline: Timestamp.fromDate(deadlineDate),
+                round: rd as TournamentRound
               });
               addedCount++;
             } else {
@@ -467,8 +484,8 @@ const AdminDashboard: React.FC = () => {
                 awayTeam: a,
                 handicap: hc,
                 startTime: Timestamp.fromDate(startDate),
-                predictionDeadline: Timestamp.fromDate(startDate),
-                round: TournamentRound.GROUP,
+                predictionDeadline: Timestamp.fromDate(deadlineDate),
+                round: rd as TournamentRound,
                 homeFlag: getTeamFlag(h),
                 awayFlag: getTeamFlag(a),
                 status: MatchStatus.SCHEDULED,
@@ -854,7 +871,20 @@ const AdminDashboard: React.FC = () => {
     setMatchSaving(true);
     try {
       const date = parseThailandDate(startTime);
-      const deadlineDate = predictionDeadline ? parseThailandDate(predictionDeadline) : date;
+      let deadlineDate = date;
+      if (predictionDeadline) {
+        deadlineDate = parseThailandDate(predictionDeadline);
+      } else {
+        const dayBefore = new Date(date.getTime() - 24 * 60 * 60 * 1000);
+        const formatter = new Intl.DateTimeFormat('sv-SE', {
+          timeZone: 'Asia/Bangkok',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        });
+        const formattedDate = formatter.format(dayBefore);
+        deadlineDate = parseThailandDate(`${formattedDate} 20:00:00`);
+      }
       
       if (editingMatchId) {
         await updateDoc(doc(db, 'matches', editingMatchId), {
@@ -1015,18 +1045,33 @@ const AdminDashboard: React.FC = () => {
     const startStr = safeFormatTimestamp(match.startTime);
     setStartTime(startStr);
 
-    // Set prediction deadline to 8 PM of today (current date) in Thailand Time
-    const now = new Date();
-    const formatter = new Intl.DateTimeFormat('sv-SE', {
-      timeZone: 'Asia/Bangkok',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    });
-    const formattedDate = formatter.format(now);
-    const deadlineDatePart = formattedDate.substring(0, 10);
-    const deadlineStr = `${deadlineDatePart}T20:00`;
-    setPredictionDeadline(deadlineStr);
+    if (match.predictionDeadline) {
+      setPredictionDeadline(safeFormatTimestamp(match.predictionDeadline));
+    } else {
+      let matchDate: Date | null = null;
+      if (match.startTime) {
+        if (typeof match.startTime.toDate === 'function') {
+          matchDate = match.startTime.toDate();
+        } else if (match.startTime.seconds !== undefined) {
+          matchDate = new Date(match.startTime.seconds * 1000);
+        } else {
+          matchDate = new Date(match.startTime);
+        }
+      }
+      if (matchDate && !isNaN(matchDate.getTime())) {
+        const dayBefore = new Date(matchDate.getTime() - 24 * 60 * 60 * 1000);
+        const formatter = new Intl.DateTimeFormat('sv-SE', {
+          timeZone: 'Asia/Bangkok',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        });
+        const formattedDate = formatter.format(dayBefore);
+        setPredictionDeadline(`${formattedDate}T20:00`);
+      } else {
+        setPredictionDeadline('');
+      }
+    }
     
     if (match.customWinScore !== undefined && match.customWinScore !== null) {
       setIsSpecialMatch(true);
@@ -1040,6 +1085,28 @@ const AdminDashboard: React.FC = () => {
     
     setShowAdd(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleStartTimeChange = (value: string) => {
+    setStartTime(value);
+    if (value) {
+      try {
+        const date = parseThailandDate(value);
+        if (!isNaN(date.getTime())) {
+          const dayBefore = new Date(date.getTime() - 24 * 60 * 60 * 1000);
+          const formatter = new Intl.DateTimeFormat('sv-SE', {
+            timeZone: 'Asia/Bangkok',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+          });
+          const formattedDate = formatter.format(dayBefore);
+          setPredictionDeadline(`${formattedDate}T20:00`);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
   };
 
   const getCountryCode = (team: string) => {
@@ -1926,7 +1993,7 @@ const AdminDashboard: React.FC = () => {
                   <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <label className="text-xs text-black font-black uppercase tracking-widest">เวลาแข่งขัน (Start Time)</label>
-                      <input type="datetime-local" required value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-4 text-huge text-black font-black focus:outline-none focus:ring-2 focus:ring-world-cup-green/20 focus:border-world-cup-green transition-all" />
+                      <input type="datetime-local" required value={startTime} onChange={e => handleStartTimeChange(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl p-4 text-huge text-black font-black focus:outline-none focus:ring-2 focus:ring-world-cup-green/20 focus:border-world-cup-green transition-all" />
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs text-black font-black uppercase tracking-widest">ปิดทายผล (Deadline)</label>
@@ -2054,7 +2121,7 @@ const AdminDashboard: React.FC = () => {
                               type="datetime-local" 
                               required 
                               value={startTime} 
-                              onChange={e => setStartTime(e.target.value)} 
+                              onChange={e => handleStartTimeChange(e.target.value)} 
                               className="w-full bg-white border border-gray-300 rounded-lg p-1.5 text-[10px] font-bold text-black focus:outline-none focus:ring-1 focus:ring-emerald-500" 
                             />
                           </td>
