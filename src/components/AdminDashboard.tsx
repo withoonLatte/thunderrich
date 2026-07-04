@@ -4,7 +4,7 @@ import { db } from '../lib/firebase';
 import { TournamentRound, Match, MatchStatus, User, Prediction, PredictionChoice } from '../types';
 import { useAuth, PLAYER_PINS } from '../contexts/AuthContext';
 import { calculateMatchResults } from '../lib/gameLogic';
-import { Trash2, Edit3, CheckCircle, PlusCircle, RefreshCw, Calendar, ChevronDown, Check, Camera, Loader2, Info, Zap, Star, FileUp } from 'lucide-react';
+import { Trash2, Edit3, CheckCircle, PlusCircle, RefreshCw, Calendar, ChevronDown, Check, Camera, Loader2, Info, Zap, Star, FileUp, Users, ClipboardList } from 'lucide-react';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'motion/react';
 import { WORLD_CUP_2026_SCHEDULE, MockMatch } from '../data/worldCupSchedule';
@@ -19,6 +19,8 @@ const AdminDashboard: React.FC = () => {
   const [manOfTheNight, setManOfTheNight] = useState<{ userId: string; updatedAt: any } | null>(null);
   const deferredAdminTab = useDeferredValue(activeAdminTab);
   const [showAdd, setShowAdd] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [calcPredsLoading, setCalcPredsLoading] = useState(false);
   
   // App Config State
   const [appConfig, setAppConfig] = useState<{ logoUrl?: string, backgroundUrl?: string } | null>(null);
@@ -743,6 +745,97 @@ const AdminDashboard: React.FC = () => {
     await batch.commit();
     setResetLoading(false);
     alert('รีเซ็ตใบเหลือง/แดงและจำนวนการทายผิดสำหรับรอบน็อกเอาต์เรียบร้อยแล้ว!');
+  };
+
+  const handleCalculatePredictions = async () => {
+    const scheduledMatches = matches.filter(m => m.status === MatchStatus.SCHEDULED);
+    const pastDeadlineMatches = scheduledMatches.filter(m => {
+      if (!m.predictionDeadline) return false;
+      const deadlineDate = m.predictionDeadline.toDate ? m.predictionDeadline.toDate() : new Date(m.predictionDeadline.seconds * 1000);
+      return deadlineDate <= new Date();
+    });
+
+    if (pastDeadlineMatches.length === 0) {
+      alert('ไม่มีแมตช์ที่เลยกำหนดเวลาส่งทายผลและยังไม่ได้เริ่มคำนวณคะแนน');
+      return;
+    }
+
+    const matchTitles = pastDeadlineMatches.map(m => `- ${m.homeTeam} vs ${m.awayTeam}`).join('\n');
+    if (!window.confirm(`คุณแน่ใจหรือไม่ว่าต้องการคำนวณคะแนนบทลงโทษสำหรับแมตช์ที่เลยกำหนดเวลาแล้วเหล่านี้?\n\n${matchTitles}\n\nระบบจะหักคะแนนผู้ที่ไม่ได้ส่งทายผลโดยอัตโนมัติ`)) {
+      return;
+    }
+
+    setCalcPredsLoading(true);
+    try {
+      const batch = writeBatch(db);
+      let penaltyCount = 0;
+      let userPointsDiff: Record<string, number> = {};
+
+      const NO_PRED_PENALTY: Record<string, number> = {
+        'group': -1,
+        'top32': -1,
+        'top16': -2,
+        'top8': -2,
+        'top4': -3,
+        'third_place': -3,
+        'final': -3,
+      };
+
+      const playersOnly = users.filter(u => u.role !== 'admin');
+
+      for (const m of pastDeadlineMatches) {
+        const matchPreds = allPredictions.filter(p => p.matchId === m.id);
+        
+        for (const u of playersOnly) {
+          const isBanned = u.bannedMatchIds?.includes(m.id);
+          const p = matchPreds.find(pred => pred.userId === u.uid);
+
+          if (!isBanned && (!p || p.choice === null || p.choice === undefined)) {
+            if (p && p.choice === null) continue;
+
+            const penaltyPoints = NO_PRED_PENALTY[m.round] || -1;
+            const predId = `${u.uid}_${m.id}`;
+            const newPredRef = doc(db, 'predictions', predId);
+
+            batch.set(newPredRef, {
+              id: predId,
+              userId: u.uid,
+              matchId: m.id,
+              choice: null,
+              pointsEarned: penaltyPoints,
+              isResultCorrect: false,
+              isVoided: true,
+              createdAt: Timestamp.now()
+            });
+
+            userPointsDiff[u.uid] = (userPointsDiff[u.uid] || 0) + penaltyPoints;
+            penaltyCount++;
+          }
+        }
+      }
+
+      for (const [uid, diff] of Object.entries(userPointsDiff)) {
+        const user = users.find(usr => usr.uid === uid);
+        if (user) {
+          const userRef = doc(db, 'users', uid);
+          batch.update(userRef, {
+            points: (user.points || 0) + diff
+          });
+        }
+      }
+
+      if (penaltyCount > 0) {
+        await batch.commit();
+        alert(`คำนวณเรียบร้อยแล้ว! ลงโทษผู้ที่ส่งคำทายไม่ทันไปทั้งหมด ${penaltyCount} รายการ`);
+      } else {
+        alert('ทุกคนทายครบถ้วนแล้ว ไม่มีผู้เล่นโดนหักคะแนน');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('เกิดข้อผิดพลาดในการคำนวณคะแนน');
+    } finally {
+      setCalcPredsLoading(false);
+    }
   };
 
   const handleHardReset = async () => {
@@ -1550,6 +1643,24 @@ const AdminDashboard: React.FC = () => {
               className="flex-1 flex items-center justify-center gap-2 bg-world-cup-green text-white px-4 py-3 rounded-2xl text-[10px] uppercase font-bold"
             >
               {showAdd ? 'ยกเลิก' : <><PlusCircle className="w-3 h-3" /> เพิ่มแมตช์</>}
+            </button>
+            <button 
+              onClick={() => setShowStatusModal(true)}
+              className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-3 rounded-2xl text-[10px] uppercase font-bold hover:bg-blue-500 transition-all shadow-md shadow-blue-600/20"
+            >
+              <ClipboardList className="w-3.5 h-3.5" /> สถานะการทาย
+            </button>
+            <button 
+              disabled={calcPredsLoading}
+              onClick={handleCalculatePredictions}
+              className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 text-white px-4 py-3 rounded-2xl text-[10px] uppercase font-bold disabled:opacity-50 hover:bg-emerald-500 transition-all shadow-md shadow-emerald-600/20"
+            >
+              {calcPredsLoading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Zap className="w-3.5 h-3.5" />
+              )}
+              คำนวณผลการทาย
             </button>
             <button 
               onClick={async () => {
@@ -2824,8 +2935,133 @@ const AdminDashboard: React.FC = () => {
         )}
     </>
   )}
-</div>
-);
+      {showStatusModal && (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-[#0f172a] border border-slate-800 rounded-[2.5rem] p-6 max-w-4xl w-full max-h-[85vh] overflow-y-auto space-y-6 shadow-[0_20px_50px_rgba(0,0,0,0.5)] text-slate-100"
+          >
+            <div className="flex justify-between items-center border-b border-slate-850 pb-4">
+              <div className="flex items-center gap-3">
+                <ClipboardList className="w-6 h-6 text-emerald-400" />
+                <h3 className="text-xl font-black uppercase tracking-wider text-white">ตรวจสอบสถานะการทายผล</h3>
+              </div>
+              <button 
+                onClick={() => setShowStatusModal(false)}
+                className="w-10 h-10 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition-all text-xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              {matches.filter(m => m.status === 'scheduled').length === 0 ? (
+                <p className="text-center text-slate-400 py-8 font-black uppercase">ไม่มีแมตช์ที่กำลังรอแข่ง</p>
+              ) : (
+                matches.filter(m => m.status === 'scheduled').map(m => {
+                  const matchPreds = allPredictions.filter(p => p.matchId === m.id);
+                  const playersOnly = users.filter(u => u.role !== 'admin');
+                  
+                  const predictedUsers: { name: string, choice: string }[] = [];
+                  const missingUsers: string[] = [];
+                  const bannedUsers: string[] = [];
+
+                  playersOnly.forEach(u => {
+                    const isBanned = u.bannedMatchIds?.includes(m.id);
+                    const p = matchPreds.find(pred => pred.userId === u.uid);
+
+                    if (isBanned) {
+                      bannedUsers.push(u.displayName);
+                    } else if (p && p.choice !== null && p.choice !== undefined) {
+                      const choiceName = p.choice === 'home' ? m.homeTeam : m.awayTeam;
+                      predictedUsers.push({ name: u.displayName, choice: choiceName });
+                    } else {
+                      missingUsers.push(u.displayName);
+                    }
+                  });
+
+                  const deadlineDate = m.predictionDeadline ? (m.predictionDeadline.toDate ? m.predictionDeadline.toDate() : new Date(m.predictionDeadline.seconds * 1000)) : null;
+                  const deadlineStr = deadlineDate ? deadlineDate.toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' }) : '-';
+
+                  return (
+                    <div key={m.id} className="bg-slate-900/60 border border-slate-800 rounded-3xl p-5 space-y-4">
+                      <div className="flex flex-wrap justify-between items-center gap-3 border-b border-slate-800/60 pb-3">
+                        <div>
+                          <h4 className="text-lg font-black text-white">{m.homeTeam} vs {m.awayTeam}</h4>
+                          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">⏱️ Deadline: {deadlineStr}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider ${missingUsers.length === 0 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
+                            ทายแล้ว {predictedUsers.length} / {playersOnly.length} คน
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-black uppercase">
+                        {/* Predicted List */}
+                        <div className="bg-emerald-950/20 border border-emerald-900/20 p-4 rounded-2xl space-y-2.5">
+                          <h5 className="text-emerald-450 flex items-center gap-1.5 font-black">
+                            🟢 ทายแล้ว ({predictedUsers.length})
+                          </h5>
+                          <ul className="space-y-1.5 font-bold normal-case text-slate-300">
+                            {predictedUsers.length === 0 ? <li className="text-slate-500 italic">ไม่มี</li> : predictedUsers.map((pu, idx) => (
+                              <li key={idx} className="flex justify-between items-center bg-slate-950/40 px-3 py-1.5 rounded-xl border border-slate-900/50">
+                                <span className="font-semibold text-slate-200">{pu.name}</span>
+                                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-wider bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">{pu.choice}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        {/* Missing List */}
+                        <div className="bg-rose-950/20 border border-rose-900/20 p-4 rounded-2xl space-y-2.5">
+                          <h5 className="text-rose-450 flex items-center gap-1.5 font-black">
+                            🔴 ยังไม่ได้ทาย ({missingUsers.length})
+                          </h5>
+                          <ul className="space-y-1.5 font-bold normal-case text-slate-350">
+                            {missingUsers.length === 0 ? <li className="text-emerald-400 font-bold italic">🎉 ครบทุกคนแล้ว!</li> : missingUsers.map((name, idx) => (
+                              <li key={idx} className="bg-slate-950/40 px-3 py-1.5 rounded-xl border border-slate-900/50 text-slate-200">
+                                {name}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        {/* Banned List */}
+                        <div className="bg-amber-950/20 border border-amber-900/20 p-4 rounded-2xl space-y-2.5">
+                          <h5 className="text-amber-500 flex items-center gap-1.5 font-black">
+                            🟥 โดนแบน ({bannedUsers.length})
+                          </h5>
+                          <ul className="space-y-1.5 font-bold normal-case text-slate-350">
+                            {bannedUsers.length === 0 ? <li className="text-slate-500 italic">ไม่มี</li> : bannedUsers.map((name, idx) => (
+                              <li key={idx} className="bg-slate-950/40 px-3 py-1.5 rounded-xl border border-slate-900/50 text-slate-400 line-through">
+                                {name}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            <div className="border-t border-slate-800 pt-4 flex justify-end">
+              <button 
+                onClick={() => setShowStatusModal(false)}
+                className="bg-slate-800 hover:bg-slate-700 text-white px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all"
+              >
+                ปิดหน้าต่าง
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default AdminDashboard;
