@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { User } from '../types';
 import { motion } from 'motion/react';
@@ -8,28 +8,51 @@ const ScoreGraph: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
-    const q = query(collection(db, 'users'), orderBy('points', 'desc'));
-    const unsubscribe = onSnapshot(q, (snap) => {
-      const data = snap.docs
-        .map(d => d.data() as User)
-        .filter(u => u.role !== 'admin');
+    let isFufahDisabled = false;
+    let unsubscribe: () => void = () => {};
 
-      data.sort((a, b) => {
-        if (b.points !== a.points) {
-          return b.points - a.points;
-        }
-        const wrongA = a.round1_wrong_count || 0;
-        const wrongB = b.round1_wrong_count || 0;
-        if (wrongA !== wrongB) {
-          return wrongA - wrongB; // Fewer wrongs first
-        }
-        return a.displayName.localeCompare(b.displayName, 'th');
+    const setupListener = async () => {
+      try {
+        const matchesSnap = await getDocs(collection(db, 'matches'));
+        matchesSnap.forEach(d => {
+          const r = d.data().round;
+          if (['top16', 'top8', 'top4', 'third_place', 'final'].includes(r)) {
+            isFufahDisabled = true;
+          }
+        });
+      } catch (e) {
+        console.error(e);
+      }
+
+      const q = query(collection(db, 'users'), orderBy('points', 'desc'));
+      unsubscribe = onSnapshot(q, (snap) => {
+        const data = snap.docs
+          .map(d => d.data() as User)
+          .filter(u => u.role !== 'admin');
+
+        data.sort((a, b) => {
+          if (b.points !== a.points) {
+            return b.points - a.points;
+          }
+          if (!isFufahDisabled) {
+            const wrongA = a.round1_wrong_count || 0;
+            const wrongB = b.round1_wrong_count || 0;
+            if (wrongA !== wrongB) {
+              return wrongA - wrongB; // Fewer wrongs first
+            }
+          }
+          return a.displayName.localeCompare(b.displayName, 'th');
+        });
+
+        setUsers(data);
       });
+    };
 
-      setUsers(data);
-    });
+    setupListener();
 
-    return () => unsubscribe();
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, []);
 
   // Calculate dynamic axis range for bilateral alignment

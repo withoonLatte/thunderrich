@@ -221,6 +221,7 @@ const Leaderboard: React.FC = () => {
   const [showPopup, setShowPopup] = useState(false);
   const [previousRanks, setPreviousRanks] = useState<Record<string, number>>({});
   const [leaderboardTab, setLeaderboardTab] = useState<'standings' | 'barRace'>('standings');
+  const [isFufahDisabled, setIsFufahDisabled] = useState(false);
 
   const handleScrollUp = (uid: string, numRows: number) => {
     setRowOffsets(prev => {
@@ -300,9 +301,25 @@ const Leaderboard: React.FC = () => {
         // Fetch matches map for sorting and round identification
         const matchesSnap = await getDocs(collection(db, 'matches'));
         const matchesMap: Record<string, any> = {};
+        let hasKnockout = false;
         matchesSnap.forEach(d => {
           matchesMap[d.id] = d.data();
+          const r = d.data().round;
+          if (['top16', 'top8', 'top4', 'third_place', 'final'].includes(r)) {
+            hasKnockout = true;
+          }
         });
+        setIsFufahDisabled(hasKnockout);
+
+        if (hasKnockout) {
+          topUsers.sort((a, b) => {
+            if (b.points !== a.points) {
+              return b.points - a.points;
+            }
+            return a.displayName.localeCompare(b.displayName, 'th');
+          });
+          setUsers([...topUsers]);
+        }
 
         // Since Firestore has a limit of 10 in 'in' queries, and we have up to 15 users, 
         // we might want to fetch all predictions and filter or chunk it.
@@ -632,13 +649,13 @@ const Leaderboard: React.FC = () => {
                       >
                         {u.displayName ? u.displayName.toUpperCase() : ''}
                       </h3>
-                      {u.yellow_cards > 0 && (
+                      {!isFufahDisabled && u.yellow_cards > 0 && (
                         <div 
                           title="ได้รับใบเหลือง" 
                           className="w-2.5 h-3.5 bg-yellow-450 border border-yellow-300 rounded-[1.5px] shadow-sm transform rotate-[6deg] flex-shrink-0" 
                         />
                       )}
-                      {u.red_cards > 0 && (
+                      {!isFufahDisabled && u.red_cards > 0 && (
                         <div 
                           title="ได้รับใบแดง" 
                           className="w-2.5 h-3.5 bg-red-600 border border-red-500 rounded-[1.5px] shadow-sm transform -rotate-[6deg] flex-shrink-0" 
@@ -751,12 +768,16 @@ const Leaderboard: React.FC = () => {
                         <span className="text-slate-500">
                           แถวที่ {currentOffset + 1} - {Math.min(numRows, currentOffset + 3)} จาก {numRows}
                         </span>
-                        <span className="text-slate-600">•</span>
-                        <span 
-                          style={{ fontSize: '25px', color: '#ef4444', fontWeight: 950 }}
-                        >
-                          เฟอะฟะ {u.round1_wrong_count}
-                        </span>
+                        {!isFufahDisabled && (
+                          <>
+                            <span className="text-slate-600">•</span>
+                            <span 
+                              style={{ fontSize: '25px', color: '#ef4444', fontWeight: 950 }}
+                            >
+                              เฟอะฟะ {u.round1_wrong_count}
+                            </span>
+                          </>
+                        )}
                       </div>
                       {numRows > 3 && (
                         <div className="flex gap-2">
