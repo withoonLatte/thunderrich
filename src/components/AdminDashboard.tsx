@@ -160,7 +160,7 @@ const AdminDashboard: React.FC = () => {
         'อันดับ',
         'ชื่อผู้เล่น',
         'คะแนนสะสมรวม',
-        'ทายผิดสะสม (เฟอะฟะ)'
+        'ทายผิดสะสม'
       ];
 
       groupMatches.forEach((m, idx) => {

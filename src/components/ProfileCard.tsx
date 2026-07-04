@@ -186,43 +186,20 @@ const ProfileCard: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-4 pt-2">
-            {!isFufahDisabled && (
-              <>
-                <div className="flex justify-between items-end px-1.5">
-                  <span className="text-xs font-black text-slate-350 uppercase tracking-[0.18em] flex items-center gap-2">
-                    <AlertTriangle className="w-5 h-5 text-yellow-400" /> เฟอะฟะ
-                  </span>
-                  <span className="text-xl font-black text-white tracking-widest">{wrongCount}<span className="text-slate-500 mx-1.5">/</span>24</span>
+            {isBanned && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="mt-6 bg-red-950/40 border-2 border-red-500/20 rounded-3xl p-5 flex items-center gap-5 shadow-inner"
+              >
+                <div className="p-3 bg-red-650 rounded-2xl shadow-lg shadow-red-600/30">
+                  <Info className="w-6 h-6 text-white" />
                 </div>
-                
-                <div className="h-7 bg-slate-900/80 rounded-full p-1.5 overflow-hidden shadow-inner border border-slate-800">
-                  <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: `${progressPercent}%` }}
-                    className={`h-full rounded-full transition-colors duration-700 ${
-                      wrongCount >= 24 ? 'bg-gradient-to-r from-red-600 to-pink-500 shadow-[0_0_15px_rgba(239,68,68,0.6)]' : 
-                      wrongCount >= 12 ? 'bg-gradient-to-r from-yellow-500 to-orange-400 shadow-[0_0_15px_rgba(245,158,11,0.6)]' : 
-                      'bg-gradient-to-r from-emerald-500 to-green-400 shadow-[0_0_15px_rgba(34,197,94,0.6)]'
-                    }`}
-                  />
+                <div>
+                  <p className="text-xs font-black text-red-400 uppercase tracking-widest leading-none mb-1.5">PENALIZED / ถูกแบน</p>
+                  <p className="text-lg font-black text-white">งดทำนายผลจำนวน {user.bannedMatchIds.length} แมตช์</p>
                 </div>
-
-                {isBanned && (
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="mt-6 bg-red-950/40 border-2 border-red-500/20 rounded-3xl p-5 flex items-center gap-5 shadow-inner"
-                  >
-                    <div className="p-3 bg-red-650 rounded-2xl shadow-lg shadow-red-600/30">
-                      <Info className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-black text-red-400 uppercase tracking-widest leading-none mb-1.5">PENALIZED / ถูกแบน</p>
-                      <p className="text-lg font-black text-white">งดทำนายผลจำนวน {user.bannedMatchIds.length} แมตช์</p>
-                    </div>
-                  </motion.div>
-                )}
-              </>
+              </motion.div>
             )}
           </div>
         )}

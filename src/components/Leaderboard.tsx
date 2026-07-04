@@ -768,16 +768,6 @@ const Leaderboard: React.FC = () => {
                         <span className="text-slate-500">
                           แถวที่ {currentOffset + 1} - {Math.min(numRows, currentOffset + 3)} จาก {numRows}
                         </span>
-                        {!isFufahDisabled && (
-                          <>
-                            <span className="text-slate-600">•</span>
-                            <span 
-                              style={{ fontSize: '25px', color: '#ef4444', fontWeight: 950 }}
-                            >
-                              เฟอะฟะ {u.round1_wrong_count}
-                            </span>
-                          </>
-                        )}
                       </div>
                       {numRows > 3 && (
                         <div className="flex gap-2">
