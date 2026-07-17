@@ -532,11 +532,11 @@ const MatchList: React.FC = () => {
                   </div>
                 )}
 
-                {/* Admin-only Community Vote Breakdown */}
-                {user?.role === 'admin' && showVotes && (
+                {/* Community Vote Breakdown */}
+                {showVotes && (
                   <div className="space-y-4 mt-3.5 bg-slate-950/60 p-4.5 rounded-[1.8rem] border border-slate-800/80 shadow-inner">
                     <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-800/40 pb-2.5">
-                      <span className="flex items-center gap-1.5 text-emerald-400">📊 มติเพื่อนซี้ (COMMUNITY VOTE - ADMIN ONLY)</span>
+                      <span className="flex items-center gap-1.5 text-emerald-400">📊 มติเพื่อนซี้ (COMMUNITY VOTE)</span>
                       <span>โหวตทั้งหมด {totalVotes} คน</span>
                     </div>
 
