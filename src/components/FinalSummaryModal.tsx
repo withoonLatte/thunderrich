@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Trophy, Crown, BarChart2, X, Sparkles } from 'lucide-react';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell, CartesianGrid } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell, CartesianGrid, LabelList } from 'recharts';
 import { User } from '../types';
 
 interface FinalSummaryModalProps {
@@ -22,10 +22,9 @@ const FinalSummaryModal: React.FC<FinalSummaryModalProps> = ({ isOpen, onClose, 
   const runnerUp1 = playerUsers[1];
   const runnerUp2 = playerUsers[2];
 
-  // Data for Recharts Bar Chart
+  // Data for Recharts Bar Chart (Using FULL display names)
   const chartData = playerUsers.map((u, index) => ({
     name: u.displayName,
-    shortName: u.displayName.length > 12 ? u.displayName.substring(0, 10) + '...' : u.displayName,
     points: u.points || 0,
     rank: index + 1
   }));
@@ -47,7 +46,7 @@ const FinalSummaryModal: React.FC<FinalSummaryModalProps> = ({ isOpen, onClose, 
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          className="bg-[#0b1329] border border-amber-500/40 rounded-[2.5rem] p-4 sm:p-6 max-w-5xl w-full max-h-[90vh] overflow-y-auto space-y-6 shadow-[0_25px_60px_rgba(245,158,11,0.25)] text-slate-100 relative"
+          className="bg-[#0b1329] border border-amber-500/40 rounded-[2.5rem] p-4 sm:p-6 max-w-6xl w-full max-h-[92vh] overflow-y-auto space-y-6 shadow-[0_25px_60px_rgba(245,158,11,0.25)] text-slate-100 relative"
         >
           {/* Header Bar */}
           <div className="flex justify-between items-center border-b border-amber-500/20 pb-4">
@@ -60,7 +59,7 @@ const FinalSummaryModal: React.FC<FinalSummaryModalProps> = ({ isOpen, onClose, 
                   สรุปผลการแข่งขันบอลโลก 2026 🏆
                 </h2>
                 <p className="text-xs text-amber-400/80 font-bold uppercase tracking-widest">
-                  WORLD CUP 2026 FINAL SUMMARY & LEADERBOARD
+                  WORLD CUP 2026 FINAL STANDINGS & SUMMARY CHART
                 </p>
               </div>
             </div>
@@ -147,35 +146,35 @@ const FinalSummaryModal: React.FC<FinalSummaryModalProps> = ({ isOpen, onClose, 
             <div className="flex items-center gap-2 pl-2">
               <BarChart2 className="w-5 h-5 text-emerald-400" />
               <span className="text-xs sm:text-sm font-black text-white uppercase tracking-wider">
-                กราฟสรุปคะแนนรวมสมาชิกทุกคน (FINAL STANDINGS CHART)
+                กราฟสรุปคะแนนแนวตั้งแสดงชื่อฉายาเต็มทุกคน (VERTICAL FINAL STANDINGS CHART)
               </span>
             </div>
           </div>
 
-          {/* Recharts Bar Chart Display */}
+          {/* Recharts VERTICAL Bar Chart Display */}
           <div className="bg-slate-950/80 border border-slate-800 rounded-3xl p-4 sm:p-6 space-y-4">
-            <div className="h-[400px] sm:h-[480px] w-full">
+            <div className="h-[450px] sm:h-[500px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={chartData}
-                  layout="vertical"
-                  margin={{ top: 10, right: 30, left: 30, bottom: 10 }}
+                  margin={{ top: 30, right: 20, left: 10, bottom: 100 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" horizontal={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
                   <XAxis 
+                    dataKey="name" 
+                    stroke="#94a3b8" 
+                    fontSize={11} 
+                    fontWeight="bold"
+                    interval={0}
+                    angle={-45}
+                    textAnchor="end"
+                    height={100}
+                  />
+                  <YAxis 
                     type="number" 
                     stroke="#64748b" 
                     fontSize={11} 
                     fontWeight="bold"
-                    domain={['dataMin - 10', 'dataMax + 10']}
-                  />
-                  <YAxis 
-                    dataKey="shortName" 
-                    type="category" 
-                    stroke="#94a3b8" 
-                    fontSize={11} 
-                    fontWeight="bold"
-                    width={130}
                   />
                   <Tooltip
                     contentStyle={{ 
@@ -189,7 +188,8 @@ const FinalSummaryModal: React.FC<FinalSummaryModalProps> = ({ isOpen, onClose, 
                     formatter={(value: any) => [`${value} คะแนน`, 'คะแนนสะสม']}
                     labelFormatter={(label: any) => `สมาชิก: ${label}`}
                   />
-                  <Bar dataKey="points" radius={[0, 10, 10, 0]} barSize={20}>
+                  <Bar dataKey="points" radius={[8, 8, 0, 0]}>
+                    <LabelList dataKey="points" position="top" fill="#f8fafc" fontSize={11} fontWeight="900" />
                     {chartData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={getBarColor(entry.rank)} />
                     ))}
