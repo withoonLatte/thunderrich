@@ -84,11 +84,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await signInAnonymously(auth);
     }
 
-    const sanitizedNickname = nickname.trim().toLowerCase();
+    const baseName = nickname.trim().split('(')[0].trim().toLowerCase();
+    const sanitizedNickname = baseName;
     const userId = `user_${sanitizedNickname}`;
 
-    const userDocRef = doc(db, 'users', userId);
-    const userSnap = await getDoc(userDocRef);
+    let userDocRef = doc(db, 'users', userId);
+    let userSnap = await getDoc(userDocRef);
+
+    // Fallback: search by exact displayName if doc ID didn't match
+    if (!userSnap.exists()) {
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('displayName', '==', nickname.trim()));
+      const querySnap = await getDocs(q);
+      if (!querySnap.empty) {
+        userDocRef = doc(db, 'users', querySnap.docs[0].id);
+        userSnap = await getDoc(userDocRef);
+      }
+    }
 
     if (userSnap.exists()) {
       const userData = userSnap.data() as User;

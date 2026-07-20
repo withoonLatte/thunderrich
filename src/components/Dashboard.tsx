@@ -4,8 +4,12 @@ import MatchList from './MatchList';
 import Webboard from './Webboard';
 import Leaderboard from './Leaderboard';
 import ScoreGraph from './ScoreGraph';
+import FinalSummaryModal from './FinalSummaryModal';
 import { useAuth } from '../contexts/AuthContext';
-import { Dice5, Coins, Spade, Info, X } from 'lucide-react';
+import { Dice5, Coins, Spade, Info, X, Trophy } from 'lucide-react';
+import { collection, onSnapshot } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import { User } from '../types';
 
 interface DashboardProps {
   activeSubTab: 'predictions' | 'standings' | 'chat';
@@ -15,6 +19,16 @@ const Dashboard: React.FC<DashboardProps> = ({ activeSubTab }) => {
   const { user } = useAuth();
   const [showRules, setShowRules] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
+  const [showFinalSummary, setShowFinalSummary] = useState(true);
+  const [users, setUsers] = useState<User[]>([]);
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'users'), (snapshot) => {
+      const uList = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User));
+      setUsers(uList);
+    });
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -31,6 +45,35 @@ const Dashboard: React.FC<DashboardProps> = ({ activeSubTab }) => {
 
   return (
     <div className="space-y-12 pb-12">
+      {/* Top Banner Button for Final Summary */}
+      <div className="mx-3 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 p-[2px] rounded-2xl shadow-[0_10px_30px_rgba(245,158,11,0.25)]">
+        <button
+          onClick={() => setShowFinalSummary(true)}
+          className="w-full bg-[#0b1329] hover:bg-slate-900 px-5 py-4 rounded-[14px] flex items-center justify-between transition-all cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <Trophy className="w-6 h-6 text-amber-400 fill-current animate-bounce shrink-0" />
+            <div className="text-left">
+              <h4 className="text-sm font-black text-white uppercase tracking-wider">
+                🏆 สรุปผลคะแนนรวมบอลโลก 2026 (FINAL SUMMARY CHART)
+              </h4>
+              <p className="text-[10px] font-bold text-amber-400/90 uppercase tracking-widest">
+                คลิกเพื่อเปิดดูแท่นแชมป์และกราฟพล็อตสรุปอันดับล่าสุด
+              </p>
+            </div>
+          </div>
+          <span className="bg-amber-500 text-slate-950 font-black text-xs px-3.5 py-1.5 rounded-xl uppercase tracking-wider shadow shrink-0">
+            เปิดดูกราฟ 📊
+          </span>
+        </button>
+      </div>
+
+      <FinalSummaryModal
+        isOpen={showFinalSummary}
+        onClose={() => setShowFinalSummary(false)}
+        users={users}
+      />
+
       {activeSubTab === 'predictions' && (
         <>
           {/* Top Section: Profile */}

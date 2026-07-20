@@ -1841,6 +1841,21 @@ const AdminDashboard: React.FC = () => {
                     <div>
                       <div className="flex items-center gap-2">
                         <p className="text-huge text-black font-black">{u.displayName}</p>
+                        <button
+                          onClick={async () => {
+                            const newName = prompt('แก้ไขชื่อและฉายาของสมาชิก:', u.displayName);
+                            if (newName && newName.trim() && newName.trim() !== u.displayName) {
+                              await updateDoc(doc(db, 'users', u.uid), {
+                                displayName: newName.trim()
+                              });
+                              alert('แก้ไขชื่อและฉายาเรียบร้อยแล้ว!');
+                            }
+                          }}
+                          className="p-1 text-slate-500 hover:text-emerald-600 transition-colors cursor-pointer"
+                          title="แก้ไขชื่อและฉายา"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
                         {u.personalPin && (
                           <span className="text-[10px] bg-amber-50 text-world-cup-gold border border-amber-200 px-2 py-0.5 rounded-lg font-black tracking-widest flex items-center gap-1 select-all">
                             🔑 {u.personalPin}
