@@ -55,7 +55,7 @@ const Dashboard: React.FC<DashboardProps> = ({ activeSubTab }) => {
             <Trophy className="w-6 h-6 text-amber-400 fill-current animate-bounce shrink-0" />
             <div className="text-left">
               <h4 className="text-sm font-black text-white uppercase tracking-wider">
-                🏆 สรุปผลคะแนนรวมบอลโลก 2026 (FINAL SUMMARY CHART)
+                🏆 สรุปผล รวยฟ้าผ่า fifa worldcup 2026
               </h4>
               <p className="text-[10px] font-bold text-amber-400/90 uppercase tracking-widest">
                 คลิกเพื่อเปิดดูแท่นแชมป์และกราฟพล็อตสรุปอันดับล่าสุด

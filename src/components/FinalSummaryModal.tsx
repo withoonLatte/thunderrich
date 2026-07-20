@@ -56,10 +56,10 @@ const FinalSummaryModal: React.FC<FinalSummaryModalProps> = ({ isOpen, onClose, 
               </div>
               <div>
                 <h2 className="text-xl sm:text-2xl font-black uppercase tracking-wider bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent">
-                  สรุปผลการแข่งขันบอลโลก 2026 🏆
+                  สรุปผล รวยฟ้าผ่า fifa worldcup 2026 🏆
                 </h2>
                 <p className="text-xs text-amber-400/80 font-bold uppercase tracking-widest">
-                  WORLD CUP 2026 FINAL STANDINGS & SUMMARY CHART
+                  SUMMARY RUAFAHPAH FIFA WORLDCUP 2026
                 </p>
               </div>
             </div>
